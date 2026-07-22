@@ -147,6 +147,12 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Blog posts — public read; admin (signed-in) write only
+    match /blogs/{slug} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
     // Lock everything else (audits, orders, appointments, cache = Admin SDK only).
     match /{document=**} {
       allow read, write: if false;
