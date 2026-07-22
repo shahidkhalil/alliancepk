@@ -167,18 +167,10 @@ function isRecallReady(field: string, picked: RecallSnapshot): boolean {
 
 function recallInstruction(field: string, picked: RecallSnapshot, ready: boolean): string {
   if (!ready) {
-    return "Transcript unclear — ask them to repeat once slowly, or suggest they type it in the form on screen.";
+    return "Transcript unclear — ask them to type it in the form on screen. Do NOT ask them to speak it again.";
   }
-  if (field === "phone") {
-    return `Read back using these digit groups ONCE: "${groupedSpokenDigits(picked.digits)}". If they say yes, call confirm_field(phone) immediately and move on. NEVER ask for or read back the phone number again after confirm_field(phone).`;
-  }
-  if (field === "email") {
-    return `Spell back letter-by-letter once: "I have ${picked.spelled_email} — is that right?" If yes, call confirm_field(email). If they skip email, call confirm_field(email) with email_skipped true.`;
-  }
-  if (field === "name") {
-    return `Confirm once: "Got it — ${picked.text}?" If yes, call confirm_field(name) and move on. NEVER ask for the name again after confirm_field(name).`;
-  }
-  return "Confirm this exact text once. If they say yes, call confirm_field for that field.";
+  // Form already has this value — never do a verbal read-back/confirm
+  return `Field captured on screen as "${field === "phone" ? formatPhoneDigits(picked.digits) : picked.text}". It is LOCKED. Do NOT read it back. Do NOT ask "is that right?". Immediately do the next_step only.`;
 }
 
 function isFieldLocked(field: string, flags: ConfirmationFlags): boolean {
@@ -357,13 +349,103 @@ export default function LiveCall({ onClose }: Props) {
   const confirmedValuesRef = useRef<ConfirmedValues>({ ...EMPTY_CONFIRMED });
   const confirmationFlagsRef = useRef<ConfirmationFlags>({ ...EMPTY_FLAGS });
   const draftRef = useRef<BookingDraft>({ ...EMPTY_DRAFT });
+  const dcRef = useRef<RTCDataChannel | null>(null);
+  const instructionsRef = useRef("");
   const hangUpRef = useRef<() => void>(() => {});
   const pendingRecallRef = useRef<{ field: RecallField } | null>(null);
   const bookingTrackedRef = useRef(false);
   const secondsRef = useRef(0);
+  const typedNotifyRef = useRef<{ name: boolean; phone: boolean; email: boolean }>({
+    name: false,
+    phone: false,
+    email: false,
+  });
 
   draftRef.current = draft;
   secondsRef.current = seconds;
+
+  /** Push locked form state into the live session so Maya stops re-asking — silent update only. */
+  const pushFormLockToMaya = useCallback((justLocked: ("name" | "phone" | "email")[]) => {
+    const dc = dcRef.current;
+    if (!dc || dc.readyState !== "open" || !justLocked.length) return;
+    const flags = confirmationFlagsRef.current;
+    const confirmed = confirmedValuesRef.current;
+    const status = sessionStatus(flags, confirmed);
+    const lockLines = Object.entries(status.confirmed_fields)
+      .filter(([, v]) => v)
+      .map(([k, v]) => `- ${k}: ${v}`)
+      .join("\n");
+
+    try {
+      // session.update only — do NOT response.create (that makes Maya verbally re-confirm)
+      dc.send(
+        JSON.stringify({
+          type: "session.update",
+          session: {
+            type: "realtime",
+            instructions: `${instructionsRef.current || "You are Maya, a clinic receptionist."}
+
+LOCKED ON-SCREEN FORM (already confirmed by the patient — NEVER re-ask, NEVER read back, NEVER say "got it — is that right?"):
+${lockLines || "- (none)"}
+NEXT REQUIRED STEP: ${status.next_step}
+When you next speak, skip every locked field entirely. Do not acknowledge locked name/phone/email. Only pursue NEXT REQUIRED STEP.`,
+          },
+        })
+      );
+    } catch {
+      /* channel closed */
+    }
+  }, []);
+
+  /** Auto-lock completed form fields and optionally notify Maya. */
+  const lockCompletedFields = useCallback(
+    (next: BookingDraft, opts?: { notify?: boolean }) => {
+      const flags = { ...confirmationFlagsRef.current };
+      const confirmed = { ...confirmedValuesRef.current };
+      const justLocked: ("name" | "phone" | "email")[] = [];
+
+      if (!flags.nameConfirmed && next.name.trim().length >= 2) {
+        flags.nameConfirmed = true;
+        confirmed.name = next.name.trim();
+        if (!typedNotifyRef.current.name) {
+          typedNotifyRef.current.name = true;
+          justLocked.push("name");
+        }
+      }
+      if (!flags.phoneConfirmed && digitsOnly(next.phone).length >= 10) {
+        flags.phoneConfirmed = true;
+        confirmed.phone = digitsOnly(next.phone);
+        if (!typedNotifyRef.current.phone) {
+          typedNotifyRef.current.phone = true;
+          justLocked.push("phone");
+        }
+      }
+      if (flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped" && next.email.trim().includes("@")) {
+        flags.emailConfirmed = true;
+        confirmed.email = normalizeEmailFromSpeech(next.email);
+        if (!typedNotifyRef.current.email) {
+          typedNotifyRef.current.email = true;
+          justLocked.push("email");
+        }
+      }
+      if (!flags.serviceConfirmed && next.service.trim()) {
+        flags.serviceConfirmed = true;
+        confirmed.service = next.service.trim();
+      }
+      if (!flags.scheduleConfirmed && next.day && next.time) {
+        flags.scheduleConfirmed = true;
+        confirmed.preferredTime = `${next.day} at ${next.time}`;
+      }
+
+      confirmationFlagsRef.current = flags;
+      confirmedValuesRef.current = confirmed;
+      if (opts?.notify !== false && justLocked.length) {
+        queueMicrotask(() => pushFormLockToMaya(justLocked));
+      }
+      return justLocked;
+    },
+    [pushFormLockToMaya]
+  );
 
   useEffect(() => {
     trackDemoStart({ demo_type: "ai_receptionist_voice", voice_used: true });
@@ -400,83 +482,97 @@ export default function LiveCall({ onClose }: Props) {
     return { flags, confirmed };
   }, []);
 
-  /** Sync service/day/time from speech only — name/phone/email come from recall+confirm or manual typing. */
-  const syncDraftFromSpeech = useCallback((transcripts: string[]) => {
-    const msgs = transcripts.map((t) => ({ role: "user", content: t }));
-    const extracted = extractBookingDraft(msgs, LIVE_SERVICES);
-    const flags = confirmationFlagsRef.current;
+  /** Fill on-screen form from speech, then auto-lock completed fields. */
+  const syncDraftFromSpeech = useCallback(
+    (transcripts: string[]) => {
+      const msgs = transcripts.map((t) => ({ role: "user", content: t }));
+      const extracted = extractBookingDraft(msgs, LIVE_SERVICES);
+      const last = (transcripts[transcripts.length - 1] || "").trim();
+      const flags = confirmationFlagsRef.current;
 
-    setDraft((prev) => {
-      const patch: Partial<BookingDraft> = {};
-      if (!flags.serviceConfirmed && extracted.service) patch.service = extracted.service;
-      if (!flags.scheduleConfirmed) {
-        if (extracted.day) patch.day = extracted.day;
-        if (extracted.time) patch.time = extracted.time;
-      }
-      return mergeDraft(prev, patch);
-    });
-  }, []);
+      setDraft((prev) => {
+        const patch: Partial<BookingDraft> = {};
 
-  const updateDraftField = useCallback((field: keyof BookingDraft, value: string) => {
-    setDraft((d) => {
-      const next = { ...d, [field]: value };
-      draftRef.current = next;
+        if (!flags.nameConfirmed) {
+          if (extracted.name) patch.name = extracted.name;
+          else if (
+            isNameLike(last) &&
+            last.split(/\s+/).length <= 3 &&
+            !/\b(book|appointment|need|want|have|pain|tooth|bleed|call|phone|email|today|tomorrow)\b/i.test(last)
+          ) {
+            patch.name = last;
+          }
+        }
+        if (!flags.phoneConfirmed) {
+          if (extracted.phone) patch.phone = extracted.phone;
+          else if (digitsOnly(last).length >= 10) patch.phone = formatPhoneDigits(digitsOnly(last));
+        }
+        if (flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped") {
+          if (extracted.email) patch.email = extracted.email;
+          else if (/@|\bat\b.*\bdot\b/i.test(last)) patch.email = normalizeEmailFromSpeech(last);
+        }
+        if (!flags.serviceConfirmed && extracted.service) patch.service = extracted.service;
+        if (!flags.scheduleConfirmed) {
+          if (extracted.day) patch.day = extracted.day;
+          if (extracted.time) patch.time = extracted.time;
+        }
 
-      const flags = { ...confirmationFlagsRef.current };
-      const confirmed = { ...confirmedValuesRef.current };
+        const next = mergeDraft(prev, patch);
+        draftRef.current = next;
+        lockCompletedFields(next);
+        return next;
+      });
+    },
+    [lockCompletedFields]
+  );
 
-      if (field === "name") {
-        if (value.trim().length >= 2) {
-          flags.nameConfirmed = true;
-          confirmed.name = value.trim();
-        } else {
+  const updateDraftField = useCallback(
+    (field: keyof BookingDraft, value: string) => {
+      setDraft((d) => {
+        const next = { ...d, [field]: value };
+        draftRef.current = next;
+
+        if (field === "name" && value.trim().length < 2) typedNotifyRef.current.name = false;
+        if (field === "phone" && digitsOnly(value).length < 10) typedNotifyRef.current.phone = false;
+        if (field === "email" && !value.trim()) typedNotifyRef.current.email = false;
+
+        // Clear confirm flags when user empties a field
+        const flags = { ...confirmationFlagsRef.current };
+        const confirmed = { ...confirmedValuesRef.current };
+        if (field === "name" && value.trim().length < 2) {
           flags.nameConfirmed = false;
           confirmed.name = "";
         }
-      } else if (field === "phone") {
-        const phoneDigits = digitsOnly(value);
-        if (phoneDigits.length >= 10) {
-          flags.phoneConfirmed = true;
-          confirmed.phone = phoneDigits;
-        } else {
+        if (field === "phone" && digitsOnly(value).length < 10) {
           flags.phoneConfirmed = false;
           confirmed.phone = "";
         }
-      } else if (field === "email") {
-        if (!value.trim()) {
+        if (field === "email" && !value.trim()) {
           flags.emailConfirmed = "skipped";
           confirmed.email = "";
-        } else {
-          flags.emailConfirmed = true;
-          confirmed.email = normalizeEmailFromSpeech(value);
         }
-      } else if (field === "service") {
-        if (value.trim()) {
-          flags.serviceConfirmed = true;
-          confirmed.service = value.trim();
-        } else {
+        if (field === "service" && !value.trim()) {
           flags.serviceConfirmed = false;
           confirmed.service = "";
         }
-      } else if (field === "day" || field === "time") {
-        if (next.day && next.time) {
-          flags.scheduleConfirmed = true;
-          confirmed.preferredTime = `${next.day} at ${next.time}`;
-        } else {
+        if ((field === "day" || field === "time") && !(next.day && next.time)) {
           flags.scheduleConfirmed = false;
           confirmed.preferredTime = "";
         }
-      }
+        confirmationFlagsRef.current = flags;
+        confirmedValuesRef.current = confirmed;
 
-      confirmationFlagsRef.current = flags;
-      confirmedValuesRef.current = confirmed;
-      return next;
-    });
-  }, []);
+        lockCompletedFields(next);
+        return next;
+      });
+    },
+    [lockCompletedFields]
+  );
 
   const hangUp = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     streamRef.current?.getTracks().forEach((t) => t.stop());
+    dcRef.current = null;
     pcRef.current?.close();
     pcRef.current = null;
     setState((s) => (s === "error" ? s : "ended"));
@@ -489,10 +585,15 @@ export default function LiveCall({ onClose }: Props) {
 
     (async () => {
       try {
-        const tokenData = await postJson(realtimeTokenUrl(), { clinicId: "demo" }, "session");
+        const tokenData = await postJson(
+          realtimeTokenUrl(),
+          { clinicId: "demo", bookingDraft: draftRef.current },
+          "session"
+        );
         const clientSecret = String(tokenData.clientSecret || "");
         const model = String(tokenData.model || "gpt-realtime-mini");
         const callMaxSeconds = Number(tokenData.maxSeconds) || 180;
+        instructionsRef.current = String(tokenData.instructions || "");
         if (!clientSecret) throw new Error("No session token — please try the chat.");
         if (cancelled) return;
         setMaxSeconds(callMaxSeconds);
@@ -516,6 +617,10 @@ export default function LiveCall({ onClose }: Props) {
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
         const dc = pc.createDataChannel("oai-events");
+        dcRef.current = dc;
+        dc.onclose = () => {
+          if (dcRef.current === dc) dcRef.current = null;
+        };
         dc.onmessage = async (e) => {
           try {
             const ev = JSON.parse(e.data);
@@ -562,8 +667,32 @@ export default function LiveCall({ onClose }: Props) {
                   const field = (args.field || "other") as RecallField;
                   const flags = confirmationFlagsRef.current;
                   const confirmed = confirmedValuesRef.current;
+                  const currentDraft = draftRef.current;
 
-                  if (isFieldLocked(field, flags)) {
+                  // Prefer already-filled on-screen form over waiting for another spoken answer
+                  if (!isFieldLocked(field, flags)) {
+                    if (field === "name" && currentDraft.name.trim().length >= 2) {
+                      flags.nameConfirmed = true;
+                      confirmed.name = currentDraft.name.trim();
+                      confirmationFlagsRef.current = flags;
+                      confirmedValuesRef.current = confirmed;
+                      typedNotifyRef.current.name = true;
+                    } else if (field === "phone" && digitsOnly(currentDraft.phone).length >= 10) {
+                      flags.phoneConfirmed = true;
+                      confirmed.phone = digitsOnly(currentDraft.phone);
+                      confirmationFlagsRef.current = flags;
+                      confirmedValuesRef.current = confirmed;
+                      typedNotifyRef.current.phone = true;
+                    } else if (field === "email" && currentDraft.email.trim().includes("@")) {
+                      flags.emailConfirmed = true;
+                      confirmed.email = normalizeEmailFromSpeech(currentDraft.email);
+                      confirmationFlagsRef.current = flags;
+                      confirmedValuesRef.current = confirmed;
+                      typedNotifyRef.current.email = true;
+                    }
+                  }
+
+                  if (isFieldLocked(field, confirmationFlagsRef.current)) {
                     const status = sessionStatus(flags, confirmed);
                     const lockedPhone = formatPhoneDigits(confirmed.phone);
                     const output = {
@@ -600,15 +729,48 @@ export default function LiveCall({ onClose }: Props) {
                   const ready = isRecallReady(field, picked);
 
                   if (ready && field === "name" && !flags.nameConfirmed) {
-                    setDraft((d) => mergeDraft(d, { name: picked.text }));
+                    const next = mergeDraft(draftRef.current, { name: picked.text });
+                    draftRef.current = next;
+                    setDraft(next);
+                    lockCompletedFields(next, { notify: true });
                   } else if (ready && field === "phone" && !flags.phoneConfirmed) {
-                    setDraft((d) => mergeDraft(d, { phone: formatPhoneDigits(picked.digits) }));
+                    const next = mergeDraft(draftRef.current, { phone: formatPhoneDigits(picked.digits) });
+                    draftRef.current = next;
+                    setDraft(next);
+                    lockCompletedFields(next, { notify: true });
                   } else if (ready && field === "email" && flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped") {
-                    setDraft((d) => mergeDraft(d, { email: picked.text }));
+                    const next = mergeDraft(draftRef.current, { email: picked.text });
+                    draftRef.current = next;
+                    setDraft(next);
+                    lockCompletedFields(next, { notify: true });
                   }
 
+                  // Auto-lock from speech — no verbal "is that right?" loop
                   if (ready && (field === "name" || field === "phone" || field === "email")) {
-                    pendingRecallRef.current = { field };
+                    pendingRecallRef.current = null;
+                    const status = sessionStatus(confirmationFlagsRef.current, confirmedValuesRef.current);
+                    const display =
+                      field === "phone"
+                        ? formatPhoneDigits(picked.digits)
+                        : field === "email"
+                          ? picked.text
+                          : picked.text;
+                    const output = {
+                      ready: true,
+                      field,
+                      already_confirmed: true,
+                      text: display,
+                      digits: picked.digits,
+                      instruction: `LOCKED on form as "${display}". Do NOT read back. Do NOT ask for confirmation. Immediately: ${status.next_step}`,
+                      ...status,
+                    };
+                    dc.send(
+                      JSON.stringify({
+                        type: "conversation.item.create",
+                        item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(output) },
+                      })
+                    );
+                    continue;
                   }
 
                   const status = sessionStatus(confirmationFlagsRef.current, confirmedValuesRef.current);
@@ -629,6 +791,7 @@ export default function LiveCall({ onClose }: Props) {
                       item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(output) },
                     })
                   );
+                  continue;
                 }
 
                 if (call.name === "confirm_field") {
@@ -659,11 +822,16 @@ export default function LiveCall({ onClose }: Props) {
                       instruction: "Name already confirmed. Do NOT ask again. " + nextStepHint(flags),
                       ...sessionStatus(flags, confirmed),
                     };
-                  } else if (args.field === "name" && args.confirmed && lastRecallRef.current.name?.text) {
+                  } else if (
+                    args.field === "name" &&
+                    args.confirmed &&
+                    (lastRecallRef.current.name?.text || currentDraft.name.trim().length >= 2)
+                  ) {
                     flags.nameConfirmed = true;
-                    confirmed.name = lastRecallRef.current.name.text;
+                    confirmed.name = (lastRecallRef.current.name?.text || currentDraft.name).trim();
                     setDraft((d) => mergeDraft(d, { name: confirmed.name }));
                     pendingRecallRef.current = null;
+                    typedNotifyRef.current.name = true;
                     output = {
                       success: true,
                       field: "name",
@@ -681,11 +849,16 @@ export default function LiveCall({ onClose }: Props) {
                       instruction: "Phone already confirmed. Do NOT mention phone again. " + nextStepHint(flags),
                       ...sessionStatus(flags, confirmed),
                     };
-                  } else if (args.field === "phone" && args.confirmed && lastRecallRef.current.phone?.digits) {
+                  } else if (
+                    args.field === "phone" &&
+                    args.confirmed &&
+                    (lastRecallRef.current.phone?.digits || digitsOnly(currentDraft.phone).length >= 10)
+                  ) {
                     flags.phoneConfirmed = true;
-                    confirmed.phone = lastRecallRef.current.phone.digits;
+                    confirmed.phone = lastRecallRef.current.phone?.digits || digitsOnly(currentDraft.phone);
                     setDraft((d) => mergeDraft(d, { phone: formatPhoneDigits(confirmed.phone) }));
                     pendingRecallRef.current = null;
+                    typedNotifyRef.current.phone = true;
                     output = {
                       success: true,
                       field: "phone",
@@ -825,6 +998,29 @@ export default function LiveCall({ onClose }: Props) {
         }
         await pc.setRemoteDescription({ type: "answer", sdp: await sdpRes.text() });
         if (cancelled) return;
+
+        // Reinforce anti-loop rules client-side (works even if functions deploy is pending)
+        const boost = `
+LOCKED FORM RULES (highest priority):
+- On-screen Name / Phone / Email that are filled are ALREADY CONFIRMED.
+- NEVER read them back. NEVER ask "is that right?" or "got it — …?".
+- Ask each missing question at most once. Skip locked fields entirely.
+- If unclear, ask them to type on screen — do not loop.
+`;
+        const base = instructionsRef.current || "You are Maya, a clinic receptionist.";
+        instructionsRef.current = `${base}\n${boost}`;
+        const sendBoost = () => {
+          if (dc.readyState === "open") {
+            dc.send(
+              JSON.stringify({
+                type: "session.update",
+                session: { type: "realtime", instructions: instructionsRef.current },
+              })
+            );
+          }
+        };
+        if (dc.readyState === "open") sendBoost();
+        else dc.addEventListener("open", sendBoost, { once: true });
 
         setState("live");
         timerRef.current = setInterval(() => {

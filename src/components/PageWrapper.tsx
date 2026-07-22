@@ -14,9 +14,9 @@ const PackageOrderForm = dynamic(() => import("./PackageOrderForm"), { ssr: fals
 function PageContent({ children }: { children: ReactNode }) {
   const { isOpen, closeForm } = useForm();
   return (
-    <div className="relative min-h-screen bg-white">
+    <div className="relative min-h-screen bg-white overflow-x-clip max-w-[100vw]">
       <Navigation />
-      <main className="relative">{children}</main>
+      <main className="relative overflow-x-clip max-w-[100vw]">{children}</main>
       <Footer />
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}
       <AuditChatWidget />

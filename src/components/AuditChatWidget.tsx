@@ -17,7 +17,7 @@ export default function AuditChatWidget() {
   const [showNudge, setShowNudge] = useState(false);
   const [ready, setReady] = useState(false);
   const pathname = usePathname();
-  const hidden = pathname === "/free-website-audit";
+  const hidden = pathname === "/free-website-audit" || pathname === "/ai-receptionist";
 
   useEffect(() => {
     if (hidden) return;

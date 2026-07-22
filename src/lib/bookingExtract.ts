@@ -20,7 +20,20 @@ export const BOOKING_DAYS = ["Today", "Tomorrow", "Monday", "Tuesday", "Wednesda
 export const BOOKING_TIMES = ["11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM", "8:30 PM"];
 
 export function isServicesQuery(text: string): boolean {
-  return /\b(what services|services do you|what do you offer|what treatments|list (your )?services|tell me about your services)\b/i.test(text);
+  const t = text.trim().replace(/\s+/g, " ");
+  if (!t) return false;
+  // Don't treat booking requests as a catalog ask ("book a service", etc.)
+  if (/\b(book|schedule|appointment|reserve)\b/i.test(t) && !/\b(what|which|list|show|offer|available)\b/i.test(t)) {
+    return false;
+  }
+  // Short / casual: "services", "service?", "your services"
+  if (/^(hey[,!]?\s+|hi[,!]?\s+|please\s+)?(what('s| is| are)?\s+)?(your\s+|the\s+)?(services?|treatments?)\??\.?$/i.test(t)) {
+    return true;
+  }
+  // Common catalog phrasing — same UI as the Services chip
+  return /\b(what\s+services?|which\s+services?|services?\s+do\s+you|what\s+do\s+you\s+offer|what\s+treatments?|list(?:\s+of)?(?:\s+your)?\s+services?|show(?:\s+me)?(?:\s+your|\s+the)?\s+services?|(?:your|available)\s+services?|services?\s+(?:you\s+)?offer|tell\s+me\s+about\s+your\s+services?|services?\s+list|service\s+menu|what\s+can\s+you\s+(?:do|offer|help\s+with))\b/i.test(
+    t
+  );
 }
 
 export function isServiceDetailQuery(text: string): string | null {
@@ -141,7 +154,7 @@ export function extractBookingDraft(
   const userCombined = userTexts.join("\n");
 
   const structured = userCombined.match(
-    /Name:\s*([^.\n]+)[.\s]*Phone:\s*([^.\n]+)(?:[.\s]*Email:\s*([^.\n]+))?[.\s]*Service:\s*([^.\n]+)[.\s]*Preferred time:\s*([^\n.]+)/i
+    /Name:\s*(.+?)[.\s]+Phone:\s*(.+?)(?:[.\s]+Email:\s*(.+?))?[.\s]+Service:\s*(.+?)[.\s]+Preferred time:\s*([^\n]+)/i
   );
   if (structured) {
     draft.name = structured[1].trim();

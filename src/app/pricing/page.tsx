@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, ChevronDown } from "lucide-react";
 import PageWrapper from "@/components/PageWrapper";
 import ServicePricingSection from "@/components/ServicePricingSection";
 import { pricingServices, serviceCategories, ServiceCategory } from "@/lib/pricingData";
@@ -104,6 +104,7 @@ function PricingContent() {
   const { openForm } = useForm();
   const [activeCategory, setActiveCategory] = useState<ServiceCategory>("All");
   const [activeId, setActiveId] = useState(pricingServices[0].id);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const filtered = activeCategory === "All"
     ? pricingServices
@@ -116,6 +117,16 @@ function PricingContent() {
   }, [activeCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const active = pricingServices.find((s) => s.id === activeId) ?? pricingServices[0];
+
+  const selectService = (id: string) => {
+    setActiveId(id);
+    setPickerOpen(false);
+    requestAnimationFrame(() => {
+      document.getElementById("service-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const mobileCategories = (serviceCategories.filter((c) => c !== "All") as ServiceCategory[]);
 
   // Deep link: /pricing#service-id opens that service directly.
   useEffect(() => {
@@ -230,41 +241,126 @@ function PricingContent() {
             </div>
           </aside>
 
-          {/* Mobile tab bar (hidden on lg) — min-w-0 lets the pill rows scroll
-              instead of forcing the flex row wider than the screen */}
+          {/* Mobile: themed expandable picker (compact when closed) */}
           <div className="lg:hidden w-full min-w-0 mb-6">
-            {/* Category pills */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {serviceCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border transition-colors duration-150 ${
-                    activeCategory === cat
-                      ? "bg-[#00283C] text-white border-[#00283C]"
-                      : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+            <p className="text-[10px] font-black uppercase tracking-widest text-[#0077A8] mb-2">
+              Service
+            </p>
+
+            <div
+              className={`rounded-2xl overflow-hidden transition-shadow duration-200 ${
+                pickerOpen
+                  ? "shadow-lg shadow-[#00283C]/10 ring-1 ring-[#00B4D8]/35"
+                  : "shadow-sm ring-1 ring-gray-200"
+              }`}
+            >
+              <button
+                type="button"
+                aria-expanded={pickerOpen}
+                onClick={() => setPickerOpen((o) => !o)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left bg-gradient-to-br from-white to-[#F0F9FC]"
+              >
+                <span
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white text-xs font-black"
+                  style={{ background: "linear-gradient(135deg, #00283C, #0077A8)" }}
+                >
+                  {active.name.charAt(0)}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-bold text-[#00283C] truncate">{active.name}</span>
+                  <span className="block text-[11px] font-semibold text-[#00B4D8] mt-0.5 truncate">
+                    {active.category}
+                  </span>
+                </span>
+                <span
+                  className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                    pickerOpen ? "bg-[#00B4D8] text-white" : "bg-[#E0F4F9] text-[#0077A8]"
                   }`}
                 >
-                  {cat}
-                </button>
-              ))}
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${pickerOpen ? "rotate-180" : ""}`} />
+                </span>
+              </button>
+
+              <AnimatePresence initial={false}>
+                {pickerOpen && (
+                  <motion.div
+                    key="picker-panel"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="overflow-hidden border-t border-[#00B4D8]/15 bg-white"
+                  >
+                    <div className="max-h-[min(58vh,380px)] overflow-y-auto overscroll-contain px-2 py-2">
+                      {mobileCategories.map((cat) => {
+                        const items = pricingServices.filter((s) => s.category === cat);
+                        if (!items.length) return null;
+                        return (
+                          <div key={cat} className="mb-2 last:mb-0">
+                            <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#94A3B8]">
+                              {cat}
+                            </p>
+                            <ul className="space-y-1">
+                              {items.map((s) => {
+                                const selected = s.id === activeId;
+                                return (
+                                  <li key={s.id}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveCategory("All");
+                                        selectService(s.id);
+                                      }}
+                                      className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
+                                        selected
+                                          ? "bg-[#00283C] text-white shadow-md shadow-[#00283C]/20"
+                                          : "text-[#00283C] hover:bg-[#F0F9FC] active:bg-[#E0F4F9]"
+                                      }`}
+                                    >
+                                      <span
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black ${
+                                          selected
+                                            ? "bg-[#00B4D8] text-white"
+                                            : "bg-[#E0F4F9] text-[#0077A8]"
+                                        }`}
+                                      >
+                                        {s.name.charAt(0)}
+                                      </span>
+                                      <span className="flex-1 min-w-0">
+                                        <span className="block text-sm font-semibold leading-snug truncate">
+                                          {s.name}
+                                        </span>
+                                        <span
+                                          className={`block text-[11px] mt-0.5 truncate ${
+                                            selected ? "text-white/60" : "text-gray-400"
+                                          }`}
+                                        >
+                                          {s.packages[0]?.price}
+                                          {s.packages.length > 1 ? "+" : ""} · {s.packages[0]?.period?.replace("/", "").trim() || "plan"}
+                                        </span>
+                                      </span>
+                                      {selected && (
+                                        <Check className="w-4 h-4 shrink-0 text-[#00B4D8]" strokeWidth={3} />
+                                      )}
+                                    </button>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            {/* Service pills */}
-            <div className="flex gap-2 overflow-x-auto mt-2 pb-1">
-              {filtered.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setActiveId(s.id)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors duration-150 ${
-                    activeId === s.id
-                      ? "bg-[#00B4D8]/10 text-[#0077A8] border-[#00B4D8]/40"
-                      : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  {s.name}
-                </button>
-              ))}
-            </div>
+
+            {!pickerOpen && (
+              <p className="mt-2.5 text-xs text-gray-500 leading-relaxed line-clamp-2 px-0.5">
+                {active.tagline}
+              </p>
+            )}
           </div>
 
           {/* Main content */}

@@ -22,13 +22,24 @@ import { buildClientTriage, type TriageInfo } from "@/lib/emergencyTriage";
 const MAX_RECORD_SECONDS = 30;
 
 interface ChatMsg {
+  id: string;
   role: "user" | "assistant";
   content: string;
   audio?: string;
   voiceNote?: boolean;
   showServices?: boolean;
   serviceDetail?: string;
+  /** Offer form vs chat booking paths */
+  bookingChoice?: { service: string; resolved?: boolean };
   form?: { service: string; done?: boolean };
+  triage?: TriageInfo;
+  booking?: Booking;
+}
+
+let msgSeq = 0;
+function newMsgId() {
+  msgSeq += 1;
+  return `m-${Date.now()}-${msgSeq}`;
 }
 
 interface Booking {
@@ -38,18 +49,20 @@ interface Booking {
   preferredTime: string;
   clinicName?: string;
   urgent?: boolean;
+  email?: string;
 }
 
 const SUGGESTIONS: {
   icon: string;
   label: string;
+  shortLabel: string;
   action: "chat" | "services" | "detail" | "book";
   service?: string;
 }[] = [
-  { icon: "🚨", label: "My tooth is bleeding", action: "chat" },
-  { icon: "🦷", label: "What services do you offer?", action: "services" },
-  { icon: "🕐", label: "What are your hours?", action: "chat" },
-  { icon: "📅", label: "Book me an appointment", action: "book" },
+  { icon: "🚨", label: "My tooth is bleeding", shortLabel: "Tooth bleeding", action: "chat" },
+  { icon: "📋", label: "What's my appointment?", shortLabel: "My appointment", action: "chat" },
+  { icon: "🦷", label: "What services do you offer?", shortLabel: "View services", action: "services" },
+  { icon: "📅", label: "Book me an appointment", shortLabel: "Book appointment", action: "book" },
 ];
 
 const SERVICES = [
@@ -137,31 +150,134 @@ function hasOpenForm(msgs: ChatMsg[]) {
   return msgs.some((m) => m.form && !m.form.done);
 }
 
+function hasOpenBookingChoice(msgs: ChatMsg[]) {
+  return msgs.some((m) => m.bookingChoice && !m.bookingChoice.resolved);
+}
+
+/** Professional paragraph layout for Maya replies */
+function renderInline(text: string) {
+  // Split on **bold**, *italic*, and `code` — never show raw markdown markers
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return (
+        <strong key={i} className="font-semibold text-[#00332C]">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return (
+        <em key={i} className="italic">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    if (part.startsWith("`") && part.endsWith("`") && part.length > 2) {
+      return (
+        <span key={i} className="font-medium text-[#00332C]">
+          {part.slice(1, -1)}
+        </span>
+      );
+    }
+    // Strip any leftover unmatched markdown markers
+    return <span key={i}>{part.replace(/\*\*/g, "").replace(/__/g, "")}</span>;
+  });
+}
+
+function AssistantText({ text }: { text: string }) {
+  const cleaned = text
+    .replace(/\*\*\s*/g, "**")
+    .replace(/\s*\*\*/g, "**")
+    .trim();
+
+  const blocks = cleaned
+    .split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="text-left space-y-2.5">
+      {blocks.map((block, i) => {
+        const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+        return (
+          <p key={i} className="text-[13px] sm:text-sm leading-[1.6] text-gray-700 tracking-[-0.01em]">
+            {lines.map((line, j) => (
+              <span key={j}>
+                {j > 0 ? <br /> : null}
+                {renderInline(line)}
+              </span>
+            ))}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function BookingPathChoice({
+  service,
+  onForm,
+  onChat,
+}: {
+  service: string;
+  onForm: () => void;
+  onChat: () => void;
+}) {
+  return (
+    <div className="mt-2.5 w-full rounded-2xl rounded-tl-md border border-[#0E7C6B]/15 bg-white shadow-sm p-3.5 sm:p-4 space-y-3">
+      <p className="text-[12px] sm:text-sm font-semibold text-[#00332C] text-left leading-snug">
+        How would you like to book{service ? ` ${service}` : ""}?
+      </p>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          type="button"
+          onClick={onForm}
+          className="flex-1 text-left px-3.5 py-3 rounded-xl bg-gradient-to-r from-[#0E7C6B] to-[#14A08A] text-white shadow-sm hover:shadow-md transition-all"
+        >
+          <span className="block text-xs font-bold">Fill booking form</span>
+          <span className="block text-[10px] text-white/80 mt-0.5">Quick — name, phone, day &amp; time</span>
+        </button>
+        <button
+          type="button"
+          onClick={onChat}
+          className="flex-1 text-left px-3.5 py-3 rounded-xl bg-[#F4F8F7] border border-[#0E7C6B]/20 text-[#00332C] hover:border-[#0E7C6B]/45 hover:bg-white transition-all"
+        >
+          <span className="block text-xs font-bold">Chat with Maya</span>
+          <span className="block text-[10px] text-gray-500 mt-0.5">Type answers — she&apos;ll guide you</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BookingForm({
   draft,
   onChange,
   onSubmit,
   busy,
+  onSwitchToChat,
 }: {
   draft: BookingDraft;
   onChange: (d: BookingDraft) => void;
   onSubmit: () => void;
   busy: boolean;
+  onSwitchToChat?: () => void;
 }) {
   const set = (key: keyof BookingDraft, val: string) => onChange({ ...draft, [key]: val });
   const phoneOk = draft.phone.replace(/\D/g, "").length >= 10;
   const canBook = draftIsComplete(draft);
 
-  const field = "w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:border-[#0E7C6B] focus:ring-2 focus:ring-[#0E7C6B]/10 bg-white transition-all";
-  const label = "block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1";
+  const field = "w-full px-3 py-2.5 sm:px-3.5 rounded-xl border border-gray-200 text-[15px] sm:text-sm text-gray-800 outline-none focus:border-[#0E7C6B] focus:ring-2 focus:ring-[#0E7C6B]/10 bg-white transition-all";
+  const label = "block text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1 text-left";
 
   return (
-    <div className="w-full rounded-2xl rounded-tl-md border border-[#0E7C6B]/15 bg-gradient-to-b from-white to-[#F7FBFA] shadow-md p-3.5 sm:p-5 space-y-3 sm:space-y-3.5 mt-2.5">
-      <div className="flex items-center gap-2 pb-1">
-        <span className="w-8 h-8 rounded-full bg-[#0E7C6B]/10 flex items-center justify-center text-base">📅</span>
-        <div>
-          <p className="text-sm font-bold text-[#00332C]">Book your appointment</p>
-          <p className="text-[11px] text-gray-400">Speak or type — review before confirming</p>
+    <div className="w-full rounded-2xl rounded-tl-md border border-[#0E7C6B]/20 bg-white shadow-md p-3 sm:p-5 space-y-2.5 sm:space-y-3.5 mt-2 text-left">
+      <div className="flex items-center gap-2 pb-0.5">
+        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0E7C6B]/10 flex items-center justify-center text-sm sm:text-base flex-shrink-0">📅</span>
+        <div className="min-w-0">
+          <p className="text-[13px] sm:text-sm font-bold text-[#00332C]">Book your appointment</p>
+          <p className="text-[10px] sm:text-[11px] text-gray-500">Fill in the details below to confirm</p>
         </div>
       </div>
       <div>
@@ -171,6 +287,9 @@ function BookingForm({
       <div>
         <label className={label}>Phone / WhatsApp</label>
         <input value={draft.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(555) 123-4567" inputMode="tel" className={field} />
+        {draft.phone.trim() && !phoneOk && (
+          <p className="mt-1 text-[11px] text-amber-600">Enter a full 10-digit phone number</p>
+        )}
       </div>
       <div>
         <label className={label}>Email <span className="normal-case font-normal">(optional)</span></label>
@@ -207,6 +326,16 @@ function BookingForm({
       >
         Confirm Booking ✓
       </button>
+      {onSwitchToChat && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onSwitchToChat}
+          className="w-full py-2 text-xs font-semibold text-[#0E7C6B] hover:underline disabled:opacity-40"
+        >
+          Prefer to chat instead? Continue with Maya →
+        </button>
+      )}
     </div>
   );
 }
@@ -214,15 +343,15 @@ function BookingForm({
 export default function ReceptionistDemo() {
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
+      id: "welcome",
       role: "assistant",
-      content: "Hi there! 😊 I'm Maya at Bright Smile Dental Care. Ask about our services or hours — or tap Book when you're ready for an appointment.",
+      content: "Hi there. I'm Maya at Bright Smile Dental Care. I can help with services, hours, or booking an appointment — tap Book when you're ready.",
     },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [triage, setTriage] = useState<TriageInfo | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const triageTrackedRef = useRef(false);
   const [recState, setRecState] = useState<"idle" | "recording" | "transcribing">("idle");
   const [recSeconds, setRecSeconds] = useState(0);
   const [draft, setDraft] = useState<BookingDraft>({ ...EMPTY_DRAFT });
@@ -230,6 +359,13 @@ export default function ReceptionistDemo() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const focusComposer = () => {
+    // Defer until after React re-enable / layout so focus sticks on mobile too.
+    requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+  };
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const draftRef = useRef(draft);
@@ -238,6 +374,8 @@ export default function ReceptionistDemo() {
   const demoStartedAtRef = useRef(0);
   const messagesSentRef = useRef(0);
   const voiceUsedRef = useRef(false);
+  const deepLinkHandledRef = useRef(false);
+  const sendRef = useRef<(text: string, opts?: { voice?: boolean; forceBooking?: boolean; continueChatBooking?: boolean }) => void>(() => {});
   draftRef.current = draft;
 
   const markDemoStarted = (voiceUsed = false) => {
@@ -248,9 +386,38 @@ export default function ReceptionistDemo() {
     trackDemoStart({ demo_type: "ai_receptionist_chat", voice_used: voiceUsed });
   };
 
+  /** Scroll only inside the chat panel — never move the whole page */
+  const scrollChatToBottom = useCallback((smooth = true) => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const run = () => {
+      el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(run));
+  }, []);
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, busy]);
+    scrollChatToBottom(true);
+  }, [messages, busy, scrollChatToBottom]);
+
+  // Email deep link: /ai-receptionist?ref=XXXX&intent=check
+  useEffect(() => {
+    if (deepLinkHandledRef.current || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = (params.get("ref") || "").trim().toUpperCase();
+    const intent = (params.get("intent") || "").trim().toLowerCase();
+    if (!ref && intent !== "check" && intent !== "chat") return;
+    deepLinkHandledRef.current = true;
+
+    document.getElementById("demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    if (intent === "check" || ref) {
+      const ask = ref
+        ? `I'd like to check my appointment. My reference is ${ref}.`
+        : "I'd like to check my appointment details please.";
+      window.setTimeout(() => sendRef.current(ask, { continueChatBooking: true }), 700);
+    }
+  }, []);
 
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -294,31 +461,113 @@ export default function ReceptionistDemo() {
     []
   );
 
-  const openFormFor = (service: string) => {
+  /** Book chip / service Book → show form immediately (no gray flash from choice→form) */
+  const openBookingChoice = (service = "", userText?: string) => {
     if (busy) return;
     bookingTrackedRef.current = false;
     trackEvent("appointment_booking_start", { channel: "chat" });
     setShowSuggestions(false);
     setDraft(mergeDraft({ ...EMPTY_DRAFT }, service ? { service } : {}));
+    const userLine =
+      userText ||
+      (service ? `I'd like to book: ${service}` : "Book me an appointment");
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: service ? `I'd like to book: ${service}` : "Book me an appointment" },
+      { id: newMsgId(), role: "user", content: userLine },
       {
+        id: newMsgId(),
         role: "assistant",
         content: service
-          ? `Perfect — fill in the details below and tap Confirm when ready. 👇`
-          : "Sure! Complete the form below when you're ready. 👇",
+          ? `Perfect — please complete the booking form for ${service} below.`
+          : "Perfect — please complete the booking form below.",
         form: { service },
       },
     ]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChatToBottom(true);
+      });
+    });
+  };
+
+  /** Keep openFormFor for service catalog / detail cards */
+  const openFormFor = (service: string) => {
+    openBookingChoice(service);
+  };
+
+  const chooseFormPath = () => {
+    setMessages((prev) => {
+      const choice = [...prev].reverse().find((m) => m.bookingChoice && !m.bookingChoice.resolved);
+      const service = choice?.bookingChoice?.service || "";
+      if (service) setDraft((d) => mergeDraft(d, { service }));
+      return prev.map((m) => {
+        if (m.bookingChoice && !m.bookingChoice.resolved) {
+          return {
+            ...m,
+            content: "Perfect — please complete the booking form below.",
+            bookingChoice: { ...m.bookingChoice, resolved: true },
+            form: { service },
+          };
+        }
+        return m;
+      });
+    });
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollChatToBottom(true);
+      });
+    });
+  };
+
+  const chooseChatPath = () => {
+    const pending = [...messagesRef.current].reverse().find((m) => m.bookingChoice && !m.bookingChoice.resolved);
+    const service = pending?.bookingChoice?.service || "";
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        m.bookingChoice && !m.bookingChoice.resolved
+          ? {
+              ...m,
+              content: "Great — we'll book through chat. I'll ask for a few details.",
+              bookingChoice: { ...m.bookingChoice, resolved: true },
+            }
+          : m
+      );
+      messagesRef.current = next;
+      return next;
+    });
+    const prompt = service
+      ? `I'd like to book ${service} by chatting with you. Please ask me for the details one by one.`
+      : "I'd like to book an appointment by chatting with you. Please ask me for the details one by one.";
+    setTimeout(() => send(prompt, { continueChatBooking: true }), 50);
+  };
+
+  const switchFormToChat = () => {
+    setMessages((prev) => {
+      const next = prev.map((m) => (m.form && !m.form.done ? { ...m, form: { ...m.form, done: true } } : m));
+      messagesRef.current = next;
+      return next;
+    });
+    setTimeout(
+      () =>
+        send(
+          "I'd prefer to finish booking by chatting with you. Please continue asking for any details you still need.",
+          { continueChatBooking: true }
+        ),
+      50
+    );
   };
 
   const showServicesMenu = (userText: string) => {
     setShowSuggestions(false);
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: userText },
-      { role: "assistant", content: "We offer a full range of dental care — tap a service to learn more or book. 🦷", showServices: true },
+      { id: newMsgId(), role: "user", content: userText },
+      {
+        id: newMsgId(),
+        role: "assistant",
+        content: "We offer a full range of dental care — tap a service to learn more or book.",
+        showServices: true,
+      },
     ]);
   };
 
@@ -326,8 +575,13 @@ export default function ReceptionistDemo() {
     setShowSuggestions(false);
     setMessages((prev) => [
       ...prev,
-      { role: "user", content: userText },
-      { role: "assistant", content: `Here's a quick overview of ${service}:`, serviceDetail: service },
+      { id: newMsgId(), role: "user", content: userText },
+      {
+        id: newMsgId(),
+        role: "assistant",
+        content: `Here's a quick overview of ${service}:`,
+        serviceDetail: service,
+      },
     ]);
   };
 
@@ -340,25 +594,102 @@ export default function ReceptionistDemo() {
     send(msg, { forceBooking: true });
   };
 
-  const handleResponse = (data: { reply?: string; booking?: Booking; triage?: TriageInfo; audio?: string; transcript?: string; bookingDraft?: Partial<BookingDraft> }, prevMessages: ChatMsg[]) => {
-    const updated = [...prevMessages];
+  const handleResponse = (data: {
+    reply?: string;
+    booking?: Booking;
+    triage?: TriageInfo;
+    audio?: string;
+    transcript?: string;
+    bookingDraft?: Partial<BookingDraft>;
+    showBookingForm?: boolean;
+  }, prevMessages: ChatMsg[]) => {
+    let updated = [...prevMessages];
     if (data.transcript) {
       const idx = updated.map((m) => m.content).lastIndexOf("🎤 Voice note…");
       if (idx >= 0) updated[idx] = { ...updated[idx], content: data.transcript };
     }
-    updated.push({ role: "assistant", content: data.reply || "", audio: data.audio || undefined });
+
+    const userText = data.transcript || prevMessages[prevMessages.length - 1]?.content || "";
+    // Prefer server triage; client fallback only for THIS turn's user text (not sticky re-detect)
+    const triagePayload =
+      data.triage?.urgent ? data.triage : buildClientTriage(userText);
+
+    let replyText = (data.reply || "").trim();
+    if (triagePayload?.urgent) {
+      // Replace weak greetings so the patient always gets a real triage response
+      if (
+        !replyText ||
+        (/how can i (help|assist) you/i.test(replyText) && !/(emerg|bleed|urgent|slot|pain)/i.test(replyText)) ||
+        (/^hi\b/i.test(replyText) && replyText.length < 80 && !/(emerg|bleed|urgent|slot)/i.test(replyText))
+      ) {
+        replyText =
+          `I'm sorry you're going through this — I'm treating it as urgent. ` +
+          `I've alerted the front desk and can hold ${triagePayload.emergencySlot}. ` +
+          `Please enter your name and phone below so we can lock that slot` +
+          (triagePayload.clinicPhone ? ` (or call ${triagePayload.clinicPhone} now)` : "") +
+          `. If this is life-threatening, call 911 first.`;
+      }
+    }
+
+    updated.push({
+      id: newMsgId(),
+      role: "assistant",
+      content: replyText || "Sorry, could you say that again?",
+      audio: data.audio || undefined,
+      // Same interactive catalog as the Services chip (incl. voice / edge phrases)
+      ...(isServicesQuery(userText) && !data.booking
+        ? {
+            showServices: true,
+            content:
+              replyText && !/^(hi|hello|hey)\b/i.test(replyText)
+                ? replyText
+                : "We offer a full range of dental care — tap a service to learn more or book.",
+          }
+        : {}),
+      // Attach triage / booking to this reply only — stay in chat flow, not stuck at bottom
+      ...(triagePayload?.urgent ? { triage: triagePayload } : {}),
+      ...(data.booking
+        ? {
+            booking: {
+              ...data.booking,
+              urgent: !!(data.booking.urgent || triagePayload?.urgent),
+            },
+          }
+        : {}),
+    });
+
+    const alreadyHasForm = hasOpenForm(updated);
+    const shouldOpenForm =
+      !alreadyHasForm &&
+      !data.booking &&
+      (Boolean(data.showBookingForm) ||
+        Boolean(triagePayload?.urgent) ||
+        /\b(fill (in|out|the) form|tap confirm|booking form)\b/i.test(replyText));
+
+    if (shouldOpenForm) {
+      const seed: Partial<BookingDraft> = { ...(data.bookingDraft || {}) };
+      if (triagePayload?.urgent) {
+        seed.service = seed.service || "Consultation & Check-up";
+        seed.day = seed.day || "Today";
+      }
+      setDraft((prev) => mergeDraft(prev, seed));
+      updated = [
+        ...updated.slice(0, -1),
+        {
+          ...updated[updated.length - 1],
+          form: { service: seed.service || "" },
+        },
+      ];
+    }
 
     setMessages(updated);
 
-    if (hasOpenForm(updated) && (data.transcript || data.bookingDraft)) {
+    if (hasOpenForm(updated) || shouldOpenForm) {
       applyDraftFromMessages(updated, data.bookingDraft);
     }
 
-    const triagePayload = data.triage?.urgent
-      ? data.triage
-      : buildClientTriage(data.transcript || prevMessages[prevMessages.length - 1]?.content || "");
-    if (triagePayload?.urgent) {
-      setTriage(triagePayload);
+    if (triagePayload?.urgent && !triageTrackedRef.current) {
+      triageTrackedRef.current = true;
       trackEvent("element_click", {
         element_text: "emergency_triage",
         button_location: "ai_receptionist_demo",
@@ -367,37 +698,36 @@ export default function ReceptionistDemo() {
     }
 
     if (data.audio) playAudio(data.audio);
-    if (data.booking) {
-      setBooking({ ...data.booking, urgent: !!(data.booking.urgent || triagePayload?.urgent) });
-      if (!bookingTrackedRef.current) {
-        bookingTrackedRef.current = true;
-        trackDemoComplete({
-          demo_type: "ai_receptionist_chat",
-          voice_used: voiceUsedRef.current,
-          messages_sent: messagesSentRef.current,
-          duration: Math.round((Date.now() - demoStartedAtRef.current) / 1000),
-        });
-        trackEvent("appointment_booking_complete", {
-          channel: "chat",
-          urgent: !!(data.booking.urgent || triagePayload?.urgent),
-        });
-        trackEvent("generate_lead", {
-          lead_source: triagePayload?.urgent ? "ai_receptionist_emergency" : "ai_receptionist_chat",
-        });
-      }
+    if (data.booking && !bookingTrackedRef.current) {
+      bookingTrackedRef.current = true;
+      trackDemoComplete({
+        demo_type: "ai_receptionist_chat",
+        voice_used: voiceUsedRef.current,
+        messages_sent: messagesSentRef.current,
+        duration: Math.round((Date.now() - demoStartedAtRef.current) / 1000),
+      });
+      trackEvent("appointment_booking_complete", {
+        channel: "chat",
+        urgent: !!(data.booking.urgent || triagePayload?.urgent),
+      });
+      trackEvent("generate_lead", {
+        lead_source: triagePayload?.urgent ? "ai_receptionist_emergency" : "ai_receptionist_chat",
+      });
     }
   };
 
-  const send = async (text: string, opts?: { voice?: boolean; forceBooking?: boolean }) => {
+  const send = async (text: string, opts?: { voice?: boolean; forceBooking?: boolean; continueChatBooking?: boolean }) => {
     const v = text.trim();
     if (!v || busy) return;
     markDemoStarted(Boolean(opts?.voice));
     messagesSentRef.current += 1;
     setInput("");
     setShowSuggestions(false);
+    focusComposer();
 
     if (isServicesQuery(v)) {
       showServicesMenu(v);
+      focusComposer();
       return;
     }
     const detailSvc = isServiceDetailQuery(v) || matchServiceName(v);
@@ -405,16 +735,28 @@ export default function ReceptionistDemo() {
       const svc = SERVICES.find((s) => s.toLowerCase().includes(detailSvc.toLowerCase())) || matchServiceName(detailSvc);
       if (svc) {
         showServiceDetail(v, svc);
+        focusComposer();
         return;
       }
     }
 
-    if (hasBookingIntent(v) && !hasOpenForm(messages) && !opts?.forceBooking) {
-      openFormFor(matchServiceName(v) || "");
+    // Typed booking intent → open form immediately (same as Book chip)
+    if (
+      !opts?.forceBooking &&
+      !opts?.continueChatBooking &&
+      hasBookingIntent(v) &&
+      !hasOpenForm(messagesRef.current) &&
+      !hasOpenBookingChoice(messagesRef.current)
+    ) {
+      openBookingChoice(matchServiceName(v) || "", v);
+      focusComposer();
       return;
     }
 
-    const next: ChatMsg[] = [...messages, { role: "user", content: v, voiceNote: opts?.voice }];
+    const next: ChatMsg[] = [
+      ...messagesRef.current,
+      { id: newMsgId(), role: "user", content: v, voiceNote: opts?.voice },
+    ];
     setMessages(next);
     if (hasOpenForm(next)) applyDraftFromMessages(next);
     setBusy(true);
@@ -426,7 +768,7 @@ export default function ReceptionistDemo() {
         body: JSON.stringify({
           clinicId: "demo",
           speak: !!opts?.voice,
-          bookingDraft: hasOpenForm(next) ? draftRef.current : undefined,
+          bookingDraft: draftRef.current,
           messages: next.filter((m) => m.content),
         }),
       });
@@ -434,15 +776,29 @@ export default function ReceptionistDemo() {
       if (!res.ok) throw new Error(data.error || "Something went wrong");
       handleResponse(data, next);
     } catch (err) {
+      const raw = err instanceof Error ? err.message : "Please try again.";
+      const friendly =
+        /failed to fetch|networkerror|load failed|network request failed/i.test(raw)
+          ? "Can't reach the booking server right now (network/DNS). Try again on Wi‑Fi with DNS 8.8.8.8, or use a hotspot."
+          : raw;
       trackEvent("api_error", {
         api_name: "ai_receptionist_chat",
-        error_message: err instanceof Error ? err.message : "Chat request failed",
+        error_message: raw,
       });
-      setMessages((prev) => [...prev, { role: "assistant", content: `😕 ${err instanceof Error ? err.message : "Please try again."}` }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newMsgId(),
+          role: "assistant",
+          content: `😕 ${friendly}`,
+        },
+      ]);
     } finally {
       setBusy(false);
+      focusComposer();
     }
   };
+  sendRef.current = send;
 
   const cancelledRef = useRef(false);
 
@@ -487,7 +843,10 @@ export default function ReceptionistDemo() {
           setShowSuggestions(false);
           setBusy(true);
           const hist = messagesRef.current.filter((m) => m.content && !m.content.startsWith("🎤 Voice note"));
-          const pending: ChatMsg[] = [...hist, { role: "user", content: "🎤 Voice note…", voiceNote: true }];
+          const pending: ChatMsg[] = [
+            ...hist,
+            { id: newMsgId(), role: "user", content: "🎤 Voice note…", voiceNote: true },
+          ];
           setMessages(pending);
           setRecState("idle");
 
@@ -499,7 +858,7 @@ export default function ReceptionistDemo() {
               speak: true,
               audio: b64,
               mime: blob.type,
-              bookingDraft: hasOpenForm(messagesRef.current) ? draftRef.current : undefined,
+              bookingDraft: draftRef.current,
               messages: hist,
             }),
           });
@@ -515,7 +874,14 @@ export default function ReceptionistDemo() {
           });
           setRecState("idle");
           setBusy(false);
-          setMessages((prev) => [...prev, { role: "assistant", content: `🎤 ${err instanceof Error ? err.message : "Couldn't process the voice note."}` }]);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: newMsgId(),
+              role: "assistant",
+              content: `🎤 ${err instanceof Error ? err.message : "Couldn't process the voice note."}`,
+            },
+          ]);
         }
       };
       recorderRef.current = rec;
@@ -534,31 +900,38 @@ export default function ReceptionistDemo() {
         demo_type: "ai_receptionist_chat",
         error_context: "microphone_permission",
       });
-      setMessages((prev) => [...prev, { role: "assistant", content: "🎤 I couldn't access your microphone — please allow mic access, or type your message instead." }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newMsgId(),
+          role: "assistant",
+          content: "🎤 I couldn't access your microphone — please allow mic access, or type your message instead.",
+        },
+      ]);
     }
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto px-3 sm:px-4">
-      <div className="rounded-2xl sm:rounded-3xl border border-gray-200/80 shadow-xl shadow-gray-200/50 overflow-hidden bg-white">
+    <div className="w-full max-w-xl mx-auto px-0 sm:px-4">
+      <div className="rounded-none sm:rounded-3xl border-y sm:border border-gray-200/80 shadow-none sm:shadow-xl sm:shadow-gray-200/50 overflow-hidden bg-white">
 
-        {/* Header — stacked on mobile so controls don't crush */}
-        <div className="px-3.5 sm:px-5 py-3 sm:py-4" style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}>
-          <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Header */}
+        <div className="px-3 sm:px-5 py-2.5 sm:py-4" style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}>
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-shrink-0">
-              <MayaAvatar size="w-10 h-10 sm:w-11 sm:h-11" />
+              <MayaAvatar size="w-9 h-9 sm:w-11 sm:h-11" />
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400 border-2 border-[#0B5D50]" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <p className="text-sm sm:text-[15px] font-bold text-white leading-tight">Maya</p>
-                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-white/80 bg-white/10 px-2 py-0.5 rounded-full">
-                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> LIVE DEMO
+                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-white/80 bg-white/10 px-1.5 sm:px-2 py-0.5 rounded-full flex-shrink-0">
+                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> LIVE
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-white/60 leading-tight truncate">Receptionist · Bright Smile Dental Care</p>
+              <p className="text-[10px] sm:text-[11px] text-white/60 leading-tight truncate">Bright Smile Dental Care</p>
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <LiveCallLauncher />
               <button
                 type="button"
@@ -573,42 +946,121 @@ export default function ReceptionistDemo() {
         </div>
 
         <div
-          className="h-[min(52vh,420px)] sm:h-[380px] overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-4 sm:py-5 space-y-3.5 sm:space-y-4"
+          ref={chatScrollRef}
+          className="overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 h-[min(62dvh,520px)] sm:h-[420px]"
           style={{ background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)" }}
         >
           <AnimatePresence initial={false}>
-            {messages.map((m, i) => {
+            {messages.map((m) => {
               const isBot = m.role === "assistant";
+              const showAvatar =
+                isBot &&
+                !(m.form && !m.form.done) &&
+                (m.content || m.showServices || m.serviceDetail || m.triage || m.booking || (m.bookingChoice && !m.bookingChoice.resolved));
               return (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
+                  key={m.id}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className={`flex gap-2.5 ${isBot ? "justify-start" : "justify-end"}`}
+                  transition={{ duration: 0.2 }}
+                  className={`flex gap-2 ${isBot ? "justify-start" : "justify-end"}`}
                 >
-                  {isBot && (m.content || m.showServices || m.serviceDetail || (m.form && !m.form.done)) ? <MayaAvatar /> : null}
-                  <div className={`flex flex-col ${isBot ? "items-start" : "items-end"} max-w-[92%] sm:max-w-[85%] min-w-0`}>
+                  {showAvatar ? <MayaAvatar size="w-7 h-7 sm:w-8 sm:h-8" /> : null}
+                  <div
+                    className={`flex flex-col ${isBot ? "items-start" : "items-end"} min-w-0 ${
+                      m.form && !m.form.done ? "w-full max-w-full" : "max-w-[88%] sm:max-w-[85%] w-full sm:w-auto"
+                    }`}
+                  >
                     {m.content && (
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                        className={`rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5 w-full sm:w-auto ${
                           isBot
-                            ? "bg-white border border-gray-100 shadow-sm text-gray-700 rounded-tl-md"
-                            : "text-white rounded-tr-md shadow-md shadow-[#0E7C6B]/15"
+                            ? "bg-white border border-gray-100 shadow-sm rounded-tl-md text-left"
+                            : "text-white rounded-tr-md shadow-md shadow-[#0E7C6B]/15 text-left"
                         }`}
                         style={!isBot ? { background: "linear-gradient(135deg, #0E7C6B, #14A08A)" } : undefined}
                       >
-                        {m.voiceNote && <span className="block text-[10px] opacity-70 mb-1">🎤 voice note</span>}
-                        {m.content}
+                        {m.voiceNote && <span className="block text-[10px] opacity-70 mb-1.5 font-medium">🎤 voice note</span>}
+                        {isBot ? (
+                          <AssistantText text={m.content} />
+                        ) : (
+                          <p className="text-[13px] sm:text-sm leading-[1.55] whitespace-pre-wrap">{m.content}</p>
+                        )}
                         {m.audio && (
                           <button
                             type="button"
                             onClick={() => playAudio(m.audio!, true)}
-                            className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#0E7C6B] bg-[#0E7C6B]/8 border border-[#0E7C6B]/20 rounded-full px-3 py-1.5 hover:bg-[#0E7C6B]/15 transition-colors"
+                            className="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-[#0E7C6B] bg-[#0E7C6B]/8 border border-[#0E7C6B]/20 rounded-full px-3 py-1.5 hover:bg-[#0E7C6B]/15 transition-colors"
                           >
                             🔊 Play Maya&apos;s voice reply
                           </button>
                         )}
+                      </div>
+                    )}
+                    {m.bookingChoice && !m.bookingChoice.resolved && (
+                      <BookingPathChoice
+                        service={m.bookingChoice.service}
+                        onForm={chooseFormPath}
+                        onChat={chooseChatPath}
+                      />
+                    )}
+                    {m.triage?.urgent && (
+                      <div className="mt-2 rounded-2xl rounded-tl-md px-4 py-3.5 bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 shadow-sm max-w-full">
+                        <p className="flex items-center gap-1.5 text-sm font-bold text-red-800 mb-1.5">
+                          <AlertTriangle className="w-4 h-4" /> Emergency Triage Active
+                        </p>
+                        <div className="text-xs text-red-700 space-y-1">
+                          <p>
+                            Flagged: <span className="font-semibold">{m.triage.reason}</span>
+                          </p>
+                          <p className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> Holding {m.triage.emergencySlot}
+                          </p>
+                          {m.triage.staffAlerted && (
+                            <p className="font-semibold text-red-800">Front desk alerted — priority queue</p>
+                          )}
+                          {m.triage.clinicPhone && (
+                            <p className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> Transfer: {m.triage.clinicPhone}
+                            </p>
+                          )}
+                          {m.triage.guidance && <p className="text-red-600/90 pt-0.5">{m.triage.guidance}</p>}
+                        </div>
+                      </div>
+                    )}
+                    {m.booking && (
+                      <div
+                        className={`mt-2 rounded-2xl rounded-tl-md px-4 py-3.5 shadow-sm max-w-full border ${
+                          m.booking.urgent
+                            ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
+                            : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
+                        }`}
+                      >
+                        <p
+                          className={`flex items-center gap-1.5 text-sm font-bold mb-1.5 ${
+                            m.booking.urgent ? "text-red-800" : "text-green-800"
+                          }`}
+                        >
+                          <CalendarCheck2 className="w-4 h-4" />
+                          {m.booking.urgent ? "Emergency Slot Held" : "Appointment Confirmed"}
+                        </p>
+                        <div className={`text-xs space-y-0.5 ${m.booking.urgent ? "text-red-700" : "text-green-700"}`}>
+                          <p>
+                            <span className="font-semibold">{m.booking.name}</span> · {m.booking.service}
+                          </p>
+                          <p className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {m.booking.preferredTime}
+                          </p>
+                          {m.booking.phone && (
+                            <p className="flex items-center gap-1">
+                              <Phone className="w-3 h-3" /> {m.booking.phone}
+                            </p>
+                          )}
+                          <p className="pt-1 leading-snug">
+                            Booking confirmed — our team will contact you shortly
+                            {m.booking.email ? " by email or phone" : " by phone"}.
+                          </p>
+                        </div>
                       </div>
                     )}
                     {m.showServices && (
@@ -621,68 +1073,19 @@ export default function ReceptionistDemo() {
                       <ServiceDetailCard name={m.serviceDetail} onBook={() => openFormFor(m.serviceDetail!)} />
                     )}
                     {m.form && !m.form.done && (
-                      <BookingForm draft={draft} onChange={setDraft} onSubmit={submitForm} busy={busy} />
+                      <BookingForm
+                        draft={draft}
+                        onChange={setDraft}
+                        onSubmit={submitForm}
+                        busy={busy}
+                        onSwitchToChat={switchFormToChat}
+                      />
                     )}
                   </div>
                 </motion.div>
               );
             })}
           </AnimatePresence>
-
-          {triage?.urgent && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2.5 justify-start">
-              <MayaAvatar />
-              <div className="rounded-2xl rounded-tl-md px-4 py-3.5 bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 shadow-sm max-w-[85%]">
-                <p className="flex items-center gap-1.5 text-sm font-bold text-red-800 mb-1.5">
-                  <AlertTriangle className="w-4 h-4" /> Emergency Triage Active
-                </p>
-                <div className="text-xs text-red-700 space-y-1">
-                  <p>
-                    Flagged: <span className="font-semibold">{triage.reason}</span>
-                  </p>
-                  <p className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> Holding {triage.emergencySlot}
-                  </p>
-                  {triage.staffAlerted && (
-                    <p className="font-semibold text-red-800">Front desk alerted — priority queue</p>
-                  )}
-                  {triage.clinicPhone && (
-                    <p className="flex items-center gap-1">
-                      <Phone className="w-3 h-3" /> Transfer: {triage.clinicPhone}
-                    </p>
-                  )}
-                  {triage.guidance && <p className="text-red-600/90 pt-0.5">{triage.guidance}</p>}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {booking && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-2.5 justify-start">
-              <MayaAvatar />
-              <div
-                className={`rounded-2xl rounded-tl-md px-4 py-3.5 shadow-sm max-w-[85%] border ${
-                  booking.urgent || triage?.urgent
-                    ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-200"
-                    : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200"
-                }`}
-              >
-                <p
-                  className={`flex items-center gap-1.5 text-sm font-bold mb-1.5 ${
-                    booking.urgent || triage?.urgent ? "text-red-800" : "text-green-800"
-                  }`}
-                >
-                  <CalendarCheck2 className="w-4 h-4" />
-                  {booking.urgent || triage?.urgent ? "Emergency Slot Held" : "Appointment Confirmed"}
-                </p>
-                <div className={`text-xs space-y-0.5 ${booking.urgent || triage?.urgent ? "text-red-700" : "text-green-700"}`}>
-                  <p><span className="font-semibold">{booking.name}</span> · {booking.service}</p>
-                  <p className="flex items-center gap-1"><Clock className="w-3 h-3" /> {booking.preferredTime}</p>
-                  <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> We&apos;ll confirm on WhatsApp shortly</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {busy && (
             <div className="flex gap-2.5 justify-start">
@@ -698,27 +1101,30 @@ export default function ReceptionistDemo() {
             </div>
           )}
 
-          {showSuggestions && !busy && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="pl-0 sm:pl-10 flex flex-wrap gap-2">
+          {/* Preset chips — stacked full-width on mobile so nothing truncates */}
+          {(showSuggestions || messages.length <= 1) && !busy && !hasOpenForm(messages) && (
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 w-full pl-0 sm:pl-10">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s.label}
+                  type="button"
                   onClick={() => {
-                    if (s.action === "book") openFormFor("");
+                    if (s.action === "book") openBookingChoice();
                     else if (s.action === "services") showServicesMenu(s.label);
                     else if (s.action === "detail" && s.service) showServiceDetail(s.label, s.service);
                     else send(s.label);
                   }}
-                  className={`text-[11px] sm:text-xs px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full border shadow-sm transition-all ${
+                  className={`text-left text-[13px] sm:text-xs px-3.5 py-2.5 sm:px-3.5 sm:py-2 rounded-xl sm:rounded-full border shadow-sm transition-all ${
                     s.label.includes("bleeding")
                       ? "bg-red-50 text-red-700 border-red-200 hover:border-red-400 hover:bg-red-100"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-[#0E7C6B]/40 hover:text-[#0E7C6B]"
+                      : "bg-white text-gray-700 border-gray-200 hover:border-[#0E7C6B]/40 hover:text-[#0E7C6B]"
                   }`}
                 >
-                  {s.icon} {s.label}
+                  <span className="sm:hidden">{s.icon} {s.shortLabel}</span>
+                  <span className="hidden sm:inline">{s.icon} {s.label}</span>
                 </button>
               ))}
-            </motion.div>
+            </div>
           )}
           <div ref={bottomRef} />
         </div>
@@ -743,15 +1149,9 @@ export default function ReceptionistDemo() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const v = input.trim();
-            if (/^(book|appointment)\b|book (me|an|my)? ?(appointment|slot|visit)/i.test(v) && !/name:|phone:/i.test(v)) {
-              setInput("");
-              openFormFor("");
-              return;
-            }
-            send(v);
+            send(input.trim());
           }}
-          className="bg-white border-t border-gray-100 px-3 sm:px-4 py-3 sm:py-3.5 flex items-center gap-2 sm:gap-2.5"
+          className="bg-white border-t border-gray-100 px-2.5 sm:px-4 py-2.5 sm:py-3.5 flex items-center gap-1.5 sm:gap-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]"
         >
           {recState === "recording" ? (
             <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 py-1.5 rounded-full bg-red-50 border border-red-200 min-w-0">
@@ -765,10 +1165,11 @@ export default function ReceptionistDemo() {
             </div>
           ) : (
             <input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={recState === "transcribing" ? "Transcribing…" : hasOpenForm(messages) ? "Speak or type…" : "Type or tap mic…"}
-              disabled={busy || recState === "transcribing"}
+              disabled={recState === "transcribing"}
               className="flex-1 min-w-0 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full bg-[#F4F8F7] border border-transparent text-sm text-gray-800 outline-none focus:border-[#0E7C6B]/40 focus:bg-white transition-all disabled:opacity-60"
             />
           )}

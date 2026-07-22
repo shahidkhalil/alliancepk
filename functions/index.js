@@ -47,6 +47,9 @@ exports.packageOrder = require("./packageOrder").packageOrder;
 exports.realtimeToken = require("./realtime").realtimeToken;
 exports.bookAppointmentHttp = require("./realtime").bookAppointmentHttp;
 
+// Phase 1: email appointment reminders at T-24h and T-1h.
+exports.sendAppointmentReminders = require("./reminders").sendAppointmentReminders;
+
 const { handleBusinessAudit, isBusinessAuditRequest } = require("./businessAudit");
 
 exports.auditWebsite = onRequest(

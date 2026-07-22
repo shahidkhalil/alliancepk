@@ -84,6 +84,26 @@ function hasBookingIntent(text) {
   return /\b(book|booking|i'd like to book|i would like to book|schedule|make an appointment|reserve a slot)\b/i.test(text);
 }
 
+function isDraftComplete(draft) {
+  if (!draft || typeof draft !== "object") return false;
+  const name = String(draft.name || "").trim();
+  const phoneDigits = String(draft.phone || "").replace(/\D/g, "");
+  const service = String(draft.service || "").trim();
+  const day = String(draft.day || "").trim();
+  const time = String(draft.time || "").trim();
+  return name.length >= 2 && phoneDigits.length >= 10 && !!service && !!day && !!time;
+}
+
+function mergeBookingDrafts(base, patch) {
+  const out = { name: "", phone: "", email: "", service: "", day: "", time: "", ...(base || {}) };
+  if (!patch || typeof patch !== "object") return out;
+  for (const key of ["name", "phone", "email", "service", "day", "time"]) {
+    const v = String(patch[key] || "").trim();
+    if (v) out[key] = v;
+  }
+  return out;
+}
+
 function extractBookingDraft(messages, serviceNames) {
   const draft = { name: "", phone: "", email: "", service: "", day: "", time: "" };
   const texts = messages.map((m) => m.content || "").filter(Boolean);
@@ -92,7 +112,7 @@ function extractBookingDraft(messages, serviceNames) {
   const userCombined = userTexts.join("\n");
 
   const structured = userCombined.match(
-    /Name:\s*([^.\n]+)[.\s]*Phone:\s*([^.\n]+)(?:[.\s]*Email:\s*([^.\n]+))?[.\s]*Service:\s*([^.\n]+)[.\s]*Preferred time:\s*([^\n.]+)/i
+    /Name:\s*(.+?)[.\s]+Phone:\s*(.+?)(?:[.\s]+Email:\s*(.+?))?[.\s]+Service:\s*(.+?)[.\s]+Preferred time:\s*([^\n]+)/i
   );
   if (structured) {
     draft.name = structured[1].trim();
@@ -117,10 +137,11 @@ function extractBookingDraft(messages, serviceNames) {
   for (const t of [...userTexts].reverse()) {
     const patterns = [
       /(?:my name is|i am|i'm|this is|call me|name is|naam hai|mera naam)\s+([A-Za-z][A-Za-z\s'.-]{1,40})/i,
+      /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})$/,
     ];
     for (const p of patterns) {
       const m = t.match(p);
-      if (m && !/\b(book|appointment|service|phone|email|braces|whitening)\b/i.test(m[1])) {
+      if (m && !/\b(book|appointment|service|phone|email|braces|whitening|tomorrow|today|monday|tuesday|wednesday|thursday|friday|saturday)\b/i.test(m[1])) {
         draft.name = m[1].trim();
         break;
       }
@@ -152,4 +173,12 @@ function extractBookingDraft(messages, serviceNames) {
   return draft;
 }
 
-module.exports = { extractBookingDraft, hasBookingIntent, isServicesQuery, BOOKING_DAYS, BOOKING_TIMES };
+module.exports = {
+  extractBookingDraft,
+  hasBookingIntent,
+  isServicesQuery,
+  isDraftComplete,
+  mergeBookingDrafts,
+  BOOKING_DAYS,
+  BOOKING_TIMES,
+};

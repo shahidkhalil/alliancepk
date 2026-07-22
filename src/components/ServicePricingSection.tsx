@@ -1,186 +1,9 @@
 "use client";
 import { useState, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { Check, X, ChevronDown, ArrowRight, Clock, Cpu, Shield, Star } from "lucide-react";
+import { Check, X, ChevronDown, Clock, Cpu, Shield, Star } from "lucide-react";
 import { ServicePricing } from "@/lib/pricingData";
-import { useForm } from "@/context/FormContext";
-import { usePackageOrder } from "@/context/PackageOrderContext";
-import { useCardMotion, staggerDelay } from "@/lib/motionVariants";
-
-const PREVIEW_COUNT = 4; // features shown before "expand"
-
-/* ─── Pricing Card ─────────────────────────────────────────────────────────── */
-function PricingCard({
-  pkg,
-  index,
-  service,
-}: {
-  pkg: ServicePricing["packages"][number];
-  index: number;
-  service: ServicePricing;
-}) {
-  const { openOrder } = usePackageOrder();
-  const [expanded, setExpanded] = useState(false);
-  const { entrance, hoverProps, expandTransition } = useCardMotion();
-
-  const preview = pkg.features.slice(0, PREVIEW_COUNT);
-  const rest    = pkg.features.slice(PREVIEW_COUNT);
-  const hasMore = rest.length > 0;
-
-  const dark = pkg.popular;
-
-  return (
-    <motion.div
-      {...entrance(staggerDelay(index))}
-      {...hoverProps(true)}
-      className={`relative flex flex-col rounded-2xl overflow-hidden card-motion h-full ${
-        dark
-          ? "bg-[#00283C] shadow-xl card-shadow-hover-dark"
-          : "bg-white border border-gray-200 card-shadow-hover"
-      }`}
-    >
-      {/* Popular banner */}
-      {dark && (
-        <div className="bg-[#00B4D8] text-white text-[10px] font-black tracking-[0.18em] text-center py-2 uppercase">
-          ✦ Most Popular
-        </div>
-      )}
-
-      <div className="p-6 flex flex-col">
-        {/* Package name */}
-        <p className={`text-[11px] font-black uppercase tracking-[0.14em] mb-4 ${dark ? "text-[#00B4D8]" : "text-[#0077A8]"}`}>
-          {pkg.name}
-        </p>
-
-        {/* Price */}
-        <div className="mb-4">
-          <div className={`text-4xl font-black tracking-tight leading-none ${dark ? "text-white" : "text-[#00283C]"}`}>
-            {pkg.price}
-          </div>
-          <div className={`text-xs font-semibold mt-1.5 uppercase tracking-wider ${dark ? "text-white/60" : "text-gray-400"}`}>
-            {pkg.period}
-          </div>
-          {pkg.savings && (
-            <span className={`inline-block mt-3 text-[11px] font-bold px-2.5 py-1 rounded-full ${
-              dark ? "bg-white/10 text-white/75" : "bg-[#00B4D8]/10 text-[#0077A8]"
-            }`}>
-              {pkg.savings}
-            </span>
-          )}
-        </div>
-
-        {/* Description */}
-        <p className={`text-sm leading-relaxed mb-6 ${dark ? "text-white/60" : "text-gray-500"}`}>
-          {pkg.description}
-        </p>
-
-        {/* CTA */}
-        <button
-          onClick={() =>
-            openOrder({
-              serviceId: service.id,
-              serviceName: service.name,
-              packageName: pkg.name,
-              price: pkg.price,
-              period: pkg.period,
-            })
-          }
-          className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 ${
-            dark
-              ? "bg-white text-[#00283C] hover:bg-[#E8F7FB]"
-              : "bg-[#00283C] text-white hover:bg-[#003D5C]"
-          }`}
-        >
-          {pkg.cta} <ArrowRight className="w-4 h-4" />
-        </button>
-
-        {/* Divider */}
-        <div className={`my-5 h-px ${dark ? "bg-white/10" : "bg-gray-100"}`} />
-
-        {/* Preview features — always visible */}
-        <ul className="space-y-2.5">
-          {preview.map((f) => (
-            <FeatureRow key={f} text={f} dark={dark} />
-          ))}
-        </ul>
-
-        {/* Expandable extra features */}
-        {hasMore && (
-          <>
-            <AnimatePresence initial={false}>
-              {expanded && (
-                <motion.ul
-                  key="rest"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={expandTransition()}
-                  className="overflow-hidden space-y-2.5 mt-2.5"
-                >
-                  {rest.map((f) => (
-                    <FeatureRow key={f} text={f} dark={dark} />
-                  ))}
-
-                  {/* Add-ons shown inside expanded area */}
-                  {pkg.addOns && pkg.addOns.length > 0 && (
-                    <div className={`mt-4 pt-4 border-t ${dark ? "border-white/10" : "border-gray-100"}`}>
-                      <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${dark ? "text-white/60" : "text-gray-300"}`}>
-                        Optional Add-ons
-                      </p>
-                      {pkg.addOns.map((a) => (
-                        <p key={a} className={`text-xs leading-relaxed ${dark ? "text-white/60" : "text-gray-400"}`}>
-                          + {a}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </motion.ul>
-              )}
-            </AnimatePresence>
-
-            {/* Toggle button */}
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className={`mt-4 flex items-center gap-1.5 text-xs font-bold transition-colors duration-150 ${
-                dark ? "text-[#00B4D8] hover:text-white" : "text-[#0077A8] hover:text-[#00283C]"
-              }`}
-            >
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-250 ${expanded ? "rotate-180" : ""}`} />
-              {expanded ? "Show less" : `Show ${rest.length} more feature${rest.length > 1 ? "s" : ""}`}
-            </button>
-          </>
-        )}
-
-        {/* Add-ons when NOT expanded and no extra features hidden */}
-        {!hasMore && pkg.addOns && pkg.addOns.length > 0 && (
-          <div className={`mt-5 pt-4 border-t ${dark ? "border-white/10" : "border-gray-100"}`}>
-            <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${dark ? "text-white/60" : "text-gray-300"}`}>
-              Optional Add-ons
-            </p>
-            {pkg.addOns.map((a) => (
-              <p key={a} className={`text-xs leading-relaxed ${dark ? "text-white/60" : "text-gray-400"}`}>
-                + {a}
-              </p>
-            ))}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-function FeatureRow({ text, dark }: { text: string; dark: boolean }) {
-  return (
-    <li className="flex items-start gap-2.5">
-      <span className={`mt-[3px] flex-shrink-0 w-[17px] h-[17px] rounded-full flex items-center justify-center ${
-        dark ? "bg-[#00B4D8]/20" : "bg-[#E0F4F9]"
-      }`}>
-        <Check className={`w-2.5 h-2.5 ${dark ? "text-[#00B4D8]" : "text-[#0077A8]"}`} strokeWidth={3} />
-      </span>
-      <span className={`text-sm leading-snug ${dark ? "text-white/75" : "text-gray-600"}`}>{text}</span>
-    </li>
-  );
-}
+import PremiumPricingCarousel from "@/components/PremiumPricingCarousel";
 
 /* ─── Comparison Table ─────────────────────────────────────────────────────── */
 function ComparisonTable({ service }: { service: ServicePricing }) {
@@ -192,6 +15,7 @@ function ComparisonTable({ service }: { service: ServicePricing }) {
   return (
     <div className="mt-8 border border-gray-200 rounded-xl overflow-hidden">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-5 py-4 bg-[#F8FAFC] hover:bg-[#F0F9FC] transition-colors"
       >
@@ -209,7 +33,6 @@ function ComparisonTable({ service }: { service: ServicePricing }) {
             transition={{ duration: 0.28, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            {/* Header */}
             <div className="grid grid-cols-4 bg-[#00283C]">
               <div className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-white/60">Feature</div>
               {service.packages.slice(0, 3).map((pkg, i) => (
@@ -247,6 +70,7 @@ function FAQSection({ faqs }: { faqs: ServicePricing["faqs"] }) {
         {faqs.map((faq, i) => (
           <div key={i} className={`rounded-xl border overflow-hidden transition-colors duration-150 ${open === i ? "border-[#00B4D8]/30" : "border-gray-200"}`}>
             <button
+              type="button"
               onClick={() => setOpen(open === i ? null : i)}
               className="w-full flex items-start justify-between px-5 py-4 text-left gap-4"
             >
@@ -298,7 +122,6 @@ export default function ServicePricingSection({ service }: { service: ServicePri
   return (
     <div ref={ref}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.4 }}>
-        {/* Header */}
         <div className="mb-7">
           <span className="inline-block text-[10px] font-black uppercase tracking-[0.16em] text-[#0077A8] bg-[#E0F4F9] px-3 py-1 rounded-full mb-3">
             {service.category}
@@ -309,18 +132,7 @@ export default function ServicePricingSection({ service }: { service: ServicePri
           <p className="text-gray-500 text-sm max-w-2xl leading-relaxed">{service.tagline}</p>
         </div>
 
-        {/* Cards */}
-        <div
-          className={
-            service.fixedPrice || service.packages.length === 1
-              ? "max-w-md mx-auto"
-              : "grid md:grid-cols-3 gap-5"
-          }
-        >
-          {service.packages.map((pkg, i) => (
-            <PricingCard key={pkg.name} pkg={pkg} index={i} service={service} />
-          ))}
-        </div>
+        <PremiumPricingCarousel service={service} />
 
         {service.fixedPrice && (
           <p className="mt-4 text-center text-xs text-gray-400 max-w-lg mx-auto">

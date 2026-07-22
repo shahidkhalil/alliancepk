@@ -52,23 +52,23 @@ export default function AIReceptionist() {
         ctaText="Get Your Free Clinic Audit"
       />
 
-      <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+      <section className="py-8 sm:py-12 bg-[#F8FAFC] border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-center">
           {stats.map((s) => (
             <div key={s.label}>
-              <div className="text-4xl font-extrabold text-[#00283C] mb-1">{s.stat}</div>
-              <div className="text-sm text-gray-400">{s.label}</div>
+              <div className="text-2xl sm:text-4xl font-extrabold text-[#00283C] mb-0.5 sm:mb-1">{s.stat}</div>
+              <div className="text-[11px] sm:text-sm text-gray-400">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="py-16 bg-white border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-6 text-center mb-10">
-          <h2 className="text-2xl lg:text-3xl font-extrabold text-[#00283C] mb-3">
+      <section id="demo" className="py-10 sm:py-16 bg-white border-b border-gray-100 scroll-mt-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center mb-6 sm:mb-10">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#00283C] mb-2 sm:mb-3">
             Try It <span className="gradient-heading">Right Now</span>
           </h2>
-          <p className="text-gray-500">
+          <p className="text-sm sm:text-base text-gray-500">
             This is a live AI receptionist for a sample clinic. Ask about prices, hours, treatments — or book an appointment.
           </p>
         </div>

@@ -1,5 +1,4 @@
 "use client";
-import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useForm } from "@/context/FormContext";
 import { ArrowLeft } from "lucide-react";
@@ -34,7 +33,7 @@ export default function ServicePageHero({
           { name: `${headline} ${highlight}`, path: pathname },
         ]}
       />
-      <section className="relative pt-32 pb-16 bg-white border-b border-gray-100 overflow-hidden">
+      <section className="relative pt-24 sm:pt-32 pb-10 sm:pb-16 bg-white border-b border-gray-100 overflow-hidden">
       {/* Subtle grid */}
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: "linear-gradient(rgba(0,40,60,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,40,60,0.035) 1px, transparent 1px)",
@@ -44,28 +43,27 @@ export default function ServicePageHero({
       <div className="absolute top-0 right-0 w-[500px] h-[350px] rounded-full pointer-events-none opacity-[0.07]"
         style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", filter: "blur(80px)" }} />
 
-      <div className="relative max-w-4xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
-
-          <span className="badge-light mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8] animate-pulse" />
-            {badge}
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+        <div>
+          <span className="badge-light mb-4 sm:mb-5 max-w-full text-[10px] sm:text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8] animate-pulse flex-shrink-0" />
+            <span className="truncate">{badge}</span>
           </span>
 
-          <h1 className="text-4xl lg:text-5xl font-extrabold text-[#00283C] tracking-tight leading-tight mb-5 mt-3">
+          <h1 className="text-[1.65rem] sm:text-4xl lg:text-5xl font-extrabold text-[#00283C] tracking-tight leading-snug sm:leading-tight mb-4 sm:mb-5 mt-2 sm:mt-3">
             {headline}{" "}
-            <span className="gradient-heading">{highlight}</span>
+            <span className="text-[#0077A8]">{highlight}</span>
           </h1>
 
-          <p className="text-lg text-gray-500 max-w-2xl mb-10 leading-relaxed">{subheadline}</p>
+          <p className="text-[15px] sm:text-lg text-gray-500 max-w-2xl mb-7 sm:mb-10 leading-relaxed">{subheadline}</p>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             {ctaHref ? (
               <a
                 href={ctaHref}
                 data-analytics-label={ctaText}
                 data-analytics-location="service_hero"
-                className="btn-dark px-8 py-4 text-base"
+                className="btn-dark px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base text-center"
               >
                 {ctaText}
               </a>
@@ -74,16 +72,16 @@ export default function ServicePageHero({
                 onClick={openForm}
                 data-analytics-label="book_consultation"
                 data-analytics-location="service_hero"
-                className="btn-dark px-8 py-4 text-base"
+                className="btn-dark px-6 sm:px-8 py-3.5 sm:py-4 text-sm sm:text-base"
               >
                 {ctaText}
               </button>
             )}
-            <a href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-400 hover:text-[#00283C] transition-colors">
+            <a href="/" className="inline-flex items-center justify-center sm:justify-start gap-2 text-sm font-semibold text-gray-400 hover:text-[#00283C] transition-colors py-2">
               <ArrowLeft className="w-4 h-4" /> Back to Home
             </a>
           </div>
-        </motion.div>
+        </div>
       </div>
       </section>
     </>

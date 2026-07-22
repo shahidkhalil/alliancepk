@@ -20,6 +20,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -27,6 +28,7 @@ body {
   color: #111827;
   font-family: var(--font-inter);
   overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* Custom scrollbar */
@@ -710,10 +712,16 @@ body {
 
 /* Gradient heading — dark teal to cyan, for white bg */
 .gradient-heading {
+  color: #0077A8;
   background: linear-gradient(135deg, #00283C 0%, #0077A8 100%);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .gradient-heading {
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
 }
 
 /* Hide scrollbar on overflow-x-auto elements (mobile tab bars) */
