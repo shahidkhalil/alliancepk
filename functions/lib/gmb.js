@@ -97,39 +97,54 @@ function businessName(seo) {
 
 /**
  * Build the GMB comparison: the clinic's own listing vs. the top map-pack rivals.
+ * Only accepts a listing whose website domain matches the audited URL —
+ * never roast a "closest name match" that belongs to another clinic.
  */
 async function buildGmbCheck(auditedUrl, seo, competitors, apiKey) {
-  const city = competitors?.city || "Houston";
+  const city = competitors?.city;
+  if (!city) {
+    return {
+      found: false,
+      matchedByDomain: false,
+      searchedFor: businessName(seo) || rootDomain(auditedUrl) || "clinic",
+      you: null,
+      rivals: [],
+      reason: "city_required",
+    };
+  }
+
   const name = businessName(seo);
   if (!name) return null;
 
   const ownDomain = rootDomain(auditedUrl);
-  // Domain root without TLD often IS the business name (alinadentalclinic → "alinadentalclinic").
   const domainName = (ownDomain || "").split(".")[0];
 
-  // 1. Find their own listing — try title-derived name, then the domain itself.
-  //    A candidate whose website matches their domain is a verified match.
-  const queries = [`${name} ${city}`, `${domainName} ${city}`];
+  const queries = [`${name} ${city}`, `${domainName} ${city}`, `${ownDomain}`];
   let own = null;
-  let fallback = null;
   for (const q of queries) {
     const candidates = await placesTextSearch(q, apiKey).catch(() => []);
     for (const c of candidates) {
       const d = await placeDetails(c.placeId, apiKey).catch(() => null);
       if (!d) continue;
-      if (d.website && rootDomain(d.website) === ownDomain) { own = d; break; }
-      if (!fallback) fallback = d;
+      if (d.website && rootDomain(d.website) === ownDomain) {
+        own = d;
+        break;
+      }
     }
     if (own) break;
   }
-  const matchedByDomain = !!own;
-  if (!own) own = fallback;
+
   if (!own) {
-    return { found: false, searchedFor: `${name} ${city}`, you: null, rivals: [] };
+    return {
+      found: false,
+      matchedByDomain: false,
+      searchedFor: `${name} ${city}`,
+      you: null,
+      rivals: [],
+      reason: "no_domain_match",
+    };
   }
 
-  // 2. Rivals: map-pack names from Serper; if empty, ask Places directly
-  //    for the top clinics of this specialty in the city.
   let rivalNames = (competitors?.localMapPack || [])
     .map((p) => p.name)
     .filter((n) => n && n.toLowerCase() !== own.name.toLowerCase())
@@ -154,7 +169,7 @@ async function buildGmbCheck(auditedUrl, seo, competitors, apiKey) {
 
   return {
     found: true,
-    matchedByDomain,
+    matchedByDomain: true,
     searchedFor: `${name} ${city}`,
     you: own,
     rivals,

@@ -1,6 +1,9 @@
 /**
  * Local competitor benchmarking via Serper.dev (Google search results API).
  * Optional feature — runs only when a SERPER_API_KEY is configured.
+ *
+ * City + specialty should come from the user when possible. We never silently
+ * default to Houston — that produced wrong "invisible" reports.
  */
 
 const { analyzeSeo } = require("./seo");
@@ -19,17 +22,37 @@ const SPECIALTIES = [
   { re: /hospital|clinic|doctor|medical/i, term: "clinic" },
 ];
 
+const ALLOWED_SPECIALTIES = new Set(SPECIALTIES.map((s) => s.term));
+
 const CITIES = [
   "Houston", "Los Angeles", "Chicago", "Dallas", "New York", "Phoenix",
-  "San Antonio", "Austin", "Miami", "Dallas", "Seattle", "Denver",
+  "San Antonio", "Austin", "Miami", "Seattle", "Denver", "Sugar Land",
+  "Katy", "The Woodlands", "Plano", "Fort Worth", "Atlanta", "Boston",
 ];
 
-/** Infer "what would a patient google" from the site's own content. */
-function inferQuery(seo) {
+/** Infer specialty/city from site content — never invent a city. */
+function inferQuery(seo, hints = {}) {
   const haystack = [seo.title, seo.metaDescription, seo.h1Text].filter(Boolean).join(" ");
-  const specialty = (SPECIALTIES.find((s) => s.re.test(haystack)) || SPECIALTIES.at(-1)).term;
-  const city = CITIES.find((c) => new RegExp(c, "i").test(haystack)) || "Houston";
-  return { query: `${specialty} in ${city}`, specialty, city };
+
+  let specialty = typeof hints.specialty === "string" ? hints.specialty.trim().toLowerCase() : "";
+  if (!ALLOWED_SPECIALTIES.has(specialty)) {
+    specialty = (SPECIALTIES.find((s) => s.re.test(haystack)) || { term: "clinic" }).term;
+  }
+
+  let city = typeof hints.city === "string" ? hints.city.trim() : "";
+  if (!city) {
+    city = CITIES.find((c) => new RegExp(c, "i").test(haystack)) || "";
+  }
+  // Cap length / strip junk
+  city = String(city).replace(/[^\p{L}\p{N}\s.'-]/gu, "").trim().slice(0, 60);
+
+  return {
+    query: city ? `${specialty} in ${city}` : specialty,
+    specialty,
+    city: city || null,
+    cityInferred: !hints.city && !!city,
+    cityMissing: !city,
+  };
 }
 
 function rootDomain(hostname) {
@@ -39,10 +62,26 @@ function rootDomain(hostname) {
 /**
  * Search Google, locate the audited site's rank, and profile the top
  * competitors ranking above (or ahead of) it.
+ * @param {object} [hints] { city?, specialty? }
  */
-async function findCompetitors(auditedUrl, seo, apiKey) {
-  const { query, specialty, city } = inferQuery(seo);
+async function findCompetitors(auditedUrl, seo, apiKey, hints = {}) {
+  const inferred = inferQuery(seo, hints);
+  const { query, specialty, city, cityMissing, cityInferred } = inferred;
   const ownDomain = rootDomain(new URL(auditedUrl).hostname);
+
+  // Without a city, organic "dentist" results are national noise — skip ranking claims.
+  if (cityMissing) {
+    return {
+      searchQuery: query,
+      specialty,
+      city: null,
+      cityMissing: true,
+      yourGoogleRank: null,
+      competitorsAboveYou: [],
+      localMapPack: [],
+      skippedReason: "city_required",
+    };
+  }
 
   const data = await serperSearch(query, apiKey);
 
@@ -56,13 +95,11 @@ async function findCompetitors(auditedUrl, seo, apiKey) {
 
   const ownRank = organic.find((r) => r.domain === ownDomain)?.position ?? null;
 
-  // Top 5 competitors: sites ranking above them (or simply the top 5 if unranked).
   const rivals = organic
     .filter((r) => r.domain !== ownDomain)
     .filter((r) => (ownRank ? r.position < ownRank : true))
     .slice(0, 5);
 
-  // Quick on-page profile of the top 3 rivals (parallel, best-effort).
   const profiles = await Promise.all(
     rivals.slice(0, 3).map(async (r) => {
       try {
@@ -80,12 +117,11 @@ async function findCompetitors(auditedUrl, seo, apiKey) {
           },
         };
       } catch {
-        return r; // keep search-result info even if their site blocks us
+        return r;
       }
     })
   );
 
-  // Local map pack (Google Business listings) if Serper returned it.
   const mapPack = (data.places || []).slice(0, 5).map((p) => ({
     name: p.title,
     rating: p.rating,
@@ -96,10 +132,14 @@ async function findCompetitors(auditedUrl, seo, apiKey) {
     searchQuery: query,
     specialty,
     city,
-    yourGoogleRank: ownRank, // null = not in top 10
+    cityInferred,
+    cityMissing: false,
+    yourGoogleRank: ownRank, // null = not in the returned organic set (~top 10)
+    rankDisclaimer:
+      "Organic rank for this exact query only (approx. top 10). Not map-pack or ‘near me’ visibility.",
     competitorsAboveYou: profiles.concat(rivals.slice(3)),
     localMapPack: mapPack,
   };
 }
 
-module.exports = { findCompetitors };
+module.exports = { findCompetitors, inferQuery, ALLOWED_SPECIALTIES };

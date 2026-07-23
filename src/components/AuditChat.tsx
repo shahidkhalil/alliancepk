@@ -26,7 +26,7 @@ const AUDIT_ENDPOINT =
   process.env.NEXT_PUBLIC_AUDIT_ENDPOINT ||
   "https://asia-south1-alliancepak.cloudfunctions.net/auditWebsite";
 
-interface Issue { title: string; impact: string; fix: string }
+interface Issue { title: string; impact: string; fix: string; evidence?: string }
 interface MoneyMapRow {
   treatment: string;
   status: "invisible" | "close" | "strong";
@@ -50,6 +50,8 @@ interface CompetitorData {
   yourGoogleRank: number | null;
   list: CompetitorRow[];
   localMapPack?: { name: string; rating?: number; reviews?: number }[];
+  rankDisclaimer?: string | null;
+  cityMissing?: boolean;
 }
 interface GmbListing {
   name: string;
@@ -84,6 +86,50 @@ interface Report {
   gmbInsight?: string;
   competitorData?: CompetitorData | null;
   gmbData?: GmbData | null;
+  evidence?: Evidence | null;
+}
+
+interface Evidence {
+  speed?: {
+    performance?: number | null;
+    seo?: number | null;
+    lcp?: string | null;
+    cls?: string | null;
+    error?: string;
+  };
+  onPage?: {
+    titleLength?: number | null;
+    metaDescriptionLength?: number | null;
+    h1Count?: number | null;
+    isHttps?: boolean;
+    hasStructuredData?: boolean;
+    isSpa?: boolean;
+    pagesScanned?: number;
+    error?: string;
+  };
+  conversion?: {
+    note?: string;
+    hasPhoneLink?: boolean;
+    hasBooking?: boolean;
+    hasForm?: boolean;
+    hasMap?: boolean;
+    hasReviews?: boolean;
+    hasWhatsApp?: boolean;
+  };
+  search?: {
+    query?: string;
+    yourGoogleRank?: number | null;
+    city?: string | null;
+    specialty?: string | null;
+    disclaimer?: string;
+  } | null;
+  gmb?: {
+    found?: boolean;
+    matchedByDomain?: boolean;
+    name?: string | null;
+    rating?: number | null;
+    reviews?: number | null;
+  } | null;
 }
 
 type Msg =
@@ -99,7 +145,49 @@ type Msg =
   | { id: number; from: "bot"; kind: "options" }
   | { id: number; from: "bot"; kind: "teaser"; report: Report }
   | { id: number; from: "bot"; kind: "gate" }
+  | { id: number; from: "bot"; kind: "location"; url: string }
   | { id: number; from: "user"; kind: "text"; text: string };
+
+const SPECIALTY_OPTIONS = [
+  { value: "dentist", label: "Dentist / Dental" },
+  { value: "aesthetic clinic", label: "Aesthetic / Med spa" },
+  { value: "dermatologist", label: "Dermatologist" },
+  { value: "psychologist", label: "Psychologist" },
+  { value: "physiotherapist", label: "Physiotherapist" },
+  { value: "eye specialist", label: "Eye specialist" },
+  { value: "hair transplant clinic", label: "Hair transplant" },
+  { value: "clinic", label: "Other clinic" },
+] as const;
+
+const CITY_SUGGESTIONS = [
+  "Houston",
+  "Dallas",
+  "Austin",
+  "San Antonio",
+  "Sugar Land",
+  "Katy",
+  "The Woodlands",
+  "Los Angeles",
+  "Miami",
+  "Chicago",
+];
+
+/** Basic client-side URL check before spending an audit credit. */
+function normalizeAuditUrl(raw: string): string | null {
+  let v = raw.trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) v = `https://${v}`;
+  try {
+    const u = new URL(v);
+    if (!/^https?:$/.test(u.protocol)) return null;
+    const host = u.hostname.replace(/\.$/, "");
+    if (!host.includes(".") || host.length < 4) return null;
+    if (/^(localhost|127\.|0\.|10\.|192\.168\.)/i.test(host)) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
 
 type MsgInput = Msg extends infer M ? (M extends Msg ? Omit<M, "id"> : never) : never;
 
@@ -159,6 +247,73 @@ function TypingBubble() {
   );
 }
 
+function EvidencePanel({ evidence }: { evidence?: Evidence | null }) {
+  if (!evidence) return null;
+  const flag = (on: boolean | undefined, label: string) => (
+    <span
+      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+        on ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"
+      }`}
+      title={on ? "Detected" : "Not detected on scanned pages"}
+    >
+      {on ? "✓" : "?"} {label}
+    </span>
+  );
+  const speed = evidence.speed;
+  const onPage = evidence.onPage;
+  const conv = evidence.conversion;
+  return (
+    <div className="mt-3 text-left rounded-lg border border-gray-100 bg-[#F8FAFC] p-3 space-y-2">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Measured evidence</p>
+      {speed && !speed.error && (
+        <p className="text-[11px] text-gray-600">
+          Mobile speed: <span className="font-bold text-[#00283C]">{speed.performance ?? "—"}/100</span>
+          {speed.lcp ? <> · LCP {speed.lcp}</> : null}
+        </p>
+      )}
+      {speed?.error && (
+        <p className="text-[11px] text-amber-700">Speed data unavailable — score ignores load time.</p>
+      )}
+      {onPage && !onPage.error && (
+        <p className="text-[11px] text-gray-600">
+          Title {onPage.titleLength ?? "—"} chars · H1s: {onPage.h1Count ?? "—"}
+          {onPage.hasStructuredData ? " · Schema ✓" : " · Schema ?"}
+          {onPage.pagesScanned ? ` · ${onPage.pagesScanned} page(s) scanned` : null}
+        </p>
+      )}
+      {conv && (
+        <div className="flex flex-wrap gap-1">
+          {flag(conv.hasPhoneLink, "Tap-to-call")}
+          {flag(conv.hasBooking, "Booking")}
+          {flag(conv.hasForm, "Form")}
+          {flag(conv.hasMap, "Map")}
+          {flag(conv.hasReviews, "Reviews")}
+          {flag(conv.hasWhatsApp, "WhatsApp")}
+        </div>
+      )}
+      {evidence.search?.query && (
+        <p className="text-[11px] text-gray-600">
+          Search: “{evidence.search.query}” →{" "}
+          {evidence.search.yourGoogleRank != null
+            ? `organic #${evidence.search.yourGoogleRank}`
+            : "not in top ~10 organic"}
+        </p>
+      )}
+      {evidence.gmb && (
+        <p className="text-[11px] text-gray-600">
+          Google Business:{" "}
+          {evidence.gmb.matchedByDomain
+            ? `${evidence.gmb.name || "listing"} · ${evidence.gmb.rating ?? "—"}★ (${evidence.gmb.reviews ?? 0} reviews)`
+            : "not confirmed for this website domain"}
+        </p>
+      )}
+      <p className="text-[9px] text-gray-400 leading-snug">
+        “?” means not detected on scanned pages — a widget may still exist. Rank is for this exact query only.
+      </p>
+    </div>
+  );
+}
+
 function ScoreCard({ report, url }: { report: Report; url: string }) {
   const color = scoreColor(report.overallScore);
   return (
@@ -175,6 +330,77 @@ function ScoreCard({ report, url }: { report: Report; url: string }) {
       </div>
       <p className="font-extrabold text-[#00283C]">{report.verdict}</p>
       <p className="text-gray-500 text-sm mt-1">{report.headline}</p>
+      <EvidencePanel evidence={report.evidence} />
+    </div>
+  );
+}
+
+function LocationPicker({
+  url,
+  onConfirm,
+  disabled,
+}: {
+  url: string;
+  onConfirm: (city: string, specialty: string) => void;
+  disabled?: boolean;
+}) {
+  const [city, setCity] = useState("");
+  const [specialty, setSpecialty] = useState("dentist");
+  const canGo = city.trim().length >= 2 && !!specialty && !disabled;
+  return (
+    <div>
+      <p className="font-bold text-[#00283C] mb-1">Confirm location for accurate rankings</p>
+      <p className="text-gray-500 text-xs mb-3">
+        We search Google for clinics near you — wrong city = wrong competitors. Site:{" "}
+        <span className="font-semibold text-[#00283C] break-all">{url.replace(/^https?:\/\//, "")}</span>
+      </p>
+      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">Specialty</label>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {SPECIALTY_OPTIONS.map((s) => (
+          <button
+            key={s.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => setSpecialty(s.value)}
+            className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-colors ${
+              specialty === s.value
+                ? "bg-[#00283C] text-white border-[#00283C]"
+                : "bg-white text-[#00283C] border-gray-200 hover:border-[#0077A8]"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">City</label>
+      <input
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+        placeholder="e.g. Houston, Dallas, Austin"
+        disabled={disabled}
+        className="w-full px-3 py-2.5 rounded-lg border border-gray-200 text-sm text-[#00283C] outline-none focus:border-[#0077A8] mb-2"
+      />
+      <div className="flex flex-wrap gap-1 mb-3">
+        {CITY_SUGGESTIONS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            disabled={disabled}
+            onClick={() => setCity(c)}
+            className="text-[10px] px-2 py-1 rounded-md bg-gray-50 text-gray-600 border border-gray-100 hover:border-[#0077A8]"
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        disabled={!canGo}
+        onClick={() => onConfirm(city.trim(), specialty)}
+        className="btn-dark w-full py-2.5 text-sm disabled:opacity-40"
+      >
+        Run accurate audit →
+      </button>
     </div>
   );
 }
@@ -285,9 +511,10 @@ const STATUS_STYLES: Record<MoneyMapRow["status"], { label: string; color: strin
 function CompetitorLeaderboard({ data }: { data: CompetitorData }) {
   const badge = (on: boolean | undefined, label: string) => (
     <span
-      className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${on ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400 line-through"}`}
+      className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${on ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}
+      title={on ? "Detected" : "Not detected"}
     >
-      {label}
+      {on ? "✓" : "?"} {label}
     </span>
   );
   return (
@@ -297,8 +524,12 @@ function CompetitorLeaderboard({ data }: { data: CompetitorData }) {
       </p>
       <p className="text-xs text-gray-500 mb-2">
         {data.yourGoogleRank
-          ? `You rank #${data.yourGoogleRank}. Ranking above you:`
-          : "You're not in the top 10. These clinics are taking your patients:"}
+          ? `You rank #${data.yourGoogleRank} in organic results for this exact query. Ranking above you:`
+          : "You're not in the top ~10 organic results for this exact query. Clinics showing instead:"}
+      </p>
+      <p className="text-[10px] text-gray-400 mb-2 leading-snug">
+        {data.rankDisclaimer ||
+          "Organic top ~10 only — not map-pack or every Google search patients use."}
       </p>
       <div className="space-y-1.5">
         {data.list.map((c) => (
@@ -339,12 +570,13 @@ function CompetitorLeaderboard({ data }: { data: CompetitorData }) {
 }
 
 function GmbCard({ data, insight }: { data: GmbData; insight?: string }) {
-  if (!data.found || !data.you) {
+  if (!data.found || !data.you || !data.matchedByDomain) {
     return (
       <div>
         <p className="flex items-center gap-1.5 font-bold text-[#00283C] mb-1">📍 Google Business Profile</p>
         <p className="text-sm text-gray-600">
-          {insight || `We couldn't find a Google Business listing for "${data.searchedFor}". Patients searching on Google Maps can't find you — creating a free listing is your fastest win.`}
+          {insight ||
+            `We couldn't confirm a Google Business listing whose website matches this domain (searched: "${data.searchedFor}"). Check that your Google listing lists the correct website URL — inventing a rival comparison would be inaccurate.`}
         </p>
       </div>
     );
@@ -362,9 +594,7 @@ function GmbCard({ data, insight }: { data: GmbData; insight?: string }) {
   return (
     <div>
       <p className="flex items-center gap-1.5 font-bold text-[#00283C] mb-1">📍 Google Business Profile — you vs. map pack</p>
-      {!data.matchedByDomain && (
-        <p className="text-[10px] text-gray-400 mb-1">Closest listing match: “{data.you.name}”</p>
-      )}
+      <p className="text-[10px] text-green-700 mb-1">✓ Website domain verified</p>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
@@ -434,7 +664,6 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
   const [mode, setMode] = useState<"full" | "competitor">("full");
   const bottomRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
-  // Lead gate: full report unlocks after name+WhatsApp (remembered per browser).
   const unlockedRef = useRef(false);
   const pendingRef = useRef<{ steps: MsgInput[]; report: Report; url: string } | null>(null);
 
@@ -469,8 +698,6 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
-      // Undo the guard so React 18 Strict Mode's dev-only mount→cleanup→remount
-      // cycle reschedules these on the real mount instead of leaving the chat empty.
       started.current = false;
     };
   }, [push]);
@@ -480,11 +707,11 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
     if (opt === "audit") {
       push({ from: "user", kind: "text", text: "🔍 Full website audit" });
       setMode("full");
-      setTimeout(() => push({ from: "bot", kind: "text", text: "Great choice! Paste your website address below (e.g. yourclinic.com) and I'll check its speed, SEO, and patient experience. 👇" }), 400);
+      setTimeout(() => push({ from: "bot", kind: "text", text: "Great choice! Paste your website address below (e.g. yourclinic.com). Typical audit takes about 1–2 minutes. 👇" }), 400);
     } else if (opt === "competitor") {
       push({ from: "user", kind: "text", text: "🥊 Competitor benchmark" });
       setMode("competitor");
-      setTimeout(() => push({ from: "bot", kind: "text", text: "Let's see who's beating you on Google. Paste your website address below and I'll find your rank and the clinics ranking above you. 👇" }), 400);
+      setTimeout(() => push({ from: "bot", kind: "text", text: "Let's see who's ranking for your local searches. Paste your website address below — then confirm your city so we don't guess wrong. 👇" }), 400);
     } else {
       push({ from: "user", kind: "text", text: "📞 Book a free strategy call" });
       setTimeout(() => {
@@ -498,19 +725,19 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
 
-  const runAudit = async (rawUrl: string) => {
+  const runAudit = async (rawUrl: string, city: string, specialty: string) => {
     const auditStartedAt = Date.now();
     trackDemoStart({ demo_type: "website_audit", audit_mode: mode });
     setBusy(true);
-    push({ from: "user", kind: "text", text: rawUrl });
+    push({ from: "user", kind: "text", text: `${city} · ${specialty}` });
     push({ from: "bot", kind: "typing" });
 
     const progress = [
       "🔍 Fetching your website…",
-      "⚡ Measuring speed on mobile & desktop…",
-      "📈 Analyzing your SEO & Google visibility…",
-      "🧑‍⚕️ Walking through it like a patient would…",
-      "✍️ Writing your report…",
+      "⚡ Measuring speed on mobile…",
+      "📈 Checking SEO & local Google results…",
+      "🧑‍⚕️ Walking through booking signals…",
+      "✍️ Writing your evidence-based report…",
     ];
     let pi = 0;
     const progressTimer = setInterval(() => {
@@ -525,19 +752,24 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
           ];
         });
       }
-    }, 6000);
+    }, 8000);
 
     try {
       const res = await fetch(AUDIT_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: rawUrl }),
+        body: JSON.stringify({ url: rawUrl, city, specialty }),
       });
       const data = await res.json();
       clearInterval(progressTimer);
       if (!res.ok) throw new Error(data.error || "Audit failed");
 
-      const report: Report = { ...data.report, competitorData: data.competitors || null, gmbData: data.gmb || null };
+      const report: Report = {
+        ...data.report,
+        competitorData: data.competitors || null,
+        gmbData: data.gmb || null,
+        evidence: data.evidence || null,
+      };
       const url: string = data.url || rawUrl;
       trackDemoComplete({
         demo_type: "website_audit",
@@ -545,9 +777,8 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
         duration: Math.round((Date.now() - auditStartedAt) / 1000),
       });
 
-      replaceTyping({ from: "bot", kind: "text", text: "Done! Here's what I found. 👇" });
+      replaceTyping({ from: "bot", kind: "text", text: "Done! Here's what the data shows. 👇" });
 
-      // Everything after the score is the "full report".
       const fullSteps: MsgInput[] =
         mode === "competitor" && report.competitorComparison
           ? [
@@ -573,7 +804,6 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
         fullSteps.forEach((m, i) => setTimeout(() => push(m), 1600 + i * 1000));
         setTimeout(() => setBusy(false), 1600 + fullSteps.length * 1000);
       } else {
-        // Peek-and-gate: score + one teaser issue, then ask for name and email.
         pendingRef.current = { steps: fullSteps, report, url };
         setTimeout(() => push({ from: "bot", kind: "teaser", report }), 1600);
         setTimeout(() => push({ from: "bot", kind: "gate" }), 2400);
@@ -599,7 +829,20 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
     const v = input.trim();
     if (!v || busy) return;
     setInput("");
-    runAudit(v);
+
+    const normalized = normalizeAuditUrl(v);
+    if (!normalized) {
+      push({ from: "user", kind: "text", text: v });
+      push({
+        from: "bot",
+        kind: "text",
+        text: "That doesn't look like a website address. Try something like yourclinic.com or https://www.yourclinic.com",
+      });
+      return;
+    }
+
+    push({ from: "user", kind: "text", text: v });
+    setTimeout(() => push({ from: "bot", kind: "location", url: normalized }), 300);
   };
 
   const unlockReport = async (name: string, phone: string, email: string) => {
@@ -607,7 +850,6 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
     unlockedRef.current = true;
     try { localStorage.setItem(LEAD_KEY, JSON.stringify({ name, phone, email })); } catch { /* ignore */ }
 
-    // Save the lead with full audit intelligence attached.
     try {
       await addDoc(collection(getDb(), "leads"), {
         name: String(name || "").trim().slice(0, 120),
@@ -648,12 +890,20 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
       <div className={`${heightClass} overflow-y-auto px-4 py-5 space-y-4 bg-[#F8FAFC] flex-1`}>
         <AnimatePresence initial={false}>
           {messages.map((m) => {
             if (m.kind === "typing") return <TypingBubble key={m.id} />;
             if (m.kind === "text") return <Bubble key={m.id} from={m.from}>{m.text}</Bubble>;
+            if (m.kind === "location") return (
+              <Bubble key={m.id} from="bot">
+                <LocationPicker
+                  url={m.url}
+                  disabled={busy}
+                  onConfirm={(city, specialty) => runAudit(m.url, city, specialty)}
+                />
+              </Bubble>
+            );
             if (m.kind === "options") return (
               <motion.div key={m.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-2 pl-10 pr-4">
                 {[
@@ -783,13 +1033,12 @@ export default function AuditChat({ heightClass = "h-[520px]" }: { heightClass?:
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <form onSubmit={onSubmit} className="border-t border-gray-200 bg-white px-3 py-3 flex items-center gap-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={busy ? "Auditing… hang tight" : "Type your website, e.g. yourclinic.com"}
+          placeholder={busy ? "Auditing… ~1–2 min" : "Type your website, e.g. yourclinic.com"}
           disabled={busy}
           className="flex-1 px-4 py-3 rounded-xl bg-[#F8FAFC] border border-gray-200 text-sm text-[#00283C] outline-none focus:border-[#0077A8] transition-colors disabled:opacity-60"
         />

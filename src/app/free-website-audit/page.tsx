@@ -20,9 +20,9 @@ const checks = [
 ];
 
 const steps = [
-  { n: "1", title: "Paste your website link", desc: "Type your clinic's web address into the chat — no signup, no credit card." },
-  { n: "2", title: "AI runs a real audit (≈30 sec)", desc: "We pull live Google PageSpeed data, scan your pages and Google Business listing, and check real search rankings." },
-  { n: "3", title: "Get your report & fixes", desc: "A plain-English report: your score, your biggest problems, who's beating you, and exactly what to fix first." },
+  { n: "1", title: "Paste your website + city", desc: "Enter your clinic URL, then confirm specialty and city so rankings aren't guessed." },
+  { n: "2", title: "AI runs a real audit (≈1–2 min)", desc: "We pull live Google PageSpeed data, scan your pages and Google Business listing, and check real search rankings." },
+  { n: "3", title: "Get your report & fixes", desc: "A plain-English report grounded in measured evidence: score, biggest problems, who's ranking for your searches, and what to fix first." },
 ];
 
 const faqs = [
@@ -82,7 +82,7 @@ export default function FreeWebsiteAudit() {
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-4">
-            Powered by real Google PageSpeed data + AI analysis. Your audit is free — no signup needed.
+            Powered by real Google PageSpeed data + evidence-grounded AI. Free score first — typical audit ~1–2 minutes.
           </p>
         </div>
       </section>

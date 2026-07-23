@@ -55,12 +55,18 @@ async function analyzeSeo(url) {
   const bodyText = $("body").text().replace(/\s+/g, " ").trim();
 
   // Conversion / UX signals that matter for clinics specifically.
+  // false = not detected on scanned pages — NOT proof the feature is absent
+  // (widgets, GTM, third-party booking embeds often hide from static HTML).
   const htmlLower = html.toLowerCase();
-  let hasWhatsApp = /wa\.me|whatsapp|api\.whatsapp/.test(htmlLower);
-  let hasPhoneLink = $('a[href^="tel:"]').length > 0;
-  let hasBooking = /book|appointment|schedule|consultation/.test(htmlLower);
-  let hasMap = /google\.com\/maps|maps\.google|goo\.gl\/maps|<iframe[^>]+maps/.test(htmlLower);
-  let hasReviews = /review|testimonial|rating|stars?/.test(htmlLower);
+  let hasWhatsApp = /wa\.me|api\.whatsapp\.com|whatsapp\.com\/send/.test(htmlLower);
+  let hasPhoneLink =
+    $('a[href^="tel:"]').length > 0 || $('a[href^="sms:"]').length > 0;
+  let hasBooking =
+    /book\s*(now|online|appointment)|online\s*booking|request\s*(an?\s*)?(appointment|visit|consultation)|schedule\s*(an?\s*)?(appointment|visit)|calendly|setmore|simplybook|doctible|zocdoc|patient\s*portal/i.test(
+      htmlLower
+    );
+  let hasMap = /google\.com\/maps|maps\.google|goo\.gl\/maps|maps\.app\.goo\.gl|<iframe[^>]+maps/.test(htmlLower);
+  let hasReviews = /review|testimonial|rating|google\s*reviews|trustpilot|healthgrades/.test(htmlLower);
   let hasForm = $("form").length > 0;
 
   // DEEP SCAN (zero API credits — our own fetches only).
@@ -119,11 +125,15 @@ async function analyzeSeo(url) {
 
     const extra = extraTexts.join(" ").toLowerCase();
     if (extra) {
-      hasWhatsApp = hasWhatsApp || /wa\.me|api\.whatsapp|whatsapp/.test(extra);
-      hasPhoneLink = hasPhoneLink || /["'`]tel:|href="tel:|href='tel:/.test(extra);
-      hasBooking = hasBooking || /book|appointment|schedule|consultation/.test(extra);
-      hasMap = hasMap || /google\.com\/maps|maps\.google|goo\.gl\/maps/.test(extra);
-      hasReviews = hasReviews || /review|testimonial|rating/.test(extra);
+      hasWhatsApp = hasWhatsApp || /wa\.me|api\.whatsapp\.com|whatsapp\.com\/send/.test(extra);
+      hasPhoneLink = hasPhoneLink || /["'`]tel:|href=["']tel:|href=["']sms:|["']sms:/.test(extra);
+      hasBooking =
+        hasBooking ||
+        /book\s*(now|online|appointment)|online\s*booking|request\s*(an?\s*)?(appointment|visit|consultation)|calendly|doctible|zocdoc/.test(
+          extra
+        );
+      hasMap = hasMap || /google\.com\/maps|maps\.google|goo\.gl\/maps|maps\.app\.goo\.gl/.test(extra);
+      hasReviews = hasReviews || /review|testimonial|healthgrades|trustpilot/.test(extra);
       hasForm = hasForm || /<form|onsubmit|handlesubmit/.test(extra);
     }
   }
@@ -156,8 +166,17 @@ async function analyzeSeo(url) {
     pagesScanned,
     imageCount: images.length,
     imagesMissingAlt,
-    // Conversion / UX signals
-    conversion: { hasWhatsApp, hasPhoneLink, hasBooking, hasMap, hasReviews, hasForm },
+    // Conversion / UX signals — false means "not detected", not absolute absence
+    conversion: {
+      hasWhatsApp,
+      hasPhoneLink,
+      hasBooking,
+      hasMap,
+      hasReviews,
+      hasForm,
+      detectionNote:
+        "false = not detected on scanned HTML/JS (widgets/embeds may still exist)",
+    },
   };
 }
 
