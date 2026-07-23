@@ -16,6 +16,7 @@ import dynamic from "next/dynamic";
 
 const ConsultationForm = dynamic(() => import("@/components/ConsultationForm"), { ssr: false });
 const AuditChatWidget = dynamic(() => import("@/components/AuditChatWidget"), { ssr: false });
+const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySalesBar"), { ssr: false });
 
 type ServiceGroup = "ai" | "growth" | "platform";
 
@@ -199,18 +200,23 @@ function ServicesContent() {
               designed so you can choose in seconds.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={openForm}
+              <a
+                href="/free-website-audit"
+                data-analytics-label="start_website_audit"
+                data-analytics-location="services_hero"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#00283C] font-bold px-7 py-3.5 text-sm hover:bg-[#E8F7FB] transition-colors"
               >
                 Get a free clinic audit
-              </button>
-              <a
-                href="#services"
+              </a>
+              <button
+                type="button"
+                onClick={openForm}
+                data-analytics-label="book_consultation"
+                data-analytics-location="services_hero"
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 text-white font-semibold px-7 py-3.5 text-sm hover:bg-white/10 transition-colors"
               >
-                Explore services <ArrowRight className="w-4 h-4" />
-              </a>
+                Book a strategy call
+              </button>
             </div>
           </div>
 
@@ -390,15 +396,23 @@ function ServicesContent() {
               </p>
             </div>
             <div className="relative flex flex-wrap gap-3">
-              <button onClick={openForm} className="btn-dark px-6 py-3 text-sm">
-                Free clinic audit
-              </button>
               <a
-                href="/pricing"
+                href="/free-website-audit"
+                data-analytics-label="start_website_audit"
+                data-analytics-location="services_next_step"
+                className="btn-dark px-6 py-3 text-sm inline-flex items-center"
+              >
+                Free clinic audit
+              </a>
+              <button
+                type="button"
+                onClick={openForm}
+                data-analytics-label="book_consultation"
+                data-analytics-location="services_next_step"
                 className="inline-flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-[#00283C] border border-[#00283C]/15 rounded-md hover:border-[#0077A8] hover:text-[#0077A8] transition-colors"
               >
-                See pricing
-              </a>
+                Book a strategy call
+              </button>
             </div>
           </AnimatedSurface>
         </div>
@@ -406,6 +420,7 @@ function ServicesContent() {
 
       <FinalCTA />
       <Footer />
+      <MobileStickySalesBar />
     </div>
   );
 }

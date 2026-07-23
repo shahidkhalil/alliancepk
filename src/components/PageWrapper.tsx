@@ -10,6 +10,7 @@ import { PackageOrderProvider } from "@/context/PackageOrderContext";
 const ConsultationForm = dynamic(() => import("./ConsultationForm"), { ssr: false });
 const AuditChatWidget = dynamic(() => import("./AuditChatWidget"), { ssr: false });
 const PackageOrderForm = dynamic(() => import("./PackageOrderForm"), { ssr: false });
+const MobileStickySalesBar = dynamic(() => import("./MobileStickySalesBar"), { ssr: false });
 
 function PageContent({ children }: { children: ReactNode }) {
   const { isOpen, closeForm } = useForm();
@@ -18,6 +19,7 @@ function PageContent({ children }: { children: ReactNode }) {
       <Navigation />
       <main className="relative overflow-x-clip max-w-[100vw]">{children}</main>
       <Footer />
+      <MobileStickySalesBar />
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}
       <AuditChatWidget />
       <PackageOrderForm />

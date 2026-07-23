@@ -71,34 +71,6 @@ function BottomCTA() {
   );
 }
 
-/* ─── Mobile sticky closer ──────────────────────────────────────────────────── */
-function StickySalesBar() {
-  const { openForm } = useForm();
-  return (
-    <div className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 py-3 safe-pb">
-      <div className="flex gap-2 max-w-lg mx-auto">
-        <a
-          href="/free-website-audit"
-          data-analytics-label="start_website_audit"
-          data-analytics-location="pricing_sticky"
-          className="flex-1 text-center py-3 rounded-xl bg-[#00283C] text-white text-xs font-black"
-        >
-          Free Audit
-        </a>
-        <button
-          type="button"
-          onClick={openForm}
-          data-analytics-label="book_consultation"
-          data-analytics-location="pricing_sticky"
-          className="flex-1 py-3 rounded-xl border border-[#00283C]/20 text-[#00283C] text-xs font-black"
-        >
-          Book a Call
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Main page content ──────────────────────────────────────────────────────── */
 function PricingContent() {
   const { openForm } = useForm();
@@ -175,12 +147,20 @@ function PricingContent() {
             </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
               <a
-                href="/free-website-audit"
-                data-analytics-label="start_website_audit"
+                href="/ai-receptionist"
+                data-analytics-label="start_ai_demo"
                 data-analytics-location="pricing_hero"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-black hover:bg-[#003D5C] transition-colors"
               >
-                Free Clinic Audit First <ArrowRight className="w-4 h-4" />
+                Try Maya Live <ArrowRight className="w-4 h-4" />
+              </a>
+              <a
+                href="/free-website-audit"
+                data-analytics-label="start_website_audit"
+                data-analytics-location="pricing_hero"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
+              >
+                Free Clinic Audit
               </a>
               <button
                 type="button"
@@ -189,7 +169,7 @@ function PricingContent() {
                 data-analytics-location="pricing_hero"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
               >
-                Book Free Strategy Call
+                Book Strategy Call
               </button>
             </div>
             <p className="text-xs text-gray-400 mb-5 max-w-xl">
@@ -382,9 +362,6 @@ function PricingContent() {
 
       <WhySection />
       <BottomCTA />
-      <StickySalesBar />
-      {/* Spacer so sticky bar doesn't cover content on mobile */}
-      <div className="h-20 lg:hidden" aria-hidden />
     </>
   );
 }

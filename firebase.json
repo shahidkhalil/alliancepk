@@ -1,6 +1,7 @@
 {
   "firestore": {
-    "rules": "firestore.rules"
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "functions": {
     "source": "functions",
@@ -15,6 +16,18 @@
       "**/node_modules/**"
     ],
     "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "/blogs",
+        "destination": "/blog",
+        "type": 301
+      },
+      {
+        "source": "/blogs/**",
+        "destination": "/blog",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
         "source": "/api/receptionist",
@@ -31,6 +44,10 @@
       {
         "source": "/api/business-audit",
         "function": { "functionId": "auditWebsite", "region": "asia-south1" }
+      },
+      {
+        "source": "/blog/**",
+        "destination": "/blog/viewer/index.html"
       }
     ],
     "headers": [

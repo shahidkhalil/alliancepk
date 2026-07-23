@@ -9,6 +9,7 @@ import HomeBelowFold from "@/components/HomeBelowFold";
 
 const ConsultationForm = dynamic(() => import("@/components/ConsultationForm"), { ssr: false });
 const AuditChatWidget = dynamic(() => import("@/components/AuditChatWidget"), { ssr: false });
+const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySalesBar"), { ssr: false });
 
 function HomeContent() {
   const { isOpen, closeForm } = useForm();
@@ -22,6 +23,7 @@ function HomeContent() {
       <HomeBelowFold />
       <FinalCTA />
       <Footer />
+      <MobileStickySalesBar />
     </main>
   );
 }

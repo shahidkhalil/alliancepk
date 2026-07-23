@@ -1,17 +1,24 @@
 /**
- * Seed / sync blog posts from src/lib/blogData.ts → Firestore `blogs/{slug}`.
+ * Upsert blog posts into Firestore `blogs/{slug}` from a JSON file.
  *
- * Requires Firebase CLI login (uses access token from firebase-tools config).
+ * Content source of truth is Firestore. Use this only for bulk import/update.
  *
  * Usage:
- *   npx tsx scripts/seedBlogsToFirestore.ts
+ *   npx tsx scripts/seedBlogsToFirestore.ts path/to/posts.json
+ *
+ * JSON format: BlogPost[] (same fields as Firestore docs).
  */
 import fs from "fs";
 import path from "path";
 import https from "https";
-import { blogPosts } from "../src/lib/blogData";
 
 const PROJECT = process.env.FIREBASE_PROJECT || "alliancepak";
+
+type SeedPost = {
+  slug: string;
+  title: string;
+  [key: string]: unknown;
+};
 
 function loadAccessToken(): string {
   const configPath = path.join(
@@ -47,7 +54,9 @@ function toFirestoreValue(v: unknown): Record<string, unknown> {
 
 function patchDoc(token: string, slug: string, data: Record<string, unknown>) {
   return new Promise<void>((resolve, reject) => {
-    const body = JSON.stringify({ fields: (toFirestoreValue(data) as { mapValue: { fields: unknown } }).mapValue.fields });
+    const body = JSON.stringify({
+      fields: (toFirestoreValue(data) as { mapValue: { fields: unknown } }).mapValue.fields,
+    });
     const url = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/blogs/${encodeURIComponent(slug)}`;
     const req = https.request(
       url,
@@ -75,16 +84,35 @@ function patchDoc(token: string, slug: string, data: Record<string, unknown>) {
 }
 
 async function main() {
+  const fileArg = process.argv[2];
+  if (!fileArg) {
+    console.error(
+      "Usage: npx tsx scripts/seedBlogsToFirestore.ts <posts.json>\n" +
+        "Blogs are stored in Firestore — pass a JSON array of posts to upsert."
+    );
+    process.exit(1);
+  }
+
+  const abs = path.resolve(fileArg);
+  const posts = JSON.parse(fs.readFileSync(abs, "utf8")) as SeedPost[];
+  if (!Array.isArray(posts) || !posts.length) {
+    throw new Error("JSON must be a non-empty array of posts with slug + title");
+  }
+
   const token = loadAccessToken();
-  console.log(`Seeding ${blogPosts.length} posts → ${PROJECT}/blogs`);
-  for (const post of blogPosts) {
+  console.log(`Upserting ${posts.length} posts → ${PROJECT}/blogs`);
+  for (const post of posts) {
+    if (!post.slug || !post.title) {
+      console.warn("skip (missing slug/title)", post);
+      continue;
+    }
     const payload = {
       ...post,
       sections: post.sections || [],
       content: post.content || [],
       keywords: post.keywords || [],
-      published: true,
-      source: "blogData_sync",
+      published: post.published !== false,
+      source: "json_upsert",
       updatedAt: new Date().toISOString(),
     };
     await patchDoc(token, post.slug, payload);

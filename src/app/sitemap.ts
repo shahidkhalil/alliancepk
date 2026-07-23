@@ -1,8 +1,11 @@
 import type { MetadataRoute } from "next";
+import { fetchBlogsForBuild } from "@/lib/fetchBlogsBuild";
+
+export const dynamic = "force-static";
 
 const baseUrl = "https://alliancetechltd.com";
 
-const routes = [
+const staticRoutes = [
   { path: "", priority: 1.0 },
   { path: "/services", priority: 0.9 },
   { path: "/digital-marketing-for-clinics", priority: 0.8 },
@@ -21,15 +24,6 @@ const routes = [
   { path: "/portfolio", priority: 0.7 },
   { path: "/pricing", priority: 0.9 },
   { path: "/blog", priority: 0.8 },
-  { path: "/blog/houston-ai-receptionist-smart-appointment-reminders", priority: 0.8 },
-  { path: "/blog/free-business-growth-audit-houston-texas-clinics", priority: 0.8 },
-  { path: "/blog/how-clinics-get-more-patients-houston-texas", priority: 0.8 },
-  { path: "/blog/houston-ai-receptionist-for-clinics", priority: 0.8 },
-  { path: "/blog/houston-ai-automation-patient-booking", priority: 0.8 },
-  { path: "/blog/houston-dental-clinic-marketing", priority: 0.7 },
-  { path: "/blog/new-york-clinic-patient-growth", priority: 0.7 },
-  { path: "/blog/los-angeles-aesthetic-clinic-seo", priority: 0.7 },
-  { path: "/blog/chicago-dental-marketing-guide", priority: 0.7 },
   { path: "/free-website-audit", priority: 0.8 },
   { path: "/business-growth-audit", priority: 0.8 },
   { path: "/contact", priority: 0.5 },
@@ -37,10 +31,16 @@ const routes = [
   { path: "/terms-of-service", priority: 0.3 },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  return routes.map((r) => ({
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const blogs = await fetchBlogsForBuild();
+  const blogRoutes = blogs.map((p) => ({
+    path: `/blog/${p.slug}`,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...blogRoutes].map((r) => ({
     url: `${baseUrl}${r.path}`,
-    changeFrequency: "monthly",
+    changeFrequency: "monthly" as const,
     priority: r.priority,
   }));
 }

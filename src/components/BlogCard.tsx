@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { doc, getDoc, increment, setDoc } from "firebase/firestore";
 import { Heart, Share2, Facebook, Linkedin, Link2, Check } from "lucide-react";
 import { getDb } from "@/lib/firebase";
-import type { BlogPost } from "@/lib/blogData";
+import type { BlogPost } from "@/lib/blogTypes";
 import { useCardMotion } from "@/lib/motionVariants";
 
 function likedKey(slug: string) {

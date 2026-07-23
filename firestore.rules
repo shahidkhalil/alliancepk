@@ -153,7 +153,24 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // Lock everything else (audits, orders, appointments, cache = Admin SDK only).
+    // Maya bookings — admin read; status-only updates (new/completed/cancelled)
+    match /appointments/{doc} {
+      allow read: if isAdmin();
+      allow create, delete: if false;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'statusUpdatedAt', 'statusUpdatedBy'])
+        && request.resource.data.status is string
+        && request.resource.data.status in ['new', 'completed', 'cancelled'];
+    }
+
+    // Maya patient memory — admin read only
+    match /patients/{doc} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Lock everything else (audits, orders, cache = Admin SDK only).
     match /{document=**} {
       allow read, write: if false;
     }

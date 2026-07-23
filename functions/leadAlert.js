@@ -289,8 +289,15 @@ exports.leadAlert = onDocumentCreated(
     if (adminOk) console.log(`Admin lead email sent for ${event.params.leadId}`);
 
     try {
-      const userOk = await sendUserConfirmation(lead);
-      if (userOk) console.log(`User email sent to ${lead.email} for ${event.params.leadId}`);
+      // Maya bookings already send a dedicated appointment confirmation —
+      // skip the generic "we received your request" email for those leads.
+      const mayaSource = String(lead.source || "").startsWith("ai_receptionist");
+      if (!mayaSource) {
+        const userOk = await sendUserConfirmation(lead);
+        if (userOk) console.log(`User email sent to ${lead.email} for ${event.params.leadId}`);
+      } else {
+        console.log(`Skipping user lead email for Maya source ${lead.source}`);
+      }
     } catch (err) {
       console.error("User confirmation email failed:", err.message);
     }

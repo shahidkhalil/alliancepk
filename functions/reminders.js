@@ -1,6 +1,9 @@
 /**
  * Phase 1 appointment reminders: email at ~T-24h and ~T-1h.
  * Runs every 15 minutes via Cloud Scheduler.
+ *
+ * Dedup: claim reminder24hSent / reminder1hSent in a transaction BEFORE
+ * sending so overlapping scheduler runs cannot email the same patient twice.
  */
 
 const { onSchedule } = require("firebase-functions/v2/scheduler");
@@ -77,35 +80,83 @@ async function sendReminderEmail({ appt, clinic, window, gmailUser, gmailPass })
   return true;
 }
 
+/** Atomically claim this reminder slot. Returns false if already claimed. */
+async function claimReminder(docRef, flag) {
+  const db = admin.firestore();
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(docRef);
+    if (!snap.exists) return false;
+    const data = snap.data() || {};
+    if (data[flag] === true) return false;
+    if (data.status === "cancelled" || data.status === "completed") return false;
+    tx.update(docRef, {
+      [flag]: true,
+      [`${flag}At`]: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+}
+
+async function releaseReminderClaim(docRef, flag) {
+  try {
+    await docRef.update({
+      [flag]: false,
+      [`${flag}At`]: admin.firestore.FieldValue.delete(),
+    });
+  } catch (e) {
+    console.warn(`Failed to release ${flag} on ${docRef.id}:`, e.message);
+  }
+}
+
 async function processWindow(db, now, window, gmailUser, gmailPass) {
   const from = admin.firestore.Timestamp.fromDate(new Date(now.getTime() + window.minMs));
   const to = admin.firestore.Timestamp.fromDate(new Date(now.getTime() + window.maxMs));
 
-  const snap = await db
-    .collection("appointments")
-    .where("appointmentAt", ">=", from)
-    .where("appointmentAt", "<=", to)
-    .limit(100)
-    .get();
+  // Prefer unsent-only query (needs composite index). Fall back to time-range only.
+  let snap;
+  try {
+    snap = await db
+      .collection("appointments")
+      .where(window.flag, "==", false)
+      .where("appointmentAt", ">=", from)
+      .where("appointmentAt", "<=", to)
+      .limit(100)
+      .get();
+  } catch (e) {
+    console.warn(
+      `Reminder query with ${window.flag}==false failed (index?), falling back:`,
+      e.message
+    );
+    snap = await db
+      .collection("appointments")
+      .where("appointmentAt", ">=", from)
+      .where("appointmentAt", "<=", to)
+      .limit(100)
+      .get();
+  }
 
   let sent = 0;
   for (const doc of snap.docs) {
     const appt = { id: doc.id, ...doc.data() };
-    if (appt[window.flag]) continue;
+    if (appt[window.flag] === true) continue;
     if (appt.status === "cancelled" || appt.status === "completed") continue;
     if (!String(appt.email || "").trim()) continue;
 
-    const clinic = getClinic(appt.clinicId || "demo");
+    let claimed = false;
     try {
+      claimed = await claimReminder(doc.ref, window.flag);
+      if (!claimed) continue;
+
+      const clinic = getClinic(appt.clinicId || "demo");
       const ok = await sendReminderEmail({ appt, clinic, window, gmailUser, gmailPass });
-      if (!ok) continue;
-      await doc.ref.update({
-        [window.flag]: true,
-        [`${window.flag}At`]: admin.firestore.FieldValue.serverTimestamp(),
-      });
+      if (!ok) {
+        await releaseReminderClaim(doc.ref, window.flag);
+        continue;
+      }
       sent += 1;
     } catch (e) {
       console.warn(`Reminder ${window.flag} failed for ${doc.id}:`, e.message);
+      if (claimed) await releaseReminderClaim(doc.ref, window.flag);
     }
   }
   return sent;
@@ -119,6 +170,8 @@ exports.sendAppointmentReminders = onSchedule(
     secrets: [GMAIL_USER, GMAIL_APP_PASSWORD],
     timeoutSeconds: 120,
     memory: "256MiB",
+    // Prevent overlapping scheduler ticks from sending the same reminder twice.
+    maxInstances: 1,
   },
   async () => {
     const db = admin.firestore();

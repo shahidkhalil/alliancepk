@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2, Mail, MessageCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardCheck, Loader2, Phone } from "lucide-react";
 import PageWrapper from "@/components/PageWrapper";
 import ServicePageHero from "@/components/ServicePageHero";
 import { useForm } from "@/context/FormContext";
@@ -15,7 +15,9 @@ import {
   trackEmailClick,
   trackEvent,
   trackFormSubmit,
+  trackPhoneClick,
 } from "@/lib/analytics";
+import { SALES_EMAIL, SALES_TEL_HREF, formatUsPhoneDisplay } from "@/lib/siteContact";
 
 const clinicTypes = ["Dental Clinic", "Aesthetic Clinic", "Other Healthcare"];
 
@@ -35,7 +37,7 @@ function ContactQuickForm() {
   const startedRef = useRef(false);
   const sessionIdRef = useRef("");
 
-  const phoneOk = form.phone.replace(/\D/g, "").length >= 7;
+  const phoneOk = form.phone.replace(/\D/g, "").length >= 10;
   const canSubmit =
     form.name.trim().length >= 2 && phoneOk && !!form.clinicType && status !== "loading";
 
@@ -69,7 +71,7 @@ function ContactQuickForm() {
       });
     } catch (err) {
       console.error("Contact lead save failed:", err);
-      setErrorMsg("Something went wrong. Email Sales@alliancetechltd.com or try again.");
+      setErrorMsg(`Something went wrong. Email ${SALES_EMAIL} or try again.`);
       setStatus("error");
     }
   };
@@ -78,9 +80,9 @@ function ContactQuickForm() {
     return (
       <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6 text-center">
         <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-3" />
-        <p className="text-lg font-bold text-[#00283C] mb-1">Got it — we’ll reply soon</p>
+        <p className="text-lg font-bold text-[#00283C] mb-1">Got it — we&apos;ll call you soon</p>
         <p className="text-sm text-gray-500 mb-5">
-          Expect a WhatsApp or email within 2 hours (Mon–Sat). Meanwhile, run a free website audit.
+          Expect a phone call or email within 2 hours (Mon–Fri, US business hours). Meanwhile, run a free website audit.
         </p>
         <a
           href="/free-website-audit"
@@ -117,7 +119,7 @@ function ContactQuickForm() {
 
       <div>
         <label htmlFor="contact-phone" className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
-          WhatsApp / phone
+          Phone
         </label>
         <input
           id="contact-phone"
@@ -128,11 +130,15 @@ function ContactQuickForm() {
             markStarted();
             setForm((p) => ({ ...p, phone: e.target.value }));
           }}
-          placeholder="+1 713 …"
+          placeholder="(713) 555-0123"
           autoComplete="tel"
+          inputMode="tel"
           className="w-full px-3.5 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:border-[#0E7C6B] focus:ring-2 focus:ring-[#0E7C6B]/10"
           required
         />
+        {form.phone.trim() && !phoneOk && (
+          <p className="mt-1.5 text-[11px] text-amber-600">Enter a 10-digit US phone number</p>
+        )}
       </div>
 
       <div>
@@ -178,7 +184,7 @@ function ContactQuickForm() {
         )}
       </button>
       <p className="text-[11px] text-gray-400 text-center">
-        3 fields only · No spam · We reply on WhatsApp
+        3 fields only · No spam · We call or email you back
       </p>
     </form>
   );
@@ -193,30 +199,36 @@ export default function Contact() {
         badge="CONTACT US"
         headline="Let's Grow Your"
         highlight="Clinic Together"
-        subheadline="Leave your WhatsApp — or start with a free clinic audit. No long forms, no sales pressure."
+        subheadline="Call us, book a strategy call, or leave your number — no long forms, no sales pressure."
         ctaText="Get Your Free Clinic Audit"
         ctaHref="/free-website-audit"
       />
 
       <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-6">
-          {/* Instant actions — mobile-first for sales */}
+          {/* Instant actions — Call + Book first for US buyers */}
           <div className="grid sm:grid-cols-3 gap-3 mb-10">
-            <a
-              href="/free-website-audit"
-              data-analytics-label="start_website_audit"
-              data-analytics-location="contact_quick"
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#00283C] text-white font-bold text-sm py-3.5 hover:bg-[#003D5C] transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" /> Free Website Audit
-            </a>
-            <a
-              href="mailto:Sales@alliancetechltd.com?subject=Clinic%20inquiry"
-              onClick={() => trackEmailClick("contact_quick")}
-              className="flex items-center justify-center gap-2 rounded-xl border border-[#00283C]/15 text-[#00283C] font-bold text-sm py-3.5 hover:bg-[#F8FAFC] transition-colors"
-            >
-              <Mail className="w-4 h-4" /> Email Sales
-            </a>
+            {SALES_TEL_HREF ? (
+              <a
+                href={SALES_TEL_HREF}
+                onClick={() => trackPhoneClick("contact_quick")}
+                data-analytics-label="phone_click"
+                data-analytics-location="contact_quick"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#00283C] text-white font-bold text-sm py-3.5 hover:bg-[#003D5C] transition-colors"
+              >
+                <Phone className="w-4 h-4" /> Call {formatUsPhoneDisplay()}
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={openForm}
+                data-analytics-label="request_callback"
+                data-analytics-location="contact_quick"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[#00283C] text-white font-bold text-sm py-3.5 hover:bg-[#003D5C] transition-colors"
+              >
+                <Phone className="w-4 h-4" /> Request a Call
+              </button>
+            )}
             <button
               type="button"
               onClick={openForm}
@@ -226,13 +238,21 @@ export default function Contact() {
             >
               Book Strategy Call
             </button>
+            <a
+              href="/free-website-audit"
+              data-analytics-label="start_website_audit"
+              data-analytics-location="contact_quick"
+              className="flex items-center justify-center gap-2 rounded-xl border border-[#00283C]/15 text-[#00283C] font-bold text-sm py-3.5 hover:bg-[#F8FAFC] transition-colors"
+            >
+              <ClipboardCheck className="w-4 h-4" /> Free Website Audit
+            </a>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             <AnimatedSurface accent className="p-8 border border-gray-100" delay={0}>
               <h2 className="text-xl font-bold text-[#00283C] mb-2">Request a callback</h2>
               <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                Name, WhatsApp, clinic type — we&apos;ll reach out within 2 hours (Mon–Sat).
+                Name, phone, clinic type — we&apos;ll call you within 2 hours (Mon–Fri, US business hours).
               </p>
               <ContactQuickForm />
             </AnimatedSurface>
@@ -247,7 +267,7 @@ export default function Contact() {
                   {[
                     "Current Google ranking review",
                     "Ad spend & competitor signals",
-                    "WhatsApp & missed-call gaps",
+                    "Missed-call & after-hours gaps",
                     "Clear next steps for more bookings",
                   ].map((item) => (
                     <li key={item} className="flex items-center gap-3 text-sm text-gray-600">
@@ -271,11 +291,11 @@ export default function Contact() {
                 <p className="text-center text-xs text-gray-400">
                   Prefer email?{" "}
                   <a
-                    href="mailto:Sales@alliancetechltd.com"
+                    href={`mailto:${SALES_EMAIL}`}
                     onClick={() => trackEmailClick("contact_panel")}
                     className="text-[#0077A8] font-semibold hover:underline"
                   >
-                    Sales@alliancetechltd.com
+                    {SALES_EMAIL}
                   </a>
                 </p>
               </div>

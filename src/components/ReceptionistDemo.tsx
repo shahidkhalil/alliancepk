@@ -285,7 +285,7 @@ function BookingForm({
         <input value={draft.name} onChange={(e) => set("name", e.target.value)} placeholder="e.g. Jane Smith" className={field} />
       </div>
       <div>
-        <label className={label}>Phone / WhatsApp</label>
+        <label className={label}>Phone</label>
         <input value={draft.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(555) 123-4567" inputMode="tel" className={field} />
         {draft.phone.trim() && !phoneOk && (
           <p className="mt-1 text-[11px] text-amber-600">Enter a full 10-digit phone number</p>
