@@ -1,8 +1,12 @@
 /**
  * Build-time / Node-safe fetch of blogs via Firestore REST (public read).
  * Used by generateStaticParams, generateMetadata, and sitemap.
+ *
+ * Uses Node `https` (not Next's patched `fetch`) so static export is not
+ * blocked by no-store / Data Cache staleness.
  */
 
+import https from "https";
 import type { BlogPost, BlogSection } from "@/lib/blogTypes";
 
 const PROJECT = "alliancepak";
@@ -82,43 +86,69 @@ function docToPost(name: string, fields: Record<string, FsValue> | undefined): B
   };
 }
 
+function httpsGetJson(url: string): Promise<{ documents?: { name: string; fields?: Record<string, FsValue> }[] }> {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (res) => {
+        let raw = "";
+        res.on("data", (c) => (raw += c));
+        res.on("end", () => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(raw));
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error(`Firestore REST ${res.statusCode}: ${raw.slice(0, 200)}`));
+          }
+        });
+      })
+      .on("error", reject);
+  });
+}
+
 let cache: BlogPost[] | null = null;
+let inflight: Promise<BlogPost[]> | null = null;
 
 /** Fetch all blogs for build/SSR. Cached for the duration of one Node process. */
 export async function fetchBlogsForBuild(): Promise<BlogPost[]> {
   if (cache) return cache;
+  if (inflight) return inflight;
 
-  try {
-    const res = await fetch(LIST_URL, { cache: "force-cache" });
-    if (!res.ok) throw new Error(`Firestore REST ${res.status}`);
-    const json = (await res.json()) as {
-      documents?: { name: string; fields?: Record<string, FsValue> }[];
-    };
-    const bySlug = new Map<string, BlogPost>();
-    for (const d of json.documents || []) {
-      const id = d.name.split("/").pop() || "";
-      const p = docToPost(d.name, d.fields);
-      if (!p) continue;
-      if (!p.slug.includes("-") && p.slug.length < 8) continue;
-      const isAutoId = /^[A-Za-z0-9]{20}$/.test(id) && p.slug !== id;
-      const existing = bySlug.get(p.slug);
-      // Prefer slug-keyed docs over legacy auto-id duplicates
-      if (existing && isAutoId) continue;
-      if (!existing || !isAutoId) bySlug.set(p.slug, p);
+  inflight = (async () => {
+    try {
+      const json = await httpsGetJson(LIST_URL);
+      const bySlug = new Map<string, BlogPost>();
+      for (const d of json.documents || []) {
+        const id = d.name.split("/").pop() || "";
+        const p = docToPost(d.name, d.fields);
+        if (!p) continue;
+        if (!p.slug.includes("-") && p.slug.length < 8) continue;
+        const isAutoId = /^[A-Za-z0-9]{20}$/.test(id) && p.slug !== id;
+        const existing = bySlug.get(p.slug);
+        // Prefer slug-keyed docs over legacy auto-id duplicates
+        if (existing && isAutoId) continue;
+        if (!existing || !isAutoId) bySlug.set(p.slug, p);
+      }
+      const posts = [...bySlug.values()].sort((a, b) => {
+        const da = Date.parse(a.date) || 0;
+        const db = Date.parse(b.date) || 0;
+        return db - da;
+      });
+
+      console.log(`[blogs] build fetch: ${posts.length} posts`);
+      cache = posts;
+      return posts;
+    } catch (e) {
+      console.warn("fetchBlogsForBuild failed:", e instanceof Error ? e.message : e);
+      return cache || [];
+    } finally {
+      inflight = null;
     }
-    const posts = [...bySlug.values()].sort((a, b) => {
-      const da = Date.parse(a.date) || 0;
-      const db = Date.parse(b.date) || 0;
-      return db - da;
-    });
+  })();
 
-    console.log(`[blogs] build fetch: ${posts.length} posts`);
-    cache = posts;
-    return posts;
-  } catch (e) {
-    console.warn("fetchBlogsForBuild failed:", e instanceof Error ? e.message : e);
-    return cache || [];
-  }
+  return inflight;
 }
 
 export async function fetchBlogBySlugForBuild(slug: string): Promise<BlogPost | null> {

@@ -47,7 +47,7 @@
       },
       {
         "source": "/blog/**",
-        "destination": "/blog/viewer/index.html"
+        "destination": "/blog/viewer.html"
       }
     ],
     "headers": [
