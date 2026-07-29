@@ -44,12 +44,22 @@ async function setCache(key, value, ttlDays) {
 /**
  * Per-IP daily counter, namespaced per feature so chatting doesn't
  * consume the voice/audit quota. Returns true if within `limit`.
+ * Fail-open: if we can't measure (no DB / bad IP / tx error), allow the request
+ * so Maya doesn't look dead for US demo visitors.
  */
 async function checkRateLimit(ip, limit, scope = "global") {
-  if (!db) return false; // fail closed — no cache backend
-  if (!ip || typeof ip !== "string" || ip.length < 3 || ip.length > 64) return false;
+  if (!db) {
+    console.warn("rate limit skipped: cache backend not ready", scope);
+    return true;
+  }
+  const keyIp =
+    ip && typeof ip === "string" && ip.length >= 3 && ip.length <= 64
+      ? ip
+      : "unknown";
   const day = new Date().toISOString().slice(0, 10);
-  const ref = db.collection("cache").doc(keyToId(`rate:${scope}:${ip}:${day}`));
+  const ref = db.collection("cache").doc(keyToId(`rate:${scope}:${keyIp}:${day}`));
+  // Unknown IP shares a tighter bucket so fail-open isn't a free unlimited path.
+  const effectiveLimit = keyIp === "unknown" ? Math.min(limit, 30) : limit;
   try {
     const n = await db.runTransaction(async (tx) => {
       const snap = await tx.get(ref);
@@ -57,10 +67,10 @@ async function checkRateLimit(ip, limit, scope = "global") {
       tx.set(ref, { count, expiresAt: new Date(Date.now() + 2 * 86400000) });
       return count;
     });
-    return n <= limit;
+    return n <= effectiveLimit;
   } catch (e) {
-    console.warn("rate limit check failed:", e.message);
-    return false; // fail closed
+    console.warn("rate limit check failed (allowing):", e.message);
+    return true;
   }
 }
 

@@ -73,7 +73,8 @@ export default function TermsOfService() {
                 Questions about these terms can be sent to{" "}
                 <a href="mailto:Sales@alliancetechltd.com" className="text-[#0077A8] font-semibold hover:underline">
                   Sales@alliancetechltd.com
-                </a>.
+                </a>
+                , or write to us at 67 Lona Ln, Rensselaer, NY 12144, United States.
               </p>
             </div>
           </div>

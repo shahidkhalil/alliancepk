@@ -40,10 +40,10 @@ export default function ServicePageHero({
         backgroundSize: "60px 60px",
       }} />
       {/* Teal glow top-right */}
-      <div className="absolute top-0 right-0 w-[500px] h-[350px] rounded-full pointer-events-none opacity-[0.07]"
+      <div className="absolute top-0 right-0 w-[min(500px,120%)] h-[350px] rounded-full pointer-events-none opacity-[0.07]"
         style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", filter: "blur(80px)" }} />
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 w-full min-w-0">
         <div>
           <span className="badge-light mb-4 sm:mb-5 max-w-full text-[10px] sm:text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8] animate-pulse flex-shrink-0" />

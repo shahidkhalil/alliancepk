@@ -15,9 +15,9 @@ const MobileStickySalesBar = dynamic(() => import("./MobileStickySalesBar"), { s
 function PageContent({ children }: { children: ReactNode }) {
   const { isOpen, closeForm } = useForm();
   return (
-    <div className="relative min-h-screen bg-white overflow-x-clip max-w-[100vw]">
+    <div className="relative min-h-screen w-full max-w-full bg-white overflow-x-clip">
       <Navigation />
-      <main className="relative overflow-x-clip max-w-[100vw]">{children}</main>
+      <main className="relative w-full max-w-full overflow-x-clip">{children}</main>
       <Footer />
       <MobileStickySalesBar />
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}

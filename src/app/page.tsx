@@ -14,7 +14,7 @@ const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySale
 function HomeContent() {
   const { isOpen, closeForm } = useForm();
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-white">
+    <main className="relative min-h-screen w-full max-w-full overflow-x-clip bg-white">
       {/* Only download form/Firebase when the user opens the audit modal */}
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}
       <AuditChatWidget />

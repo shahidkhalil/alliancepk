@@ -70,7 +70,7 @@ export default function AuditChatWidget() {
     <>
       {everOpened && (
         <div
-          className={`fixed bottom-24 right-4 sm:right-6 z-[60] w-[calc(100vw-2rem)] max-w-[400px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white flex flex-col transition-all duration-200 ${
+          className={`fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 z-[60] sm:w-full sm:max-w-[400px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white flex flex-col transition-all duration-200 ${
             open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none invisible"
           }`}
           style={{ height: "min(600px, calc(100vh - 140px))" }}

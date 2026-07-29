@@ -1,3 +1,5 @@
+import { BUSINESS_ADDRESS, SALES_EMAIL } from "@/lib/siteContact";
+
 const BASE_URL = "https://alliancetechltd.com";
 
 export function JsonLd({ data }: { data: Record<string, unknown> | Record<string, unknown>[] }) {
@@ -21,12 +23,14 @@ export function OrganizationSchema() {
             name: "Alliance Tech",
             url: BASE_URL,
             logo: `${BASE_URL}/logo-horizontal.png`,
-            email: "Sales@alliancetechltd.com",
+            email: SALES_EMAIL,
             address: {
               "@type": "PostalAddress",
-              addressLocality: "Houston",
-              addressRegion: "TX",
-              addressCountry: "US",
+              streetAddress: BUSINESS_ADDRESS.street,
+              addressLocality: BUSINESS_ADDRESS.city,
+              addressRegion: BUSINESS_ADDRESS.region,
+              postalCode: BUSINESS_ADDRESS.postalCode,
+              addressCountry: BUSINESS_ADDRESS.countryCode,
             },
             sameAs: [
               "https://www.instagram.com/alliancetechofficial",

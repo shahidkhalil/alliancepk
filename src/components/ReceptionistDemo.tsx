@@ -1,12 +1,11 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, CalendarCheck2, Phone, Clock, Sparkles, Mic, Square, Trash2, Volume2, VolumeX, AlertTriangle } from "lucide-react";
+import { Send, Loader2, CalendarCheck2, Phone, Clock, Sparkles, Mic, Square, Trash2, Volume2, VolumeX, AlertTriangle, ChevronRight } from "lucide-react";
 import { LiveCallLauncher } from "./LiveCall";
 import {
   BookingDraft,
   EMPTY_DRAFT,
-  BOOKING_DAYS,
   BOOKING_TIMES,
   extractBookingDraft,
   hasBookingIntent,
@@ -21,6 +20,11 @@ import { receptionistUrl } from "@/lib/receptionistEndpoints";
 import { buildClientTriage, type TriageInfo } from "@/lib/emergencyTriage";
 const MAX_RECORD_SECONDS = 30;
 
+interface QuickReply {
+  label: string;
+  value: string;
+}
+
 interface ChatMsg {
   id: string;
   role: "user" | "assistant";
@@ -28,12 +32,17 @@ interface ChatMsg {
   audio?: string;
   voiceNote?: boolean;
   showServices?: boolean;
+  /** Inline day/time picker for chat booking */
+  showSchedule?: boolean;
   serviceDetail?: string;
   /** Offer form vs chat booking paths */
   bookingChoice?: { service: string; resolved?: boolean };
   form?: { service: string; done?: boolean };
   triage?: TriageInfo;
   booking?: Booking;
+  quickReplies?: QuickReply[];
+  /** User already acted on this message's interactive UI */
+  interactiveConsumed?: boolean;
 }
 
 let msgSeq = 0;
@@ -107,27 +116,320 @@ function MayaAvatar({ size = "w-8 h-8" }: { size?: string }) {
   );
 }
 
-function ServicesCatalog({ onPick, onBook }: { onPick: (s: string) => void; onBook: (s: string) => void }) {
+function ServicesCatalog({
+  onPick,
+  onBook,
+}: {
+  onPick: (s: string) => void;
+  onBook: (s: string) => void;
+}) {
   return (
-    <div className="mt-2.5 w-full max-h-[200px] sm:max-h-[220px] overflow-y-auto rounded-2xl border border-[#0E7C6B]/15 bg-white shadow-sm divide-y divide-gray-100">
-      {SERVICES.map((s) => {
-        const info = SERVICE_INFO[s];
-        return (
-          <div key={s} className="flex items-start gap-2.5 px-3 py-3 sm:px-3.5 hover:bg-[#F7FBFA] transition-colors">
-            <span className="text-lg flex-shrink-0 mt-0.5">{info?.icon || "🦷"}</span>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-xs font-bold text-[#00332C] leading-tight">{s}</p>
-              <p className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-2">{info?.desc}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <button type="button" onClick={() => onPick(s)} className="text-[10px] font-semibold text-[#0E7C6B] hover:underline">Learn more</button>
-                <button type="button" onClick={() => onBook(s)} className="text-[10px] font-bold text-white bg-[#0E7C6B] px-2.5 py-1 rounded-full hover:bg-[#0B5D50] transition-colors">Book</button>
+    <div className="mt-2.5 w-full rounded-2xl border border-[#0E7C6B]/15 bg-white shadow-sm overflow-hidden">
+      <div className="px-3.5 py-2.5 bg-[#F4F8F7] border-b border-[#0E7C6B]/10 text-left">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#0E7C6B]">Our services</p>
+        <p className="text-[11px] text-gray-500 mt-0.5">Tap a row for details · Book to reserve</p>
+      </div>
+      <div className="max-h-[280px] sm:max-h-[320px] overflow-y-auto overscroll-contain divide-y divide-gray-100">
+        {SERVICES.map((s) => {
+          const info = SERVICE_INFO[s];
+          return (
+            <div
+              key={s}
+              className="flex items-stretch gap-0 min-h-[52px] hover:bg-[#F7FBFA] transition-colors"
+            >
+              <button
+                type="button"
+                onClick={() => onPick(s)}
+                className="flex-1 flex items-start gap-3 px-3.5 py-3.5 text-left min-w-0"
+              >
+                <span className="text-xl flex-shrink-0 leading-none mt-0.5" aria-hidden>
+                  {info?.icon || "🦷"}
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[13px] sm:text-sm font-bold text-[#00332C] leading-snug">{s}</span>
+                  <span className="block text-[11px] sm:text-xs text-gray-500 mt-1 leading-snug">{info?.desc}</span>
+                  <span className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#0E7C6B]">
+                    Learn more <ChevronRight className="w-3 h-3" />
+                  </span>
+                </span>
+              </button>
+              <div className="flex items-center pr-3 pl-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onBook(s)}
+                  className="text-[11px] sm:text-xs font-bold text-white bg-gradient-to-r from-[#0E7C6B] to-[#14A08A] px-3 py-2 rounded-full hover:shadow-md transition-all whitespace-nowrap"
+                >
+                  Book
+                </button>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
+}
+
+const WEEKDAY_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+
+function startOfLocalDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function addLocalDays(d: Date, n: number) {
+  const next = new Date(d);
+  next.setDate(next.getDate() + n);
+  return startOfLocalDay(next);
+}
+
+function sameLocalDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/** Map a calendar date to BOOKING_DAYS labels the backend already understands. */
+function dateToBookingDay(d: Date): string {
+  const today = startOfLocalDay(new Date());
+  if (sameLocalDay(d, today)) return "Today";
+  if (sameLocalDay(d, addLocalDays(today, 1))) return "Tomorrow";
+  return WEEKDAY_LONG[d.getDay()];
+}
+
+function isClinicOpenDay(d: Date) {
+  // Demo clinic: Mon–Sat open, Sunday closed
+  return d.getDay() !== 0;
+}
+
+function buildScheduleDays(count = 14): Date[] {
+  const today = startOfLocalDay(new Date());
+  const days: Date[] = [];
+  for (let i = 0; i < count; i++) days.push(addLocalDays(today, i));
+  return days;
+}
+
+function bookingDayToDate(dayLabel: string, window: Date[]): Date | null {
+  if (!dayLabel) return null;
+  const match = window.find((d) => dateToBookingDay(d) === dayLabel);
+  return match || null;
+}
+
+function SlotCalendar({
+  onPickSlot,
+  selectedDay = "",
+  selectedTime = "",
+  embedded = false,
+}: {
+  onPickSlot: (dayLabel: string, time: string) => void;
+  selectedDay?: string;
+  selectedTime?: string;
+  embedded?: boolean;
+}) {
+  const days = buildScheduleDays(14);
+  const [selected, setSelected] = useState<Date | null>(() => bookingDayToDate(selectedDay, days));
+
+  useEffect(() => {
+    const fromDraft = bookingDayToDate(selectedDay, days);
+    if (fromDraft) setSelected(fromDraft);
+    // days is rebuilt each render but represents the same session window
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDay]);
+
+  const monthLabel = selected
+    ? selected.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : days[0].toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+  return (
+    <div
+      className={`w-full overflow-hidden text-left ${
+        embedded
+          ? "rounded-xl border border-gray-200 bg-[#FAFCFB]"
+          : "mt-2.5 rounded-2xl border border-[#0E7C6B]/15 bg-white shadow-sm"
+      }`}
+    >
+      <div className={`px-3.5 py-2.5 border-b ${embedded ? "bg-white border-gray-100" : "bg-[#F4F8F7] border-[#0E7C6B]/10"}`}>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#0E7C6B] flex items-center gap-1.5">
+          <CalendarCheck2 className="w-3.5 h-3.5" /> Pick a day &amp; time
+        </p>
+        <p className="text-[11px] text-gray-500 mt-0.5">
+          {monthLabel} · Mon–Sat · demo availability
+          {selectedDay && selectedTime ? ` · ${selectedDay} at ${selectedTime}` : ""}
+        </p>
+      </div>
+
+      <div className="p-3 space-y-3">
+        <div className="grid grid-cols-7 gap-1">
+          {["S", "M", "T", "W", "T", "F", "S"].map((h, i) => (
+            <div key={`${h}-${i}`} className="text-center text-[9px] font-bold text-gray-400 py-0.5">
+              {h}
+            </div>
+          ))}
+          {Array.from({ length: days[0].getDay() }).map((_, i) => (
+            <div key={`pad-${i}`} />
+          ))}
+          {days.map((d) => {
+            const open = isClinicOpenDay(d);
+            const isSel = selected && sameLocalDay(d, selected);
+            const isToday = sameLocalDay(d, startOfLocalDay(new Date()));
+            return (
+              <button
+                key={d.toISOString()}
+                type="button"
+                disabled={!open}
+                onClick={() => setSelected(d)}
+                className={`aspect-square rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
+                  !open
+                    ? "text-gray-300 cursor-not-allowed"
+                    : isSel
+                      ? "bg-[#0E7C6B] text-white shadow-sm"
+                      : isToday
+                        ? "bg-[#0E7C6B]/10 text-[#0E7C6B] border border-[#0E7C6B]/30 hover:bg-[#0E7C6B]/15"
+                        : "text-[#00332C] hover:bg-[#F4F8F7] border border-transparent"
+                }`}
+                aria-label={d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}
+              >
+                {d.getDate()}
+              </button>
+            );
+          })}
+        </div>
+
+        {selected && (
+          <div>
+            <p className="text-[11px] font-semibold text-gray-600 mb-2">
+              Available times · {dateToBookingDay(selected)}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {BOOKING_TIMES.map((t) => {
+                const active = selectedTime === t && selectedDay === dateToBookingDay(selected);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => onPickSlot(dateToBookingDay(selected), t)}
+                    className={`px-3 py-2 rounded-full text-[11px] sm:text-xs font-bold border transition-colors ${
+                      active
+                        ? "bg-[#0E7C6B] text-white border-[#0E7C6B]"
+                        : "text-[#0E7C6B] bg-[#F4F8F7] border-[#0E7C6B]/20 hover:bg-[#0E7C6B] hover:text-white hover:border-[#0E7C6B]"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!selected && (
+          <p className="text-[11px] text-gray-400 text-center py-1">Select an available day to see times</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function QuickReplyChips({
+  replies,
+  onPick,
+}: {
+  replies: QuickReply[];
+  onPick: (value: string) => void;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5 w-full">
+      {replies.map((r) => (
+        <button
+          key={r.value}
+          type="button"
+          onClick={() => onPick(r.value)}
+          className="text-left text-[12px] sm:text-xs px-3.5 py-2 rounded-full border bg-white text-[#00332C] border-[#0E7C6B]/25 hover:border-[#0E7C6B] hover:text-[#0E7C6B] shadow-sm transition-all"
+        >
+          {r.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Decide interactive UI for an assistant turn during chat booking / services ask. */
+function inferInteractiveExtras(
+  draft: BookingDraft,
+  replyText: string,
+  opts: { servicesAsked: boolean; chatBooking: boolean; bookingDone: boolean; formOpen: boolean }
+): Partial<Pick<ChatMsg, "showServices" | "showSchedule" | "quickReplies" | "content">> {
+  if (opts.bookingDone || opts.formOpen) return {};
+
+  if (opts.servicesAsked) {
+    return {
+      showServices: true,
+      content:
+        replyText && !/^(hi|hello|hey)\b/i.test(replyText)
+          ? replyText
+          : "We offer a full range of dental care — tap a service to learn more or book.",
+    };
+  }
+
+  const askingService = /\b(which|what)\s+(service|treatment)\b|\bservice\s+(would|do)\s+you\b|\bchoose\s+a\s+service\b/i.test(
+    replyText
+  );
+  const askingEmail = /\bemail\b/i.test(replyText) && /\b(skip|optional|prefer|want to (add|share|leave))\b/i.test(replyText);
+  const askingSchedule =
+    /\b(day|date|time|when|schedule|available|prefer(red)?\s+(day|time))\b/i.test(replyText) ||
+    /\b(morning|afternoon|evening)\b/i.test(replyText);
+  const askingConfirm = /\b(shall i book|ready to book|confirm( the)? booking|book that|go ahead and book)\b/i.test(
+    replyText
+  );
+
+  const inBooking =
+    opts.chatBooking ||
+    Boolean(draft.service || draft.name || draft.phone) ||
+    askingService ||
+    askingSchedule ||
+    askingEmail ||
+    askingConfirm;
+
+  if (!inBooking) return {};
+
+  if (!draft.service && (askingService || opts.chatBooking)) {
+    return {
+      showServices: true,
+      content: replyText || "Which service would you like to book? Tap one below.",
+    };
+  }
+
+  if (draft.service && draft.name && draft.phone.replace(/\D/g, "").length >= 10) {
+    if (askingEmail) {
+      return {
+        quickReplies: [{ label: "Skip email", value: "Please skip email — I don't want to provide one." }],
+      };
+    }
+    if (!draft.day || !draft.time) {
+      return {
+        showSchedule: true,
+        content: replyText || "Pick an available day and time below.",
+      };
+    }
+    if (askingConfirm) {
+      return {
+        quickReplies: [
+          {
+            label: "Yes, book it",
+            value: `Yes, please book ${draft.service} for ${draft.name} on ${draft.day} at ${draft.time}. Phone: ${draft.phone}.${draft.email ? ` Email: ${draft.email}.` : ""}`,
+          },
+          { label: "Change details", value: "I'd like to change some booking details before we confirm." },
+        ],
+      };
+    }
+  }
+
+  // Schedule asked before all contact fields — still show calendar if Maya is clearly asking for day/time
+  if ((!draft.day || !draft.time) && askingSchedule) {
+    return {
+      showSchedule: true,
+      content: replyText || "Pick an available day and time below.",
+    };
+  }
+
+  return {};
 }
 
 function ServiceDetailCard({ name, onBook }: { name: string; onBook: () => void }) {
@@ -302,21 +604,14 @@ function BookingForm({
           {SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        <div>
-          <label className={label}>Day</label>
-          <select value={draft.day} onChange={(e) => set("day", e.target.value)} className={field}>
-            <option value="" disabled>Choose</option>
-            {BOOKING_DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className={label}>Time</label>
-          <select value={draft.time} onChange={(e) => set("time", e.target.value)} className={field}>
-            <option value="" disabled>Choose</option>
-            {BOOKING_TIMES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
+      <div>
+        <label className={label}>Day &amp; time</label>
+        <SlotCalendar
+          embedded
+          selectedDay={draft.day}
+          selectedTime={draft.time}
+          onPickSlot={(day, time) => onChange({ ...draft, day, time })}
+        />
       </div>
       <button
         type="button"
@@ -375,8 +670,21 @@ export default function ReceptionistDemo() {
   const messagesSentRef = useRef(0);
   const voiceUsedRef = useRef(false);
   const deepLinkHandledRef = useRef(false);
+  const chatBookingRef = useRef(false);
   const sendRef = useRef<(text: string, opts?: { voice?: boolean; forceBooking?: boolean; continueChatBooking?: boolean }) => void>(() => {});
   draftRef.current = draft;
+
+  const consumeInteractive = useCallback(() => {
+    setMessages((prev) => {
+      const next = prev.map((m) =>
+        m.role === "assistant" && (m.showServices || m.showSchedule || m.quickReplies?.length)
+          ? { ...m, interactiveConsumed: true }
+          : m
+      );
+      messagesRef.current = next;
+      return next;
+    });
+  }, []);
 
   const markDemoStarted = (voiceUsed = false) => {
     if (voiceUsed) voiceUsedRef.current = true;
@@ -520,6 +828,7 @@ export default function ReceptionistDemo() {
   };
 
   const chooseChatPath = () => {
+    chatBookingRef.current = true;
     const pending = [...messagesRef.current].reverse().find((m) => m.bookingChoice && !m.bookingChoice.resolved);
     const service = pending?.bookingChoice?.service || "";
     setMessages((prev) => {
@@ -542,6 +851,7 @@ export default function ReceptionistDemo() {
   };
 
   const switchFormToChat = () => {
+    chatBookingRef.current = true;
     setMessages((prev) => {
       const next = prev.map((m) => (m.form && !m.form.done ? { ...m, form: { ...m.form, done: true } } : m));
       messagesRef.current = next;
@@ -631,22 +941,42 @@ export default function ReceptionistDemo() {
       }
     }
 
+    const extracted = extractBookingDraft(
+      updated.map((m) => ({ role: m.role, content: m.content })),
+      SERVICES
+    );
+    const mergedDraft = mergeDraft(mergeDraft(draftRef.current, extracted), data.bookingDraft || {});
+    setDraft(mergedDraft);
+    draftRef.current = mergedDraft;
+
+    if (data.booking) chatBookingRef.current = false;
+    else if (hasBookingIntent(userText) || mergedDraft.service || mergedDraft.name || mergedDraft.phone) {
+      chatBookingRef.current = true;
+    }
+
+    const alreadyHasForm = hasOpenForm(updated);
+    const shouldOpenForm =
+      !alreadyHasForm &&
+      !data.booking &&
+      (Boolean(data.showBookingForm) ||
+        Boolean(triagePayload?.urgent) ||
+        /\b(fill (in|out|the) form|tap confirm|booking form)\b/i.test(replyText));
+
+    const interactive = inferInteractiveExtras(mergedDraft, replyText, {
+      servicesAsked: isServicesQuery(userText) && !data.booking,
+      chatBooking: chatBookingRef.current && !shouldOpenForm,
+      bookingDone: Boolean(data.booking),
+      formOpen: alreadyHasForm || shouldOpenForm,
+    });
+
     updated.push({
       id: newMsgId(),
       role: "assistant",
-      content: replyText || "Sorry, could you say that again?",
+      content: interactive.content || replyText || "Sorry, could you say that again?",
       audio: data.audio || undefined,
-      // Same interactive catalog as the Services chip (incl. voice / edge phrases)
-      ...(isServicesQuery(userText) && !data.booking
-        ? {
-            showServices: true,
-            content:
-              replyText && !/^(hi|hello|hey)\b/i.test(replyText)
-                ? replyText
-                : "We offer a full range of dental care — tap a service to learn more or book.",
-          }
-        : {}),
-      // Attach triage / booking to this reply only — stay in chat flow, not stuck at bottom
+      ...(interactive.showServices ? { showServices: true } : {}),
+      ...(interactive.showSchedule ? { showSchedule: true } : {}),
+      ...(interactive.quickReplies ? { quickReplies: interactive.quickReplies } : {}),
       ...(triagePayload?.urgent ? { triage: triagePayload } : {}),
       ...(data.booking
         ? {
@@ -657,14 +987,6 @@ export default function ReceptionistDemo() {
           }
         : {}),
     });
-
-    const alreadyHasForm = hasOpenForm(updated);
-    const shouldOpenForm =
-      !alreadyHasForm &&
-      !data.booking &&
-      (Boolean(data.showBookingForm) ||
-        Boolean(triagePayload?.urgent) ||
-        /\b(fill (in|out|the) form|tap confirm|booking form)\b/i.test(replyText));
 
     if (shouldOpenForm) {
       const seed: Partial<BookingDraft> = { ...(data.bookingDraft || {}) };
@@ -678,15 +1000,15 @@ export default function ReceptionistDemo() {
         {
           ...updated[updated.length - 1],
           form: { service: seed.service || "" },
+          showServices: undefined,
+          showSchedule: undefined,
+          quickReplies: undefined,
         },
       ];
     }
 
     setMessages(updated);
-
-    if (hasOpenForm(updated) || shouldOpenForm) {
-      applyDraftFromMessages(updated, data.bookingDraft);
-    }
+    messagesRef.current = updated;
 
     if (triagePayload?.urgent && !triageTrackedRef.current) {
       triageTrackedRef.current = true;
@@ -723,7 +1045,10 @@ export default function ReceptionistDemo() {
     messagesSentRef.current += 1;
     setInput("");
     setShowSuggestions(false);
+    consumeInteractive();
     focusComposer();
+
+    if (opts?.continueChatBooking) chatBookingRef.current = true;
 
     if (isServicesQuery(v)) {
       showServicesMenu(v);
@@ -912,8 +1237,8 @@ export default function ReceptionistDemo() {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto px-0 sm:px-4">
-      <div className="rounded-none sm:rounded-3xl border-y sm:border border-gray-200/80 shadow-none sm:shadow-xl sm:shadow-gray-200/50 overflow-hidden bg-white">
+    <div className="w-full max-w-xl mx-auto px-3 sm:px-4 overflow-x-clip">
+      <div className="rounded-2xl sm:rounded-3xl border border-gray-200/80 shadow-sm sm:shadow-xl sm:shadow-gray-200/50 overflow-hidden bg-white max-w-full">
 
         {/* Header */}
         <div className="px-3 sm:px-5 py-2.5 sm:py-4" style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}>
@@ -956,19 +1281,29 @@ export default function ReceptionistDemo() {
               const showAvatar =
                 isBot &&
                 !(m.form && !m.form.done) &&
-                (m.content || m.showServices || m.serviceDetail || m.triage || m.booking || (m.bookingChoice && !m.bookingChoice.resolved));
+                (m.content ||
+                  m.showServices ||
+                  m.showSchedule ||
+                  m.serviceDetail ||
+                  m.triage ||
+                  m.booking ||
+                  (m.quickReplies && m.quickReplies.length > 0) ||
+                  (m.bookingChoice && !m.bookingChoice.resolved));
+              const interactiveLive = isBot && !m.interactiveConsumed && !busy;
               return (
                 <motion.div
                   key={m.id}
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
-                  className={`flex gap-2 ${isBot ? "justify-start" : "justify-end"}`}
+                  className={`flex gap-2 w-full min-w-0 ${isBot ? "justify-start" : "justify-end"}`}
                 >
                   {showAvatar ? <MayaAvatar size="w-7 h-7 sm:w-8 sm:h-8" /> : null}
                   <div
-                    className={`flex flex-col ${isBot ? "items-start" : "items-end"} min-w-0 ${
-                      m.form && !m.form.done ? "w-full max-w-full" : "max-w-[88%] sm:max-w-[85%] w-full sm:w-auto"
+                    className={`flex flex-col min-w-0 ${isBot ? "items-start" : "items-end"} ${
+                      (m.form && !m.form.done) || (m.showServices && !m.interactiveConsumed) || (m.showSchedule && !m.interactiveConsumed)
+                        ? "flex-1 w-full max-w-full"
+                        : "max-w-[min(100%,20.5rem)] sm:max-w-[85%]"
                     }`}
                   >
                     {m.content && (
@@ -1063,10 +1398,38 @@ export default function ReceptionistDemo() {
                         </div>
                       </div>
                     )}
-                    {m.showServices && (
+                    {m.showServices && interactiveLive && (
                       <ServicesCatalog
-                        onPick={(s) => showServiceDetail(`Tell me about ${s}`, s)}
-                        onBook={(s) => openFormFor(s)}
+                        onPick={(s) => {
+                          consumeInteractive();
+                          showServiceDetail(`Tell me about ${s}`, s);
+                        }}
+                        onBook={(s) => {
+                          consumeInteractive();
+                          if (chatBookingRef.current) {
+                            send(`I'd like to book ${s}`, { continueChatBooking: true });
+                          } else {
+                            openFormFor(s);
+                          }
+                        }}
+                      />
+                    )}
+                    {m.showSchedule && interactiveLive && (
+                      <SlotCalendar
+                        onPickSlot={(day, time) => {
+                          consumeInteractive();
+                          setDraft((d) => mergeDraft(d, { day, time }));
+                          send(`${day} at ${time}`, { continueChatBooking: true });
+                        }}
+                      />
+                    )}
+                    {m.quickReplies && m.quickReplies.length > 0 && interactiveLive && (
+                      <QuickReplyChips
+                        replies={m.quickReplies}
+                        onPick={(value) => {
+                          consumeInteractive();
+                          send(value, { continueChatBooking: true });
+                        }}
                       />
                     )}
                     {m.serviceDetail && (

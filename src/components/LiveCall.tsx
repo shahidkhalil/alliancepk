@@ -74,8 +74,10 @@ const EMPTY_FLAGS: ConfirmationFlags = {
   scheduleConfirmed: false,
 };
 
-const STT_WAIT_MS = 600;
-const STT_MAX_WAIT_MS = 2000;
+const STT_WAIT_MS = 400;
+const STT_MAX_WAIT_MS = 2800;
+const STT_PHONE_MAX_WAIT_MS = 5500;
+const STT_PHONE_STABLE_MS = 1000;
 
 function digitsOnly(text: string) {
   return (text.match(/\d/g) || []).join("");
@@ -130,14 +132,29 @@ function isNameLike(text: string): boolean {
 
 /** Pick the best user transcript for the field, scoped to utterances since recall was requested. */
 function pickTranscript(field: string, recent: string[], sinceIndex = 0): RecallSnapshot {
-  const list = recent.slice(sinceIndex).filter(Boolean);
+  const list = recent.slice(Math.max(0, sinceIndex)).filter(Boolean);
   const reversed = [...list].reverse();
   let text = reversed[0] || "";
 
   if (field === "phone") {
-    const withDigits = reversed.find((t) => digitsOnly(t).length >= 7);
-    if (withDigits) text = withDigits;
-  } else if (field === "email") {
+    // Accumulate digits across ALL utterances in the window (people speak numbers in chunks).
+    let allDigits = digitsOnly(list.join(" "));
+    if (allDigits.length >= 11 && allDigits.startsWith("1")) allDigits = allDigits.slice(1);
+    allDigits = allDigits.slice(0, 15);
+    const bestLine =
+      reversed.find((t) => digitsOnly(t).length >= 10) ||
+      reversed.find((t) => digitsOnly(t).length >= 7) ||
+      text;
+    const trimmed = (bestLine || "").trim();
+    return {
+      text: allDigits.length >= 10 ? formatPhoneDigits(allDigits) : trimmed || allDigits,
+      digits: allDigits,
+      spoken_digits: allDigits ? allDigits.split("").join(" ") : "",
+      spelled_email: "",
+    };
+  }
+
+  if (field === "email") {
     const withEmail = reversed.find((t) => /@|\bat\b|\bdot\b/i.test(t));
     if (withEmail) text = withEmail;
   } else if (field === "name") {
@@ -158,19 +175,33 @@ function pickTranscript(field: string, recent: string[], sinceIndex = 0): Recall
 }
 
 function isRecallReady(field: string, picked: RecallSnapshot): boolean {
-  if (!picked.text) return false;
   if (field === "phone") return picked.digits.length >= 10;
-  if (field === "email") return /@|\bat\b|\bdot\b/i.test(picked.text) || picked.text.length > 5;
+  if (!picked.text) return false;
+  if (field === "email") return picked.text.includes("@") || /@|\bat\b.*\bdot\b/i.test(picked.text);
   if (field === "name") return picked.text.length >= 2 && isNameLike(picked.text);
   return picked.text.length > 0;
 }
 
 function recallInstruction(field: string, picked: RecallSnapshot, ready: boolean): string {
   if (!ready) {
-    return "Transcript unclear — ask them to type it in the form on screen. Do NOT ask them to speak it again.";
+    if (field === "phone") {
+      return `Phone incomplete (${picked.digits.length} digits). Ask them to say the FULL 10-digit US number slowly, or type it on screen. Do NOT move to email yet. Do NOT call confirm_field(phone).`;
+    }
+    if (field === "email") {
+      return "Email unclear. Ask them to spell it with 'at' and 'dot', or type it / say skip. Do NOT call confirm_field(email) until clear or skipped.";
+    }
+    return "Transcript unclear — ask them to type it on screen, or repeat once. Do NOT skip ahead.";
   }
-  // Form already has this value — never do a verbal read-back/confirm
-  return `Field captured on screen as "${field === "phone" ? formatPhoneDigits(picked.digits) : picked.text}". It is LOCKED. Do NOT read it back. Do NOT ask "is that right?". Immediately do the next_step only.`;
+  if (field === "phone") {
+    return `Read back ONLY this number in groups using grouped_spoken_digits, then ask "is that right?". After they say yes, call confirm_field(phone). Do NOT ask for email until phone is confirmed.`;
+  }
+  if (field === "email") {
+    return `Spell back letter-by-letter using spelled_email ("${picked.spelled_email}"), ask "is that right?". After yes call confirm_field(email). If they decline email, call confirm_field(email) with email_skipped true.`;
+  }
+  if (field === "name") {
+    return `Say their name once ("${picked.text}") and ask "is that right?". After yes call confirm_field(name).`;
+  }
+  return "Continue with next_step.";
 }
 
 function isFieldLocked(field: string, flags: ConfirmationFlags): boolean {
@@ -181,14 +212,16 @@ function isFieldLocked(field: string, flags: ConfirmationFlags): boolean {
 }
 
 function nextStepHint(flags: ConfirmationFlags): string {
-  if (!flags.nameConfirmed) return "Collect full name only.";
-  if (!flags.phoneConfirmed) return "Collect phone number only — one read-back, then confirm_field(phone).";
-  if (flags.emailConfirmed !== "skipped" && flags.emailConfirmed !== true) {
-    return "Ask for email (optional) or skip it. Do NOT ask for name or phone again.";
+  if (!flags.nameConfirmed) return "Collect full name only — recall_last_spoken_text(name), read back, confirm_field(name).";
+  if (!flags.phoneConfirmed) {
+    return "Collect FULL 10-digit phone only. Wait until they finish speaking. recall_last_spoken_text(phone), read back in digit groups, confirm_field(phone). Do NOT ask email yet.";
   }
-  if (!flags.serviceConfirmed) return "Confirm service. Do NOT ask for name or phone again.";
-  if (!flags.scheduleConfirmed) return "Collect preferred day and time. Do NOT ask for name or phone again.";
-  return "Give one summary, ask 'Shall I book that?', then call book_appointment. Do NOT re-collect name or phone.";
+  if (flags.emailConfirmed !== "skipped" && flags.emailConfirmed !== true) {
+    return "Ask once for email (optional). If they give it: recall + spell-back + confirm_field(email). If they decline: confirm_field(email) with email_skipped true. Then continue.";
+  }
+  if (!flags.serviceConfirmed) return "Confirm service with confirm_field(service). Do NOT re-ask name or phone.";
+  if (!flags.scheduleConfirmed) return "Collect day and time, then confirm_field(schedule).";
+  return "One short summary, ask 'Shall I book that?', then book_appointment.";
 }
 
 function sessionStatus(flags: ConfirmationFlags, confirmed: ConfirmedValues) {
@@ -217,16 +250,38 @@ async function waitForTranscript(
   getSinceIndex: () => number,
   initialCount: number
 ): Promise<RecallSnapshot> {
+  const maxWait = field === "phone" ? STT_PHONE_MAX_WAIT_MS : STT_MAX_WAIT_MS;
   let picked = pickTranscript(field, getTranscripts(), getSinceIndex());
-  if (isRecallReady(field, picked)) return picked;
-
+  let lastCount = getTranscripts().length;
+  let stableMs = 0;
   let waited = 0;
-  while (waited < STT_MAX_WAIT_MS) {
+
+  while (waited < maxWait) {
+    if (isRecallReady(field, picked)) {
+      // Phone: require a quiet gap so we don't lock on the first half of the number
+      if (field !== "phone" || stableMs >= STT_PHONE_STABLE_MS) return picked;
+    }
+
     await sleep(STT_WAIT_MS);
     waited += STT_WAIT_MS;
+    const count = getTranscripts().length;
+    if (count > lastCount) {
+      lastCount = count;
+      stableMs = 0;
+    } else {
+      stableMs += STT_WAIT_MS;
+    }
     picked = pickTranscript(field, getTranscripts(), getSinceIndex());
-    if (isRecallReady(field, picked)) return picked;
-    if (getTranscripts().length > initialCount && picked.text) return picked;
+  }
+
+  // Final pass — never force-accept incomplete phone
+  picked = pickTranscript(field, getTranscripts(), getSinceIndex());
+  if (field === "phone" && !isRecallReady(field, picked) && getTranscripts().length > initialCount) {
+    // Keep waiting briefly if digits are still growing toward 10
+    if (picked.digits.length >= 7 && picked.digits.length < 10) {
+      await sleep(STT_PHONE_STABLE_MS);
+      picked = pickTranscript(field, getTranscripts(), getSinceIndex());
+    }
   }
   return picked;
 }
@@ -355,6 +410,7 @@ export default function LiveCall({ onClose }: Props) {
   const pendingRecallRef = useRef<{ field: RecallField } | null>(null);
   const bookingTrackedRef = useRef(false);
   const secondsRef = useRef(0);
+  const connectGenRef = useRef(0);
   const typedNotifyRef = useRef<{ name: boolean; phone: boolean; email: boolean }>({
     name: false,
     phone: false,
@@ -397,35 +453,38 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
     }
   }, []);
 
-  /** Auto-lock completed form fields and optionally notify Maya. */
+  /** Auto-lock completed form fields. Contact fields (name/phone/email) only lock from typed form input — never from speech preview. */
   const lockCompletedFields = useCallback(
-    (next: BookingDraft, opts?: { notify?: boolean }) => {
+    (next: BookingDraft, opts?: { notify?: boolean; source?: "form" | "speech" }) => {
       const flags = { ...confirmationFlagsRef.current };
       const confirmed = { ...confirmedValuesRef.current };
       const justLocked: ("name" | "phone" | "email")[] = [];
+      const fromForm = (opts?.source || "form") === "form";
 
-      if (!flags.nameConfirmed && next.name.trim().length >= 2) {
-        flags.nameConfirmed = true;
-        confirmed.name = next.name.trim();
-        if (!typedNotifyRef.current.name) {
-          typedNotifyRef.current.name = true;
-          justLocked.push("name");
+      if (fromForm) {
+        if (!flags.nameConfirmed && next.name.trim().length >= 2) {
+          flags.nameConfirmed = true;
+          confirmed.name = next.name.trim();
+          if (!typedNotifyRef.current.name) {
+            typedNotifyRef.current.name = true;
+            justLocked.push("name");
+          }
         }
-      }
-      if (!flags.phoneConfirmed && digitsOnly(next.phone).length >= 10) {
-        flags.phoneConfirmed = true;
-        confirmed.phone = digitsOnly(next.phone);
-        if (!typedNotifyRef.current.phone) {
-          typedNotifyRef.current.phone = true;
-          justLocked.push("phone");
+        if (!flags.phoneConfirmed && digitsOnly(next.phone).length >= 10) {
+          flags.phoneConfirmed = true;
+          confirmed.phone = digitsOnly(next.phone);
+          if (!typedNotifyRef.current.phone) {
+            typedNotifyRef.current.phone = true;
+            justLocked.push("phone");
+          }
         }
-      }
-      if (flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped" && next.email.trim().includes("@")) {
-        flags.emailConfirmed = true;
-        confirmed.email = normalizeEmailFromSpeech(next.email);
-        if (!typedNotifyRef.current.email) {
-          typedNotifyRef.current.email = true;
-          justLocked.push("email");
+        if (flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped" && next.email.trim().includes("@")) {
+          flags.emailConfirmed = true;
+          confirmed.email = normalizeEmailFromSpeech(next.email);
+          if (!typedNotifyRef.current.email) {
+            typedNotifyRef.current.email = true;
+            justLocked.push("email");
+          }
         }
       }
       if (!flags.serviceConfirmed && next.service.trim()) {
@@ -519,7 +578,8 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
 
         const next = mergeDraft(prev, patch);
         draftRef.current = next;
-        lockCompletedFields(next);
+        // Speech may preview fields on screen, but never auto-confirm name/phone/email
+        lockCompletedFields(next, { source: "speech", notify: false });
         return next;
       });
     },
@@ -569,19 +629,48 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
     [lockCompletedFields]
   );
 
-  const hangUp = useCallback(() => {
+  const teardownCall = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
     dcRef.current = null;
     pcRef.current?.close();
     pcRef.current = null;
-    setState((s) => (s === "error" ? s : "ended"));
+    if (audioRef.current) {
+      audioRef.current.srcObject = null;
+      audioRef.current = null;
+    }
   }, []);
+
+  const hangUp = useCallback(() => {
+    teardownCall();
+    setState((s) => (s === "error" ? s : "ended"));
+  }, [teardownCall]);
 
   hangUpRef.current = hangUp;
 
   useEffect(() => {
     let cancelled = false;
+    const gen = ++connectGenRef.current;
+    setState("connecting");
+    setSeconds(0);
+    setError("");
+
+    const isStale = () => cancelled || connectGenRef.current !== gen;
+
+    const abandonLocal = (pc?: RTCPeerConnection | null, stream?: MediaStream | null, remote?: HTMLAudioElement | null) => {
+      stream?.getTracks().forEach((t) => t.stop());
+      try {
+        pc?.close();
+      } catch {
+        /* ignore */
+      }
+      if (remote) remote.srcObject = null;
+      if (pcRef.current === pc) pcRef.current = null;
+      if (streamRef.current === stream) streamRef.current = null;
+      if (audioRef.current === remote) audioRef.current = null;
+    };
 
     (async () => {
       try {
@@ -590,12 +679,12 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
           { clinicId: "demo", bookingDraft: draftRef.current },
           "session"
         );
+        if (isStale()) return;
         const clientSecret = String(tokenData.clientSecret || "");
         const model = String(tokenData.model || "gpt-realtime-mini");
         const callMaxSeconds = Number(tokenData.maxSeconds) || 180;
         instructionsRef.current = String(tokenData.instructions || "");
         if (!clientSecret) throw new Error("No session token — please try the chat.");
-        if (cancelled) return;
         setMaxSeconds(callMaxSeconds);
 
         const pc = new RTCPeerConnection({
@@ -613,6 +702,10 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
           throw new Error("Microphone access is required for live calls — please allow mic access and try again.");
         });
+        if (isStale()) {
+          abandonLocal(pc, stream, remote);
+          return;
+        }
         streamRef.current = stream;
         stream.getTracks().forEach((t) => pc.addTrack(t, stream));
 
@@ -622,6 +715,7 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
           if (dcRef.current === dc) dcRef.current = null;
         };
         dc.onmessage = async (e) => {
+          if (isStale()) return;
           try {
             const ev = JSON.parse(e.data);
 
@@ -667,31 +761,8 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                   const field = (args.field || "other") as RecallField;
                   const flags = confirmationFlagsRef.current;
                   const confirmed = confirmedValuesRef.current;
-                  const currentDraft = draftRef.current;
 
-                  // Prefer already-filled on-screen form over waiting for another spoken answer
-                  if (!isFieldLocked(field, flags)) {
-                    if (field === "name" && currentDraft.name.trim().length >= 2) {
-                      flags.nameConfirmed = true;
-                      confirmed.name = currentDraft.name.trim();
-                      confirmationFlagsRef.current = flags;
-                      confirmedValuesRef.current = confirmed;
-                      typedNotifyRef.current.name = true;
-                    } else if (field === "phone" && digitsOnly(currentDraft.phone).length >= 10) {
-                      flags.phoneConfirmed = true;
-                      confirmed.phone = digitsOnly(currentDraft.phone);
-                      confirmationFlagsRef.current = flags;
-                      confirmedValuesRef.current = confirmed;
-                      typedNotifyRef.current.phone = true;
-                    } else if (field === "email" && currentDraft.email.trim().includes("@")) {
-                      flags.emailConfirmed = true;
-                      confirmed.email = normalizeEmailFromSpeech(currentDraft.email);
-                      confirmationFlagsRef.current = flags;
-                      confirmedValuesRef.current = confirmed;
-                      typedNotifyRef.current.email = true;
-                    }
-                  }
-
+                  // Form-typed values are already locked via lockCompletedFields — never treat speech previews as confirmed
                   if (isFieldLocked(field, confirmationFlagsRef.current)) {
                     const status = sessionStatus(flags, confirmed);
                     const lockedPhone = formatPhoneDigits(confirmed.phone);
@@ -728,56 +799,36 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
 
                   const ready = isRecallReady(field, picked);
 
+                  // Preview on the form, but do NOT auto-lock spoken values — require read-back + confirm_field
                   if (ready && field === "name" && !flags.nameConfirmed) {
                     const next = mergeDraft(draftRef.current, { name: picked.text });
                     draftRef.current = next;
                     setDraft(next);
-                    lockCompletedFields(next, { notify: true });
+                    pendingRecallRef.current = { field: "name" };
                   } else if (ready && field === "phone" && !flags.phoneConfirmed) {
                     const next = mergeDraft(draftRef.current, { phone: formatPhoneDigits(picked.digits) });
                     draftRef.current = next;
                     setDraft(next);
-                    lockCompletedFields(next, { notify: true });
+                    pendingRecallRef.current = { field: "phone" };
                   } else if (ready && field === "email" && flags.emailConfirmed !== true && flags.emailConfirmed !== "skipped") {
                     const next = mergeDraft(draftRef.current, { email: picked.text });
                     draftRef.current = next;
                     setDraft(next);
-                    lockCompletedFields(next, { notify: true });
-                  }
-
-                  // Auto-lock from speech — no verbal "is that right?" loop
-                  if (ready && (field === "name" || field === "phone" || field === "email")) {
+                    pendingRecallRef.current = { field: "email" };
+                  } else if (!ready) {
                     pendingRecallRef.current = null;
-                    const status = sessionStatus(confirmationFlagsRef.current, confirmedValuesRef.current);
-                    const display =
-                      field === "phone"
-                        ? formatPhoneDigits(picked.digits)
-                        : field === "email"
-                          ? picked.text
-                          : picked.text;
-                    const output = {
-                      ready: true,
-                      field,
-                      already_confirmed: true,
-                      text: display,
-                      digits: picked.digits,
-                      instruction: `LOCKED on form as "${display}". Do NOT read back. Do NOT ask for confirmation. Immediately: ${status.next_step}`,
-                      ...status,
-                    };
-                    dc.send(
-                      JSON.stringify({
-                        type: "conversation.item.create",
-                        item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(output) },
-                      })
-                    );
-                    continue;
                   }
 
                   const status = sessionStatus(confirmationFlagsRef.current, confirmedValuesRef.current);
+                  const display =
+                    field === "phone"
+                      ? formatPhoneDigits(picked.digits) || picked.text
+                      : picked.text;
                   const output = {
                     ready,
                     field,
-                    text: picked.text,
+                    already_confirmed: false,
+                    text: display,
                     digits: picked.digits,
                     spoken_digits: picked.spoken_digits,
                     grouped_spoken_digits: groupedSpokenDigits(picked.digits),
@@ -864,7 +915,8 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                       field: "phone",
                       value: formatPhoneDigits(confirmed.phone),
                       locked: true,
-                      instruction: "Phone is locked. Do NOT ask for or read back the phone number again. Ask about email (optional) or preferred day and time next.",
+                      instruction:
+                        "Phone is locked. Do NOT ask for or read back the phone number again. Next: ask for email once (optional). If they give it, recall + spell-back + confirm_field(email). If they decline, confirm_field(email) with email_skipped true.",
                       ...sessionStatus(flags, confirmed),
                     };
                   } else if (args.field === "email") {
@@ -872,12 +924,24 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                       flags.emailConfirmed = "skipped";
                       confirmed.email = "";
                       setDraft((d) => ({ ...d, email: "" }));
-                      output = { success: true, field: "email", skipped: true };
+                      output = {
+                        success: true,
+                        field: "email",
+                        skipped: true,
+                        instruction: "Email skipped and locked. " + nextStepHint(flags),
+                        ...sessionStatus(flags, confirmed),
+                      };
                     } else if (args.confirmed && lastRecallRef.current.email?.text) {
                       flags.emailConfirmed = true;
                       confirmed.email = lastRecallRef.current.email.text;
                       setDraft((d) => mergeDraft(d, { email: confirmed.email }));
-                      output = { success: true, field: "email", value: confirmed.email };
+                      output = {
+                        success: true,
+                        field: "email",
+                        value: confirmed.email,
+                        instruction: "Email locked. " + nextStepHint(flags),
+                        ...sessionStatus(flags, confirmed),
+                      };
                     }
                   } else if (args.field === "service" && args.confirmed) {
                     const svc = (currentDraft.service || args.service || "").trim();
@@ -915,7 +979,12 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                 }
 
                 if (call.name === "book_appointment") {
-                  const llmArgs = JSON.parse(call.arguments || "{}");
+                  let llmArgs: { notes?: string } = {};
+                  try {
+                    llmArgs = JSON.parse(call.arguments || "{}");
+                  } catch {
+                    /* ignore */
+                  }
                   const payload = buildBookingPayload(draftRef.current, confirmedValuesRef.current);
                   const gate = canBook(payload, confirmationFlagsRef.current, draftRef.current);
 
@@ -997,19 +1066,25 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
           throw new Error(`Voice connection failed (${sdpRes.status})${detail ? `: ${detail}` : ""}`);
         }
         await pc.setRemoteDescription({ type: "answer", sdp: await sdpRes.text() });
-        if (cancelled) return;
+        if (isStale()) {
+          abandonLocal(pc, stream, remote);
+          return;
+        }
 
-        // Reinforce anti-loop rules client-side (works even if functions deploy is pending)
+        // Reinforce booking-detail accuracy (works even if functions deploy is pending)
         const boost = `
-LOCKED FORM RULES (highest priority):
-- On-screen Name / Phone / Email that are filled are ALREADY CONFIRMED.
-- NEVER read them back. NEVER ask "is that right?" or "got it — …?".
-- Ask each missing question at most once. Skip locked fields entirely.
-- If unclear, ask them to type on screen — do not loop.
+BOOKING DETAIL RULES (highest priority):
+- confirmed_fields from tools are locked — never re-ask those.
+- Spoken name/phone/email are NOT confirmed until you read them back, hear yes, and call confirm_field.
+- Phone: wait for the FULL 10 digits (people speak in chunks). If recall is not ready, ask them to repeat — do NOT jump to email.
+- Phone read-back: use grouped_spoken_digits, ask "is that right?", then confirm_field(phone).
+- Email: confirm_field(email) or email_skipped — never silently skip.
+- Typing on the form locks that field; only then skip verbal confirm for it.
 `;
         const base = instructionsRef.current || "You are Maya, a clinic receptionist.";
         instructionsRef.current = `${base}\n${boost}`;
         const sendBoost = () => {
+          if (isStale()) return;
           if (dc.readyState === "open") {
             dc.send(
               JSON.stringify({
@@ -1022,6 +1097,10 @@ LOCKED FORM RULES (highest priority):
         if (dc.readyState === "open") sendBoost();
         else dc.addEventListener("open", sendBoost, { once: true });
 
+        if (isStale()) {
+          abandonLocal(pc, stream, remote);
+          return;
+        }
         setState("live");
         timerRef.current = setInterval(() => {
           setSeconds((s) => {
@@ -1030,7 +1109,7 @@ LOCKED FORM RULES (highest priority):
           });
         }, 1000);
       } catch (err) {
-        if (cancelled) return;
+        if (isStale()) return;
         trackEvent("api_error", {
           api_name: "ai_receptionist_voice",
           error_message: err instanceof Error ? err.message : "Voice call failed",
@@ -1042,7 +1121,8 @@ LOCKED FORM RULES (highest priority):
 
     return () => {
       cancelled = true;
-      hangUp();
+      // Tear down without flipping UI to "Call ended" (Strict Mode remounts this effect)
+      teardownCall();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

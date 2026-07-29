@@ -90,7 +90,8 @@ export default function PrivacyPolicy() {
                 If you have questions about this Privacy Policy, contact us at{" "}
                 <a href="mailto:Sales@alliancetechltd.com" className="text-[#0077A8] font-semibold hover:underline">
                   Sales@alliancetechltd.com
-                </a>.
+                </a>
+                , or write to us at 67 Lona Ln, Rensselaer, NY 12144, United States.
               </p>
             </div>
           </div>

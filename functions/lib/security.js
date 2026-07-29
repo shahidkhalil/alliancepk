@@ -28,15 +28,46 @@ function isAllowedOrigin(origin) {
   }
 }
 
-/** Prefer Firebase / Cloud Run client IP; fall back to rightmost XFF hop. */
+/** Prefer the real visitor IP (leftmost public hop). Shared edge IPs break rate limits. */
 function clientIp(req) {
+  const candidates = [];
+
   const ff = String(req.headers["x-forwarded-for"] || "");
   if (ff) {
-    const parts = ff.split(",").map((s) => s.trim()).filter(Boolean);
-    // Rightmost is typically the edge-injected address (harder to spoof).
-    if (parts.length) return parts[parts.length - 1];
+    for (const part of ff.split(",").map((s) => s.trim()).filter(Boolean)) {
+      candidates.push(part);
+    }
   }
-  return req.ip || req.headers["x-real-ip"] || "";
+
+  for (const h of ["x-real-ip", "x-appengine-user-ip", "cf-connecting-ip", "true-client-ip", "fastly-client-ip"]) {
+    const v = req.headers[h];
+    if (v) candidates.push(String(v).split(",")[0].trim());
+  }
+
+  if (req.ip) candidates.push(String(req.ip));
+
+  for (const ip of candidates) {
+    if (ip && ip.length >= 3 && ip.length <= 64 && !isProbablyPrivateOrSharedEdge(ip)) {
+      return ip;
+    }
+  }
+  // Last resort: first XFF hop even if private (local/dev), else empty
+  return candidates[0] || "";
+}
+
+/** Skip obvious private / link-local; keep public client IPs. */
+function isProbablyPrivateOrSharedEdge(ip) {
+  const s = String(ip).toLowerCase().replace(/^::ffff:/, "");
+  if (s === "::1" || s === "localhost") return true;
+  const m = s.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false; // IPv6 public — accept
+  const [o1, o2] = m.slice(1).map(Number);
+  if (o1 === 10 || o1 === 127) return true;
+  if (o1 === 192 && o2 === 168) return true;
+  if (o1 === 172 && o2 >= 16 && o2 <= 31) return true;
+  if (o1 === 169 && o2 === 254) return true;
+  if (o1 === 100 && o2 >= 64 && o2 <= 127) return true; // CGNAT
+  return false;
 }
 
 function applyCors(req, res) {

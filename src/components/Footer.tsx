@@ -1,5 +1,10 @@
 import Image from "next/image";
 import ConsentSettingsButton from "@/components/ConsentSettingsButton";
+import {
+  BUSINESS_ADDRESS_LINE,
+  BUSINESS_ADDRESS_MAPS_HREF,
+  SALES_EMAIL,
+} from "@/lib/siteContact";
 
 const services = [
   { label: "AI Receptionist", href: "/ai-receptionist" },
@@ -26,7 +31,7 @@ export default function Footer() {
                 alt="Alliance Tech"
                 width={280}
                 height={120}
-                className="h-20 lg:h-24 w-auto object-contain brightness-0 invert"
+                className="h-16 sm:h-20 lg:h-24 w-auto max-w-full object-contain brightness-0 invert"
               />
             </a>
             <p className="text-white/60 text-sm leading-relaxed">
@@ -94,21 +99,28 @@ export default function Footer() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">Contact</p>
             <div className="space-y-3">
-              <a href="mailto:Sales@alliancetechltd.com" className="block text-sm text-white/60 hover:text-white transition-colors">
-                Sales@alliancetechltd.com
+              <a href={`mailto:${SALES_EMAIL}`} className="block text-sm text-white/60 hover:text-white transition-colors">
+                {SALES_EMAIL}
               </a>
               <a href="/contact" className="block text-sm text-white/60 hover:text-white transition-colors">
                 Contact us
               </a>
-              <p className="text-sm text-white/60">Houston, Texas</p>
+              <a
+                href={BUSINESS_ADDRESS_MAPS_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm text-white/60 hover:text-white transition-colors leading-relaxed break-words"
+              >
+                {BUSINESS_ADDRESS_LINE}
+              </a>
             </div>
           </div>
         </div>
 
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
-          <p>© {new Date().getFullYear()} Alliance Tech (PVT) LTD. All rights reserved.</p>
-          <p>Specialist digital marketing for dental & aesthetic clinics across the United States.</p>
-          <div className="flex items-center gap-4">
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60 text-center sm:text-left">
+          <p className="max-w-full">© {new Date().getFullYear()} Alliance Tech (PVT) LTD. All rights reserved.</p>
+          <p className="max-w-full px-2">Specialist digital marketing for dental & aesthetic clinics across the United States.</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <a href="/privacy-policy" className="hover:text-white/60 transition-colors">Privacy Policy</a>
             <a href="/terms-of-service" className="hover:text-white/60 transition-colors">Terms of Service</a>
             <ConsentSettingsButton />

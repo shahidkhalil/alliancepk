@@ -17,7 +17,13 @@ import {
   trackFormSubmit,
   trackPhoneClick,
 } from "@/lib/analytics";
-import { SALES_EMAIL, SALES_TEL_HREF, formatUsPhoneDisplay } from "@/lib/siteContact";
+import {
+  BUSINESS_ADDRESS_LINE,
+  BUSINESS_ADDRESS_MAPS_HREF,
+  SALES_EMAIL,
+  SALES_TEL_HREF,
+  formatUsPhoneDisplay,
+} from "@/lib/siteContact";
 
 const clinicTypes = ["Dental Clinic", "Aesthetic Clinic", "Other Healthcare"];
 
@@ -206,6 +212,17 @@ export default function Contact() {
 
       <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-6">
+          <p className="text-sm text-gray-500 mb-6">
+            <a
+              href={BUSINESS_ADDRESS_MAPS_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#00283C] hover:text-[#0077A8] transition-colors"
+            >
+              {BUSINESS_ADDRESS_LINE}
+            </a>
+          </p>
+
           {/* Instant actions — Call + Book first for US buyers */}
           <div className="grid sm:grid-cols-3 gap-3 mb-10">
             {SALES_TEL_HREF ? (

@@ -91,11 +91,11 @@ export default function Hero() {
               {s.badge}
             </span>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#00283C] tracking-tight leading-[1.1] mb-6">
+            <h1 className="text-[1.85rem] sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#00283C] tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 break-words">
               {s.headline}
             </h1>
 
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed">
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto mb-8 leading-relaxed px-1">
               {s.sub}
             </p>
 

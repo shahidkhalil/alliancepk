@@ -21,18 +21,18 @@ export default function MobileStickySalesBar() {
   return (
     <>
       <div
-        className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+        className="fixed bottom-0 inset-x-0 z-40 lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur-md px-3 sm:px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] max-w-full overflow-x-clip"
         role="navigation"
         aria-label="Quick contact"
       >
-        <div className="flex gap-2 max-w-lg mx-auto">
+        <div className="flex gap-2 max-w-lg mx-auto w-full min-w-0">
           {SALES_TEL_HREF ? (
             <a
               href={SALES_TEL_HREF}
               onClick={() => trackPhoneClick("mobile_sticky")}
               data-analytics-label="phone_click"
               data-analytics-location="mobile_sticky"
-              className="flex-1 inline-flex items-center justify-center gap-1.5 py-3 rounded-xl border border-[#00283C]/20 text-[#00283C] text-xs font-black"
+              className="flex-1 min-w-0 inline-flex items-center justify-center gap-1.5 py-3 rounded-xl border border-[#00283C]/20 text-[#00283C] text-xs font-black"
             >
               <Phone className="w-3.5 h-3.5" aria-hidden />
               Call
@@ -54,7 +54,7 @@ export default function MobileStickySalesBar() {
             onClick={openForm}
             data-analytics-label="book_consultation"
             data-analytics-location="mobile_sticky"
-            className="flex-1 py-3 rounded-xl bg-[#00283C] text-white text-xs font-black"
+            className="flex-1 min-w-0 py-3 rounded-xl bg-[#00283C] text-white text-xs font-black px-1"
           >
             Book Strategy Call
           </button>
