@@ -25,6 +25,23 @@ const GMAIL_APP_PASSWORD = defineSecret("GMAIL_APP_PASSWORD");
 const WINDOW_24H = { minMs: 23 * 3600 * 1000, maxMs: 25 * 3600 * 1000, flag: "reminder24hSent", label: "24 hours" };
 const WINDOW_1H = { minMs: 50 * 60 * 1000, maxMs: 70 * 60 * 1000, flag: "reminder1hSent", label: "1 hour" };
 
+/** Reminder emails only — booking confirmations and lead alerts are unchanged. */
+function reminderOptOutSet(gmailUser) {
+  const set = new Set();
+  const add = (email) => {
+    const normalized = String(email || "").trim().toLowerCase();
+    if (normalized) set.add(normalized);
+  };
+  add(gmailUser);
+  add(process.env.ALERT_TO);
+  for (const part of String(process.env.REMINDER_OPT_OUT_EMAILS || "").split(",")) add(part);
+  return set;
+}
+
+function isReminderOptedOut(email, optOutSet) {
+  return optOutSet.has(String(email || "").trim().toLowerCase());
+}
+
 function formatWhen(appointmentAt, timezone) {
   try {
     return new Intl.DateTimeFormat("en-US", {
@@ -108,7 +125,7 @@ async function releaseReminderClaim(docRef, flag) {
   }
 }
 
-async function processWindow(db, now, window, gmailUser, gmailPass) {
+async function processWindow(db, now, window, gmailUser, gmailPass, optOutSet) {
   const from = admin.firestore.Timestamp.fromDate(new Date(now.getTime() + window.minMs));
   const to = admin.firestore.Timestamp.fromDate(new Date(now.getTime() + window.maxMs));
 
@@ -140,12 +157,19 @@ async function processWindow(db, now, window, gmailUser, gmailPass) {
     const appt = { id: doc.id, ...doc.data() };
     if (appt[window.flag] === true) continue;
     if (appt.status === "cancelled" || appt.status === "completed") continue;
-    if (!String(appt.email || "").trim()) continue;
+    const patientEmail = String(appt.email || "").trim();
+    if (!patientEmail) continue;
 
     let claimed = false;
     try {
       claimed = await claimReminder(doc.ref, window.flag);
       if (!claimed) continue;
+
+      if (isReminderOptedOut(patientEmail, optOutSet)) {
+        console.log(`Reminder skipped (opt-out): ${patientEmail}`);
+        sent += 1;
+        continue;
+      }
 
       const clinic = getClinic(appt.clinicId || "demo");
       const ok = await sendReminderEmail({ appt, clinic, window, gmailUser, gmailPass });
@@ -178,9 +202,10 @@ exports.sendAppointmentReminders = onSchedule(
     const now = new Date();
     const gmailUser = GMAIL_USER.value();
     const gmailPass = GMAIL_APP_PASSWORD.value();
+    const optOutSet = reminderOptOutSet(gmailUser);
 
-    const sent24 = await processWindow(db, now, WINDOW_24H, gmailUser, gmailPass);
-    const sent1 = await processWindow(db, now, WINDOW_1H, gmailUser, gmailPass);
+    const sent24 = await processWindow(db, now, WINDOW_24H, gmailUser, gmailPass, optOutSet);
+    const sent1 = await processWindow(db, now, WINDOW_1H, gmailUser, gmailPass, optOutSet);
     let archived = 0;
     try {
       archived = await archiveExpiredPatientMemories({ limit: 40 });
