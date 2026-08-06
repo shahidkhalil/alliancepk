@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageWrapper from "@/components/PageWrapper";
 import BlogListClient from "@/components/BlogListClient";
+import { fetchBlogsForBuild } from "@/lib/fetchBlogsBuild";
 
 export const metadata: Metadata = {
   title: "Clinic Growth Blog | Houston AI Automation, SEO & Booking | Alliance Tech",
@@ -23,7 +24,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
+export default async function BlogPage() {
+  const initialPosts = await fetchBlogsForBuild();
+
   return (
     <PageWrapper>
       <section className="pt-28 pb-12 bg-[#00283C]">
@@ -41,7 +44,7 @@ export default function BlogPage() {
 
       <section className="py-14 lg:py-16 bg-[#F8FAFC]">
         <div className="max-w-6xl mx-auto px-6">
-          <BlogListClient />
+          <BlogListClient initialPosts={initialPosts} />
         </div>
       </section>
     </PageWrapper>

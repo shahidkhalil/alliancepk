@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import BlogCard from "@/components/BlogCard";
 import FinalCTA from "@/components/FinalCTA";
+import BlogHtmlBody from "@/components/BlogHtmlBody";
 import { BreadcrumbSchema } from "@/components/StructuredData";
 import { fetchBlogBySlug, fetchBlogsFromFirestore } from "@/lib/firestoreBlogs";
+import { htmlHasContent } from "@/lib/blogHtml";
 import type { BlogPost } from "@/lib/blogTypes";
 
 function PostSkeleton() {
@@ -27,17 +29,75 @@ function PostSkeleton() {
   );
 }
 
-export default function BlogPostClient({ slug }: { slug: string }) {
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [related, setRelated] = useState<BlogPost[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">("loading");
+function pickRelated(all: BlogPost[], current: BlogPost, limit = 2): BlogPost[] {
+  return all
+    .filter((p) => p.slug !== current.slug)
+    .sort((a, b) => {
+      const aH = a.location === current.location ? 0 : 1;
+      const bH = b.location === current.location ? 0 : 1;
+      return aH - bH;
+    })
+    .slice(0, limit);
+}
+
+export default function BlogPostClient({
+  slug,
+  initialPost = null,
+  initialRelated = [],
+}: {
+  slug: string;
+  initialPost?: BlogPost | null;
+  initialRelated?: BlogPost[];
+}) {
+  const hasInitial = Boolean(initialPost && initialPost.slug === slug);
+  const [post, setPost] = useState<BlogPost | null>(hasInitial ? initialPost : null);
+  const [related, setRelated] = useState<BlogPost[]>(
+    hasInitial ? initialRelated : []
+  );
+  const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">(
+    hasInitial ? "ready" : "loading"
+  );
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
 
-    Promise.all([fetchBlogBySlug(slug), fetchBlogsFromFirestore()])
-      .then(([found, all]) => {
+    // Static/build path: paint instantly from baked HTML, then soft-refresh from
+    // Firestore so admin edits (CTA, body, title) show without a redeploy.
+    if (initialPost && initialPost.slug === slug) {
+      setPost(initialPost);
+      setStatus("ready");
+      if (initialRelated.length > 0) {
+        setRelated(initialRelated);
+      }
+
+      fetchBlogBySlug(slug, { bypassCache: true })
+        .then((fresh) => {
+          if (cancelled || !fresh) return;
+          setPost(fresh);
+        })
+        .catch(() => {});
+
+      if (initialRelated.length === 0) {
+        fetchBlogsFromFirestore()
+          .then((all) => {
+            if (cancelled) return;
+            setRelated(pickRelated(all, initialPost));
+          })
+          .catch(() => {});
+      }
+
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Viewer / unknown slug path: fetch THIS post first (show ASAP), related later
+    setStatus("loading");
+    setPost(null);
+    setRelated([]);
+
+    fetchBlogBySlug(slug)
+      .then((found) => {
         if (cancelled) return;
         if (!found) {
           setPost(null);
@@ -46,17 +106,13 @@ export default function BlogPostClient({ slug }: { slug: string }) {
           return;
         }
         setPost(found);
-        setRelated(
-          all
-            .filter((p) => p.slug !== found.slug)
-            .sort((a, b) => {
-              const aH = a.location === "Houston" ? 0 : 1;
-              const bH = b.location === "Houston" ? 0 : 1;
-              return aH - bH;
-            })
-            .slice(0, 2)
-        );
         setStatus("ready");
+        fetchBlogsFromFirestore()
+          .then((all) => {
+            if (cancelled) return;
+            setRelated(pickRelated(all, found));
+          })
+          .catch(() => {});
       })
       .catch(() => {
         if (!cancelled) setStatus("error");
@@ -65,7 +121,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, initialPost, initialRelated]);
 
   const articleJsonLd = useMemo(() => {
     if (!post) return null;
@@ -175,27 +231,31 @@ export default function BlogPostClient({ slug }: { slug: string }) {
             {post.excerpt}
           </p>
 
-          <div itemProp="articleBody" className="space-y-8">
-            {post.sections?.length
-              ? post.sections.map((section) => (
-                  <section key={section.heading}>
-                    <h2 className="text-xl font-bold text-[#00283C] mb-3 tracking-tight">
-                      {section.heading}
-                    </h2>
-                    <div className="space-y-4">
-                      {section.paragraphs.map((para) => (
-                        <p key={para.slice(0, 48)} className="text-gray-600 leading-relaxed">
-                          {para}
-                        </p>
-                      ))}
-                    </div>
-                  </section>
-                ))
-              : post.content.map((para) => (
-                  <p key={para.slice(0, 40)} className="text-gray-600 leading-relaxed">
-                    {para}
-                  </p>
-                ))}
+          <div className="space-y-8">
+            {htmlHasContent(post.bodyHtml) ? (
+              <BlogHtmlBody html={post.bodyHtml || ""} />
+            ) : post.sections?.length ? (
+              post.sections.map((section) => (
+                <section key={section.heading}>
+                  <h2 className="text-xl font-bold text-[#00283C] mb-3 tracking-tight">
+                    {section.heading}
+                  </h2>
+                  <div className="space-y-4">
+                    {section.paragraphs.map((para) => (
+                      <p key={para.slice(0, 48)} className="text-gray-600 leading-relaxed">
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              ))
+            ) : (
+              post.content.map((para) => (
+                <p key={para.slice(0, 40)} className="text-gray-600 leading-relaxed">
+                  {para}
+                </p>
+              ))
+            )}
           </div>
 
           {post.serviceLink && (

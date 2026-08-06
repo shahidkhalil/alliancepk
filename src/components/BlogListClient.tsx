@@ -5,12 +5,19 @@ import BlogCard from "@/components/BlogCard";
 import { fetchBlogsFromFirestore } from "@/lib/firestoreBlogs";
 import type { BlogPost } from "@/lib/blogTypes";
 
-export default function BlogListClient() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+export default function BlogListClient({
+  initialPosts = [],
+}: {
+  initialPosts?: BlogPost[];
+}) {
+  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    initialPosts.length ? "ready" : "loading"
+  );
 
   useEffect(() => {
     let cancelled = false;
+    // Show build-time list immediately; refresh from Firestore in background
     fetchBlogsFromFirestore()
       .then((list) => {
         if (cancelled) return;
@@ -18,12 +25,12 @@ export default function BlogListClient() {
         setStatus("ready");
       })
       .catch(() => {
-        if (!cancelled) setStatus("error");
+        if (!cancelled && !initialPosts.length) setStatus("error");
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialPosts.length]);
 
   if (status === "loading") {
     return (
@@ -57,7 +64,7 @@ export default function BlogListClient() {
   return (
     <div className="grid sm:grid-cols-2 gap-6">
       {posts.map((post, i) => (
-        <BlogCard key={post.slug} post={post} delay={i * 0.1} />
+        <BlogCard key={post.slug} post={post} delay={i * 0.05} />
       ))}
     </div>
   );

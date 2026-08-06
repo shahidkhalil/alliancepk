@@ -5,10 +5,10 @@ import {
   fetchBlogBySlugForBuild,
   fetchBlogsForBuild,
 } from "@/lib/fetchBlogsBuild";
+import type { BlogPost } from "@/lib/blogTypes";
 
 export async function generateStaticParams() {
   const posts = await fetchBlogsForBuild();
-  // Always include at least one param so the route exports; empty → build fail
   if (!posts.length) return [{ slug: "_placeholder" }];
   return posts.map((p) => ({ slug: p.slug }));
 }
@@ -46,10 +46,35 @@ export async function generateMetadata({
   };
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+function pickRelated(all: BlogPost[], current: BlogPost, limit = 2): BlogPost[] {
+  return all
+    .filter((p) => p.slug !== current.slug)
+    .sort((a, b) => {
+      const aH = a.location === current.location ? 0 : 1;
+      const bH = b.location === current.location ? 0 : 1;
+      return aH - bH;
+    })
+    .slice(0, limit);
+}
+
+export default async function BlogPostPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const all = await fetchBlogsForBuild();
+  const post =
+    all.find((p) => p.slug === params.slug) ||
+    (await fetchBlogBySlugForBuild(params.slug));
+  const related = post ? pickRelated(all, post) : [];
+
   return (
     <PageWrapper>
-      <BlogPostClient slug={params.slug} />
+      <BlogPostClient
+        slug={params.slug}
+        initialPost={post}
+        initialRelated={related}
+      />
     </PageWrapper>
   );
 }

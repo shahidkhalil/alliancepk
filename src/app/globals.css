@@ -914,3 +914,113 @@ body {
 .card-motion .card-shine-sweep::after {
   display: none;
 }
+
+/* Blog article body — Inter (site font), matches legacy section styling.
+   Intentionally ignores pasted font-family so published posts look consistent. */
+.blog-prose {
+  font-family: var(--font-inter);
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.blog-prose > * + * {
+  margin-top: 1rem;
+}
+
+.blog-prose h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #00283c;
+  letter-spacing: -0.02em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.blog-prose h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #00283c;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+}
+
+.blog-prose p {
+  color: #4b5563;
+  line-height: 1.7;
+}
+
+.blog-prose strong,
+.blog-prose b {
+  font-weight: 700;
+  color: #00283c;
+}
+
+.blog-prose em,
+.blog-prose i {
+  font-style: italic;
+}
+
+.blog-prose u {
+  text-decoration: underline;
+}
+
+.blog-prose ul,
+.blog-prose ol {
+  padding-left: 1.25rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.blog-prose ul {
+  list-style: disc;
+}
+
+.blog-prose ol {
+  list-style: decimal;
+}
+
+.blog-prose li {
+  margin-top: 0.35rem;
+  color: #4b5563;
+}
+
+.blog-prose a,
+.blog-prose .blog-link {
+  color: #0077a8;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.blog-prose a:hover {
+  color: #00283c;
+}
+
+.blog-prose blockquote {
+  border-left: 4px solid #0077a8;
+  padding-left: 1rem;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.blog-prose-editor {
+  min-height: 320px;
+}
+
+.blog-prose-editor.ProseMirror,
+.blog-prose-editor .ProseMirror {
+  min-height: 320px;
+  outline: none;
+}
+
+.blog-prose-editor p.is-editor-empty:first-child::before,
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

@@ -78,6 +78,7 @@ function docToPost(name: string, fields: Record<string, FsValue> | undefined): B
       "linear-gradient(135deg, #00283C 0%, #005C7A 50%, #00B4D8 100%)",
     content: fsStrings(fields.content),
     sections: fsSections(fields.sections),
+    bodyHtml: fsString(fields.bodyHtml) || undefined,
     metaTitle: fsString(fields.metaTitle) || undefined,
     metaDescription: fsString(fields.metaDescription) || undefined,
     keywords: fsStrings(fields.keywords),

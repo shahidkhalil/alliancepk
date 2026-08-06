@@ -1,0 +1,140 @@
+{
+  "site": "sc-domain:alliancetechltd.com",
+  "days": 28,
+  "generatedAt": "2026-08-04T11:12:15.251Z",
+  "count": 6,
+  "opportunities": [
+    {
+      "query": "dental marketing chicago",
+      "clicks": 0,
+      "impressions": 18,
+      "ctr": 0,
+      "position": 23,
+      "score": 35,
+      "reason": "impressions with weak CTR — supporting blog can convert",
+      "location": {
+        "id": "chicago",
+        "city": "Chicago",
+        "state": "Illinois"
+      },
+      "service": {
+        "id": "dental-growth",
+        "serviceLink": {
+          "href": "/dental-clinic-growth",
+          "label": "Grow your dental clinic",
+          "description": "Marketing, websites, and AI systems designed to bring more patients to dental practices."
+        }
+      }
+    },
+    {
+      "query": "best seo for doctors houston",
+      "clicks": 0,
+      "impressions": 3,
+      "ctr": 0,
+      "position": 75,
+      "score": 19,
+      "reason": "geo + service signal — early opportunity",
+      "location": {
+        "id": "houston",
+        "city": "Houston",
+        "state": "Texas"
+      },
+      "service": {
+        "id": "seo",
+        "serviceLink": {
+          "href": "/seo-for-clinics",
+          "label": "Explore clinic SEO services",
+          "description": "SEO built for dental, aesthetic, and medical clinics that need more booked appointments."
+        }
+      }
+    },
+    {
+      "query": "dental seo chicago, il",
+      "clicks": 0,
+      "impressions": 8,
+      "ctr": 0,
+      "position": 33.75,
+      "score": 18,
+      "reason": "geo + service signal — early opportunity",
+      "location": {
+        "id": "chicago",
+        "city": "Chicago",
+        "state": "Illinois"
+      },
+      "service": {
+        "id": "seo",
+        "serviceLink": {
+          "href": "/seo-for-clinics",
+          "label": "Explore clinic SEO services",
+          "description": "SEO built for dental, aesthetic, and medical clinics that need more booked appointments."
+        }
+      }
+    },
+    {
+      "query": "doctor website design texas",
+      "clicks": 0,
+      "impressions": 4,
+      "ctr": 0,
+      "position": 12.75,
+      "score": 17,
+      "reason": "geo + service signal — early opportunity",
+      "location": {
+        "id": "texas",
+        "city": "Houston",
+        "state": "Texas"
+      },
+      "service": {
+        "id": "clinic-website",
+        "serviceLink": {
+          "href": "/portfolio#websites",
+          "label": "See clinic website case studies",
+          "description": "Explore real healthcare websites we've built for clinics — and the results they delivered."
+        }
+      }
+    },
+    {
+      "query": "ai receptionist service austin tx",
+      "clicks": 0,
+      "impressions": 4,
+      "ctr": 0,
+      "position": 25,
+      "score": 14,
+      "reason": "geo + service signal — early opportunity",
+      "location": {
+        "id": "austin",
+        "city": "Austin",
+        "state": "Texas"
+      },
+      "service": {
+        "id": "ai-receptionist",
+        "serviceLink": {
+          "href": "/ai-receptionist",
+          "label": "Book a free AI receptionist demo",
+          "description": "See how Alliance Tech's AI receptionist answers clinic calls 24/7 and books more appointments."
+        }
+      }
+    },
+    {
+      "query": "seo for medspas los angeles",
+      "clicks": 0,
+      "impressions": 4,
+      "ctr": 0,
+      "position": 37,
+      "score": 14,
+      "reason": "geo + service signal — early opportunity",
+      "location": {
+        "id": "los-angeles",
+        "city": "Los Angeles",
+        "state": "California"
+      },
+      "service": {
+        "id": "seo",
+        "serviceLink": {
+          "href": "/seo-for-clinics",
+          "label": "Explore clinic SEO services",
+          "description": "SEO built for dental, aesthetic, and medical clinics that need more booked appointments."
+        }
+      }
+    }
+  ]
+}

@@ -15,6 +15,15 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getFirebaseAuth, getDb } from "@/lib/firebase";
+import { subscribeAllBlogs } from "@/lib/firestoreBlogs";
+import MayaDashboard, {
+  isMayaLeadSource,
+  type MayaSubTab,
+} from "@/components/MayaDashboard";
+import AdminBlogDrafts from "@/components/AdminBlogDrafts";
+import AdminBlogForm from "@/components/AdminBlogForm";
+import AdminBlogManager from "@/components/AdminBlogManager";
+import PaginationBar, { paginate } from "@/components/PaginationBar";
 import {
   Loader2,
   LogOut,
@@ -34,13 +43,11 @@ import {
   ClipboardCheck,
   Package,
   Bell,
+  FilePenLine,
+  Upload,
+  Files,
   type LucideIcon,
 } from "lucide-react";
-import MayaDashboard, {
-  isMayaLeadSource,
-  type MayaSubTab,
-} from "@/components/MayaDashboard";
-import PaginationBar, { paginate } from "@/components/PaginationBar";
 
 type LeadRow = {
   id: string;
@@ -73,9 +80,12 @@ type NavId =
   | "maya-urgent"
   | "maya-bookings"
   | "maya-reminders"
-  | "maya-patients";
+  | "maya-patients"
+  | "blog-all"
+  | "blog-drafts"
+  | "blog-new";
 
-type NavGroupId = "overview" | "leads" | "maya";
+type NavGroupId = "overview" | "leads" | "maya" | "content";
 
 const AUDIT_SOURCES = new Set(["audit_bot", "business_growth_audit", "website_audit_gate"]);
 const PACKAGE_SOURCES = new Set(["package_order", "pricing_package"]);
@@ -232,6 +242,21 @@ const PAGE_META: Record<NavId, { title: string; subtitle: string; category: stri
     subtitle: "Preferences, pending questions, visit history",
     category: "Maya AI",
   },
+  "blog-all": {
+    title: "All blogs",
+    subtitle: "Create, edit, publish, unpublish, and delete blog posts",
+    category: "Content",
+  },
+  "blog-drafts": {
+    title: "Blog drafts",
+    subtitle: "GSC auto-generated posts awaiting approval",
+    category: "Content",
+  },
+  "blog-new": {
+    title: "New blog",
+    subtitle: "Upload JSON or fill all fields, then save draft or publish live",
+    category: "Content",
+  },
 };
 
 function mayaSectionFromNav(id: NavId): MayaSubTab | null {
@@ -245,6 +270,7 @@ function mayaSectionFromNav(id: NavId): MayaSubTab | null {
 
 function groupForNav(id: NavId): NavGroupId {
   if (id === "home") return "overview";
+  if (id === "blog-drafts" || id === "blog-new" || id === "blog-all") return "content";
   if (id.startsWith("maya-") || id === "leads-maya") return "maya";
   return "leads";
 }
@@ -263,9 +289,12 @@ export default function AdminPage() {
     overview: true,
     leads: true,
     maya: true,
+    content: true,
   });
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [drafts, setDrafts] = useState<LeadRow[]>([]);
+  const [blogDraftCount, setBlogDraftCount] = useState(0);
+  const [blogTotalCount, setBlogTotalCount] = useState(0);
   const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
@@ -279,6 +308,8 @@ export default function AdminPage() {
     if (!user) {
       setLeads([]);
       setDrafts([]);
+      setBlogDraftCount(0);
+      setBlogTotalCount(0);
       return;
     }
     setLoadingData(true);
@@ -296,10 +327,21 @@ export default function AdminPage() {
     const unsubDrafts = onSnapshot(draftsQ, (snap) => {
       setDrafts(snap.docs.map((d) => ({ id: d.id, ...d.data() } as LeadRow)));
     });
+    const unsubBlogDrafts = subscribeAllBlogs(
+      (rows) => {
+        setBlogTotalCount(rows.length);
+        setBlogDraftCount(rows.filter((b) => !b.published).length);
+      },
+      () => {
+        setBlogTotalCount(0);
+        setBlogDraftCount(0);
+      }
+    );
 
     return () => {
       unsubLeads();
       unsubDrafts();
+      unsubBlogDrafts();
     };
   }, [user]);
 
@@ -485,6 +527,30 @@ export default function AdminPage() {
         { id: "maya-reminders", label: "Reminders", icon: Bell },
         { id: "maya-patients", label: "Patient memory", icon: Users },
         { id: "leads-maya", label: "Maya leads", icon: Bot, count: counts.maya },
+      ],
+    },
+    {
+      id: "content",
+      label: "Content",
+      hint: "Blog publishing",
+      items: [
+        {
+          id: "blog-all",
+          label: "All blogs",
+          icon: Files,
+          count: blogTotalCount,
+        },
+        {
+          id: "blog-drafts",
+          label: "Blog drafts",
+          icon: FilePenLine,
+          count: blogDraftCount,
+        },
+        {
+          id: "blog-new",
+          label: "New / upload blog",
+          icon: Upload,
+        },
       ],
     },
   ];
@@ -758,6 +824,24 @@ export default function AdminPage() {
                   patients: "maya-patients",
                 };
                 go(map[section]);
+              }}
+            />
+          )}
+
+          {nav === "blog-all" && (
+            <AdminBlogManager
+              onCountChange={(total, drafts) => {
+                setBlogTotalCount(total);
+                setBlogDraftCount(drafts);
+              }}
+            />
+          )}
+          {nav === "blog-drafts" && <AdminBlogDrafts />}
+          {nav === "blog-new" && (
+            <AdminBlogForm
+              onSaved={(_slug, published) => {
+                if (!published) go("blog-drafts");
+                else go("blog-all");
               }}
             />
           )}

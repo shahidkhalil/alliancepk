@@ -96,7 +96,107 @@ function ChatWidgetGallery({ shots, client, accent }: { shots: ChatShot[]; clien
   );
 }
 
-type ProjectType = "Website" | "AI Automation";
+function PhoneFrame({ src, caption, alt, accent, onClick }: { src: string; caption: string; alt: string; accent: string; onClick?: () => void }) {
+  return (
+    <button onClick={onClick} className="group flex flex-col items-center text-left w-full">
+      <div className="w-full max-w-[108px] sm:max-w-[120px] mx-auto rounded-[1.1rem] overflow-hidden border-2 border-[#1a1a2e] bg-[#1a1a2e] shadow-sm hover:shadow-md transition-shadow">
+        <div className="h-2.5 bg-[#1a1a2e] flex items-center justify-center">
+          <span className="w-7 h-0.5 rounded-full bg-white/25" />
+        </div>
+        <div className="overflow-hidden bg-white aspect-[9/19.5]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            className="w-full h-full object-cover object-top group-hover:scale-[1.02] transition-transform duration-500"
+          />
+        </div>
+        <div className="h-2 bg-[#1a1a2e] flex items-center justify-center">
+          <span className="w-4 h-0.5 rounded-full bg-white/20" />
+        </div>
+      </div>
+      <div className="flex items-center gap-1 mt-2 px-0.5 w-full max-w-[120px] mx-auto">
+        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: accent }} />
+        <p className="text-[10px] text-gray-500 leading-snug line-clamp-2">{caption}</p>
+      </div>
+    </button>
+  );
+}
+
+function PhoneGallery({ shots, client, accent }: { shots: ChatShot[]; client: string; accent: string }) {
+  const openLightbox = useContext(LightboxContext);
+  const images = shots.map((s) => s.src);
+  return (
+    <div className="px-7 lg:px-10 py-7 bg-[#F8FAFC] border-b border-gray-100">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: accent }}>App Screens</span>
+        <span className="h-px flex-1" style={{ background: "#E2E8F0" }} />
+        <span className="text-[11px] text-gray-400">{shots.length} screens · tap to enlarge</span>
+      </div>
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 justify-items-center">
+        {shots.map((s, i) => (
+          <PhoneFrame
+            key={s.src}
+            src={s.src}
+            caption={s.caption}
+            alt={`${client} — ${s.caption}`}
+            accent={accent}
+            onClick={() => openLightbox(images, i)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Pre-designed feature cards (headline + phone already in the image). */
+function FeatureCardGallery({ shots, client, accent }: { shots: ChatShot[]; client: string; accent: string }) {
+  const openLightbox = useContext(LightboxContext);
+  const images = shots.map((s) => s.src);
+  return (
+    <div className="px-7 lg:px-10 py-8 bg-[#F8FAFC] border-b border-gray-100">
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: accent }}>App Feature Cards</span>
+        <span className="h-px flex-1" style={{ background: "#E2E8F0" }} />
+        <span className="text-[11px] text-gray-400">{shots.length} cards · tap to enlarge</span>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {shots.map((s, i) => (
+          <button
+            key={s.src}
+            onClick={() => openLightbox(images, i)}
+            className="group text-left rounded-2xl overflow-hidden border border-gray-200/80 bg-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+          >
+            <div className="overflow-hidden bg-[#E8F4FC] aspect-[472/1024] flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={s.src}
+                alt={`${client} — ${s.caption}`}
+                loading="lazy"
+                className="w-full h-full object-contain group-hover:scale-[1.015] transition-transform duration-500"
+              />
+            </div>
+            <div className="flex items-start gap-2 px-3.5 py-3 border-t border-gray-100 bg-white">
+              <span
+                className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: accent }}
+              />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+                <p className="text-xs sm:text-sm text-[#00283C] font-medium leading-snug">{s.caption}</p>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type ProjectType = "Website" | "AI Automation" | "SEO" | "App";
 
 interface CaseStudy {
   client: string;
@@ -105,11 +205,18 @@ interface CaseStudy {
   tagline: string;
   liveUrl?: string;
   liveLabel?: string;
+  pdfUrl?: string;
+  pdfLabel?: string;
   afterImage?: string;
+  afterLabel?: string;
+  thumbImage?: string;
+  logo?: string;
   heroWide?: boolean;
   beforeImage?: string;
   gallery?: string[];
   chatGallery?: ChatShot[];
+  phoneGallery?: ChatShot[];
+  featureGallery?: ChatShot[];
   services: string[];
   challenge: string;
   built: string;
@@ -283,41 +390,406 @@ const caseStudies: CaseStudy[] = [
     ],
     accent: "#00B4D8",
   },
+  {
+    client: "B2B Packaging Brand",
+    type: "SEO",
+    category: "B2B Packaging — Organic Growth & Lead Gen",
+    tagline:
+      "A 12-month B2B SEO program that put a wholesale packaging site on page one for 500 high-intent keywords and grew organic traffic by 75%.",
+    pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
+    pdfLabel: "Full SEO Portfolio PDF",
+    afterImage: "/case-studies/seo-cbd-boxes.jpg",
+    afterLabel: "Results Snapshot",
+    heroWide: true,
+    gallery: ["/case-studies/seo-cbd-boxes-results.jpg"],
+    services: [
+      "Keyword Research & Strategy",
+      "Landing Page SEO",
+      "Content Marketing",
+      "Technical & On-Page SEO",
+      "Lead-Focused Optimization",
+    ],
+    challenge:
+      "A new B2B packaging brand needed a strong online presence for wholesale products. Without rankings for industry-specific and solution-based keywords, organic lead flow stayed limited in a competitive packaging market.",
+    built:
+      "We ran comprehensive industry research to identify high-intent keywords, built and optimized landing pages around those terms and buyer pain points, and launched a content marketing system — including a funnel-stage blog editorial calendar — to support rankings and authority.",
+    result:
+      "Within 6 months the site hit first-page rankings for 500 high-intent keywords. Organic traffic rose 75%, and Search Console showed 92.9K clicks and 5.1M impressions over 16 months — driving significant lead volume from organic search.",
+    features: [
+      "High-intent keyword research for B2B packaging",
+      "Landing pages mapped to buyer pain points",
+      "Content calendar across awareness → decision stages",
+      "Ongoing ranking and traffic performance tracking",
+      "Organic lead generation focus (not vanity traffic)",
+    ],
+    metrics: [
+      { value: "500", label: "Page-1 keywords (6 mo)" },
+      { value: "+75%", label: "Organic traffic" },
+      { value: "92.9K", label: "Clicks (16 months)" },
+    ],
+    accent: "#0EA5E9",
+  },
+  {
+    client: "Local Beauty Salon",
+    type: "SEO",
+    category: "Beauty & Personal Care — Local SEO (NYC)",
+    tagline:
+      "Local SEO that put a beauty salon #1 in the Google Map Pack for its primary neighborhood search within one month.",
+    pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
+    pdfLabel: "Full SEO Portfolio PDF",
+    afterImage: "/case-studies/seo-amparo-beauty.jpg",
+    afterLabel: "Map Pack Results",
+    heroWide: true,
+    services: [
+      "Local Keyword Research",
+      "Google Business Profile",
+      "On-Page Local SEO",
+      "Location Content",
+      "Local Link Building",
+    ],
+    challenge:
+      "A local beauty salon needed a stronger online presence to attract neighborhood customers. Without Map Pack visibility for high-intent beauty searches, booking inquiries stayed harder to win against nearby competitors.",
+    built:
+      "We researched local high-intent beauty keywords, optimized the Google Business Profile, created location-specific content, strengthened on-page SEO for service terms, and built a local backlink strategy to grow neighborhood authority.",
+    result:
+      "Within one month the salon ranked #1 for primary beauty service keywords and topped the Google Local Pack for its core local query — boosting organic visibility, traffic, and booking inquiries.",
+    features: [
+      "Google Business Profile & Maps Pack optimization",
+      "Local beauty keyword targeting",
+      "Service-page on-page SEO",
+      "Location-specific content",
+      "Local authority / backlink outreach",
+    ],
+    metrics: [
+      { value: "#1", label: "Map Pack ranking" },
+      { value: "1 mo", label: "Time to results" },
+      { value: "Local", label: "Booking inquiries ↑" },
+    ],
+    accent: "#E11D48",
+  },
+  {
+    client: "Custom Packaging Brand",
+    type: "SEO",
+    category: "B2B Product Launch — Custom Packaging SEO",
+    tagline:
+      "A 6-month SEO launch that secured first-page rankings for 250 high-intent keywords and grew organic traffic 35%.",
+    pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
+    pdfLabel: "Full SEO Portfolio PDF",
+    afterImage: "/case-studies/seo-refine-packaging.jpg",
+    afterLabel: "Results Snapshot",
+    heroWide: true,
+    gallery: ["/case-studies/seo-refine-packaging-keywords.jpg"],
+    services: [
+      "Industry Keyword Research",
+      "Landing Page Development",
+      "Content Marketing",
+      "On-Page Optimization",
+      "Commercial Intent Targeting",
+    ],
+    challenge:
+      "A custom packaging company needed strong visibility for new products in a competitive market — ranking for industry and solution keywords so organic search could generate qualified B2B leads.",
+    built:
+      "We built a high-intent keyword list from industry research, developed and optimized landing pages for target terms, and ran content marketing to support rankings for commercial packaging queries across retail and specialty product lines.",
+    result:
+      "In 6 months the site achieved first-page rankings for 250 high-intent keywords and grew organic traffic by 35%. Domain metrics showed ~9.6K organic visits and 12.2K ranking keywords, with strong positions on commercial terms.",
+    features: [
+      "Industry + pain-point keyword mapping",
+      "Optimized product / landing pages",
+      "Content supporting commercial keywords",
+      "Ongoing ranking and traffic reporting",
+      "Lead generation via organic search",
+    ],
+    metrics: [
+      { value: "250", label: "Page-1 keywords" },
+      { value: "+35%", label: "Organic traffic" },
+      { value: "9.6K", label: "Monthly organic visits" },
+    ],
+    accent: "#DC2626",
+  },
+  {
+    client: "Vitamins & Supplements Store",
+    type: "SEO",
+    category: "Healthcare E-Commerce — Vitamins & Supplements",
+    tagline:
+      "A 3-month SEO engagement that lifted rankings, grew organic traffic 25%, and doubled revenue for a supplements e-commerce brand.",
+    pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
+    pdfLabel: "Full SEO Portfolio PDF",
+    afterImage: "/case-studies/seo-vitaminshouse.jpg",
+    afterLabel: "Results Snapshot",
+    heroWide: true,
+    gallery: ["/case-studies/seo-vitaminshouse-results.jpg"],
+    services: [
+      "Healthcare Keyword Research",
+      "Product Page Optimization",
+      "Schema Markup",
+      "Technical SEO",
+      "Conversion-Focused Content",
+    ],
+    challenge:
+      "A vitamins and supplements store needed stronger rankings for product terms, more organic traffic, and a clear path to double sales — competing in a crowded market with weak visibility on high-volume keywords.",
+    built:
+      "We researched vitamins and medicines keywords, prioritized high-volume / lower-competition opportunities, optimized product and service pages with relevant content, and implemented schema markup to improve search visibility and rich results.",
+    result:
+      "Rankings improved for 15+ vitamins and medicines keywords, organic traffic rose 25%, and revenue increased 100%. Growth continued to ~29.4K monthly organic visits with 191K clicks and 6.42M impressions over 16 months in key markets.",
+    features: [
+      "High-volume, low-competition keyword targeting",
+      "Product page SEO for vitamins & medicines",
+      "Schema markup for richer SERP presence",
+      "Traffic and ranking growth tracking",
+      "Revenue-aligned SEO priorities",
+    ],
+    metrics: [
+      { value: "+25%", label: "Organic traffic" },
+      { value: "+100%", label: "Revenue increase" },
+      { value: "29.4K", label: "Monthly organic visits" },
+    ],
+    accent: "#16A34A",
+  },
+  {
+    client: "Spark",
+    type: "App",
+    category: "Health & Wellbeing — Mobile App",
+    tagline:
+      "Spark is a health & wellbeing app built around daily habits, mood tracking, and a community wall — so people can stay consistent and feel supported.",
+    afterImage: "/case-studies/spark-1.jpg",
+    afterLabel: "Spark App",
+    thumbImage: "/case-studies/spark-card.jpg",
+    logo: "/case-studies/spark-logo.png",
+    phoneGallery: [
+      { src: "/case-studies/spark-1.jpg", caption: "Splash — Spark brand & tagline" },
+      { src: "/case-studies/spark-2.jpg", caption: "Onboarding tour for health & wellbeing" },
+      { src: "/case-studies/spark-3.jpg", caption: "Home — daily updates, habits & mood score" },
+      { src: "/case-studies/spark-4.jpg", caption: "Habit & mood tracking dashboard" },
+      { src: "/case-studies/spark-5.jpg", caption: "Spark Wall — community mood feed" },
+      { src: "/case-studies/spark-6.jpg", caption: "Side menu — profile, habits & resources" },
+    ],
+    services: [
+      "Mobile App UI/UX",
+      "Habit Tracking",
+      "Mood Insights",
+      "Community Feed",
+      "Onboarding Flow",
+    ],
+    challenge:
+      "People struggle to stay consistent with health and wellbeing goals when tools feel fragmented — habits in one place, mood in another, and no supportive community to keep momentum.",
+    built:
+      "We shaped Spark as a single mobile experience: a clear splash and onboarding tour, a home dashboard with daily updates and habit stats, mood scoring with motivational quotes, a Spark Wall community feed, and a side menu for profile, achievements, and resources.",
+    result:
+      "Spark gives users one place to track habits, check in on mood, and share progress with others — reducing friction and making daily wellbeing habits easier to stick with.",
+    features: [
+      "Splash branding and guided onboarding tour",
+      "Home dashboard with daily updates & habit stats",
+      "Mood score and motivational quotes",
+      "Spark Wall community feed (posts, likes, comments)",
+      "Side navigation for profile, achievements & resources",
+      "Bottom nav: Home, Spark Wall, Habits, Mood",
+    ],
+    metrics: [
+      { value: "6", label: "Core app screens" },
+      { value: "Habits", label: "Daily tracking" },
+      { value: "Mood", label: "Check-ins & wall" },
+    ],
+    accent: "#7C3AED",
+  },
+  {
+    client: "IngreedyIt",
+    type: "App",
+    category: "Ingredient & Product Intelligence — Mobile App",
+    tagline:
+      "IngreedyIt helps people make smarter everyday choices — scan food, cosmetics, cleaning, and pet products, then understand ingredients at their level.",
+    afterImage: "/case-studies/smart-eating-phone-1.jpg",
+    afterLabel: "IngreedyIt App",
+    thumbImage: "/case-studies/smart-eating-card.jpg",
+    logo: "/case-studies/ingreedyit-logo.png",
+    phoneGallery: [
+      { src: "/case-studies/smart-eating-phone-1.jpg", caption: "Home — explore food, cosmetics & more" },
+      { src: "/case-studies/smart-eating-phone-2.jpg", caption: "Dashboard — ingredient scores at a glance" },
+      { src: "/case-studies/smart-eating-phone-3.jpg", caption: "Alerts — know what to avoid instantly" },
+      { src: "/case-studies/smart-eating-phone-4.jpg", caption: "Nutrition — see what’s inside your meal" },
+      { src: "/case-studies/smart-eating-phone-5.jpg", caption: "Learn — everything you want to know" },
+      { src: "/case-studies/smart-eating-phone-6.jpg", caption: "Settings — personalize your experience" },
+      { src: "/case-studies/smart-eating-phone-7.jpg", caption: "Modes — get information at your level" },
+    ],
+    services: [
+      "Mobile App UI/UX",
+      "Ingredient Analysis",
+      "Nutrition Insights",
+      "Personalization",
+      "Multi-Category Search",
+    ],
+    challenge:
+      "Shoppers and health-conscious users struggle to understand what’s in food, snacks, self-care, cleaning, and pet products — labels are dense, jargon is confusing, and there’s no simple way to personalize guidance to their preferences or knowledge level.",
+    built:
+      "We designed a mobile experience around clear category entry points (Food, Snacks, Self Care, Cleaning, Pet Food, Search), ingredient score dashboards, expandable education sections (What Is It, Health Implications, How It’s Made, Nutrition), Simple / Scholar / Scientific reading modes, meal nutrition breakdowns, and preference personalization.",
+    result:
+      "Users can explore products, see ingredient scores at a glance, dig into health implications, switch complexity modes, and personalize preferences — turning opaque labels into decisions they can act on.",
+    features: [
+      "Category home for food, snacks, self-care, cleaning & pets",
+      "Ingredient score lists and product dashboards",
+      "Expandable education: health, manufacturing, nutrition, studies",
+      "Simplify / Expand / Question actions on each section",
+      "Simple, Scholar & Scientific information modes",
+      "Meal nutrition charts and compare / share flows",
+      "Personalization: language, preferences, medical, pets & more",
+    ],
+    metrics: [
+      { value: "6", label: "Product categories" },
+      { value: "3", label: "Reading modes" },
+      { value: "7", label: "Core app screens" },
+    ],
+    accent: "#0284C7",
+  },
+  {
+    client: "UK Furniture Retailer",
+    type: "SEO",
+    category: "Home Furniture — Local / Organic SEO (UK)",
+    tagline:
+      "A 2-month local SEO push that lifted local visibility 40% and boosted inquiries 25% for a UK furniture retailer.",
+    pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
+    pdfLabel: "Full SEO Portfolio PDF",
+    afterImage: "/case-studies/seo-sphynxbeds.jpg",
+    afterLabel: "Keyword Rankings",
+    heroWide: true,
+    services: [
+      "Local Keyword Research",
+      "Google Business Profile",
+      "On-Page Local SEO",
+      "Location Targeting",
+      "Commercial Keyword Optimization",
+    ],
+    challenge:
+      "A UK furniture retailer needed stronger local search visibility and more organic traffic for furniture and bedding queries — without clearer location and commercial keyword targeting, inquiries stayed below potential.",
+    built:
+      "We used Google Keyword Planner for local research, prioritized location-specific terms, optimized the Google Business Profile, and improved on-page SEO with local and commercial keyword targeting across product pages.",
+    result:
+      "Local search visibility rose 40%, organic traffic from targeted local areas grew 20%, and customer inquiries / service bookings improved 25% — with stronger positions on commercial furniture keywords.",
+    features: [
+      "Local keyword prioritization",
+      "Google Business Profile optimization",
+      "On-page local keyword improvements",
+      "Commercial product-term targeting",
+      "Inquiry and booking growth focus",
+    ],
+    metrics: [
+      { value: "+40%", label: "Local visibility" },
+      { value: "+20%", label: "Local organic traffic" },
+      { value: "+25%", label: "Inquiries & bookings" },
+    ],
+    accent: "#0F766E",
+  },
 ];
+
+function CaseStudyDetails({ c }: { c: CaseStudy }) {
+  return (
+    <div className="px-7 lg:px-10 py-8 lg:py-10">
+      <p className="text-lg lg:text-xl font-bold text-[#00283C] leading-snug tracking-tight mb-7">
+        {c.tagline}
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-9">
+        {c.services.map((s) => (
+          <span key={s} className="badge-light text-xs">{s}</span>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 mb-9 py-6 border-y border-gray-100">
+        {c.metrics.map((m) => (
+          <div key={m.label} className="text-center">
+            <div className="text-2xl lg:text-3xl font-extrabold" style={{ color: c.accent }}>{m.value}</div>
+            <div className="text-[11px] lg:text-xs text-gray-400 leading-tight mt-1">{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-7">
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">The Challenge</h3>
+          <p className="text-gray-600 leading-relaxed">{c.challenge}</p>
+        </div>
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">What We Built</h3>
+          <p className="text-gray-600 leading-relaxed">{c.built}</p>
+        </div>
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">The Result</h3>
+          <p className="text-gray-600 leading-relaxed">{c.result}</p>
+        </div>
+      </div>
+
+      <div className="mt-9 pt-7 border-t border-gray-100">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Key Features We Delivered</h3>
+        <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
+          {c.features.map((f) => (
+            <div key={f} className="flex items-start gap-2.5">
+              <span className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c.accent }}>
+                <Check className="w-3 h-3 text-white" />
+              </span>
+              <span className="text-sm text-gray-600 leading-snug">{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function CaseStudyBlock({ c, index }: { c: CaseStudy; index: number }) {
   const { entrance, hoverProps } = useCardMotion();
+
   return (
     <motion.article
       {...entrance(staggerDelay(index))}
       {...hoverProps(true)}
       className="card-white rounded-2xl overflow-hidden card-motion card-shadow-hover"
     >
-      {/* Header band */}
+      {/* Header band — same for all project types */}
       <div className="bg-[#00283C] px-7 lg:px-10 py-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-2">
-              Case Study {String(index + 1).padStart(2, "0")}
+          <div className="flex items-start gap-4">
+            {c.logo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={c.logo}
+                alt=""
+                className="h-12 sm:h-14 w-auto max-w-[7rem] object-contain rounded-xl bg-white/95 p-1.5 flex-shrink-0"
+              />
+            )}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-widest text-white/60 mb-2">
+                Case Study {String(index + 1).padStart(2, "0")}
+              </div>
+              <h2 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">{c.client}</h2>
+              <p className="text-sm text-[#9FD3E8] font-medium mt-1">{c.category}</p>
             </div>
-            <h2 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">{c.client}</h2>
-            <p className="text-sm text-[#9FD3E8] font-medium mt-1">{c.category}</p>
           </div>
-          {c.liveUrl && (
-            <a
-              href={c.liveUrl}
-              target={c.liveUrl.startsWith("http") ? "_blank" : undefined}
-              rel={c.liveUrl.startsWith("http") ? "noopener noreferrer" : undefined}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold text-[#00283C] bg-white hover:bg-[#9FD3E8] transition-colors whitespace-nowrap self-start"
-            >
-              {c.liveLabel ?? "View Live"}
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
-          )}
+          <div className="flex flex-wrap items-center gap-2 self-start">
+            {c.liveUrl && (
+              <a
+                href={c.liveUrl}
+                target={c.liveUrl.startsWith("http") || c.liveUrl.endsWith(".pdf") ? "_blank" : undefined}
+                rel={c.liveUrl.startsWith("http") || c.liveUrl.endsWith(".pdf") ? "noopener noreferrer" : undefined}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold text-[#00283C] bg-white hover:bg-[#9FD3E8] transition-colors whitespace-nowrap"
+              >
+                {c.liveLabel ?? "View Live"}
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
+            )}
+            {c.pdfUrl && (
+              <a
+                href={c.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold text-white border border-white/40 hover:bg-white/10 transition-colors whitespace-nowrap"
+              >
+                {c.pdfLabel ?? "Download PDF"}
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Before / After visual */}
+      {/* Before / After / App hero visual */}
       {(c.beforeImage || c.afterImage) && (
         <div className="bg-[#EEF3F6] px-7 lg:px-10 py-8 border-b border-gray-100">
           <div className={`grid gap-5 ${c.beforeImage && c.afterImage ? "md:grid-cols-2" : "grid-cols-1"}`}>
@@ -337,93 +809,63 @@ function CaseStudyBlock({ c, index }: { c: CaseStudy; index: number }) {
               <div className="block">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] font-bold uppercase tracking-widest text-[#0077A8]">
-                    {c.beforeImage ? "After — By Alliance Tech" : "Live Product Demo"}
+                    {c.beforeImage
+                      ? "After — By Alliance Tech"
+                      : c.afterLabel ?? "Live Product Demo"}
                   </span>
                   <span className="h-px flex-1 bg-[#9FD3E8]" />
                 </div>
-                <div
-                  className={`rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-[#F8FAFC] ${
-                    c.beforeImage ? "aspect-[16/10]" : c.heroWide ? "" : "flex justify-center p-4 sm:p-6"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.afterImage}
-                    alt={`${c.client} — demo by Alliance Tech`}
-                    className={
-                      c.beforeImage
-                        ? "w-full h-full object-cover object-top"
-                        : c.heroWide
-                        ? "w-full h-auto block"
-                        : "w-full max-w-md h-auto rounded-lg shadow-md"
-                    }
-                  />
-                </div>
+                {c.type === "App" ? (
+                  <div className="flex justify-center py-2 sm:py-4">
+                    <div className="w-[100px] sm:w-[112px] rounded-[1.1rem] overflow-hidden border-2 border-[#1a1a2e] bg-[#1a1a2e] shadow-md">
+                      <div className="h-2.5 bg-[#1a1a2e] flex items-center justify-center">
+                        <span className="w-7 h-0.5 rounded-full bg-white/25" />
+                      </div>
+                      <div className="overflow-hidden bg-white aspect-[9/19.5]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={c.afterImage}
+                          alt={`${c.client} — app by Alliance Tech`}
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
+                      <div className="h-2 bg-[#1a1a2e] flex items-center justify-center">
+                        <span className="w-4 h-0.5 rounded-full bg-white/20" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-[#F8FAFC] ${
+                      c.beforeImage ? "aspect-[16/10]" : c.heroWide ? "" : "flex justify-center p-4 sm:p-6"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={c.afterImage}
+                      alt={`${c.client} — demo by Alliance Tech`}
+                      className={
+                        c.beforeImage
+                          ? "w-full h-full object-cover object-top"
+                          : c.heroWide
+                          ? "w-full h-auto block"
+                          : "w-full max-w-md h-auto rounded-lg shadow-md"
+                      }
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Full screenshot gallery */}
       {c.gallery?.length ? <ScreenshotGallery images={c.gallery} client={c.client} accent={c.accent} /> : null}
-
-      {/* AI chat / voice widget gallery */}
       {c.chatGallery?.length ? <ChatWidgetGallery shots={c.chatGallery} client={c.client} accent={c.accent} /> : null}
+      {c.phoneGallery?.length ? <PhoneGallery shots={c.phoneGallery} client={c.client} accent={c.accent} /> : null}
+      {c.featureGallery?.length ? <FeatureCardGallery shots={c.featureGallery} client={c.client} accent={c.accent} /> : null}
 
-      <div className="px-7 lg:px-10 py-8 lg:py-10">
-        <p className="text-lg lg:text-xl font-bold text-[#00283C] leading-snug tracking-tight mb-7">
-          {c.tagline}
-        </p>
-
-        {/* Services tags */}
-        <div className="flex flex-wrap gap-2 mb-9">
-          {c.services.map((s) => (
-            <span key={s} className="badge-light text-xs">{s}</span>
-          ))}
-        </div>
-
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-4 mb-9 py-6 border-y border-gray-100">
-          {c.metrics.map((m) => (
-            <div key={m.label} className="text-center">
-              <div className="text-2xl lg:text-3xl font-extrabold" style={{ color: c.accent }}>{m.value}</div>
-              <div className="text-[11px] lg:text-xs text-gray-400 leading-tight mt-1">{m.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Story */}
-        <div className="space-y-7">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">The Challenge</h3>
-            <p className="text-gray-600 leading-relaxed">{c.challenge}</p>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">What We Built</h3>
-            <p className="text-gray-600 leading-relaxed">{c.built}</p>
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">The Result</h3>
-            <p className="text-gray-600 leading-relaxed">{c.result}</p>
-          </div>
-        </div>
-
-        {/* Feature list */}
-        <div className="mt-9 pt-7 border-t border-gray-100">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Key Features We Delivered</h3>
-          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
-            {c.features.map((f) => (
-              <div key={f} className="flex items-start gap-2.5">
-                <span className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c.accent }}>
-                  <Check className="w-3 h-3 text-white" />
-                </span>
-                <span className="text-sm text-gray-600 leading-snug">{f}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <CaseStudyDetails c={c} />
     </motion.article>
   );
 }
@@ -469,7 +911,7 @@ function Lightbox({ images, index, onClose, onNav }: { images: string[]; index: 
   );
 }
 
-const filters: ("All" | ProjectType)[] = ["All", "Website", "AI Automation"];
+const filters: ("All" | ProjectType)[] = ["All", "Website", "AI Automation", "SEO", "App"];
 
 export default function Portfolio() {
   const [filter, setFilter] = useState<"All" | ProjectType>("All");
@@ -486,6 +928,37 @@ export default function Portfolio() {
     setSelected(0);
   };
 
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace(/^#/, "").toLowerCase();
+      if (hash === "websites" || hash === "website") {
+        setFilter("Website");
+        setSelected(0);
+        requestAnimationFrame(() => {
+          document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      } else if (hash === "ai" || hash === "ai-automation") {
+        setFilter("AI Automation");
+        setSelected(0);
+      } else if (hash === "seo" || hash === "local-seo") {
+        setFilter("SEO");
+        setSelected(0);
+        requestAnimationFrame(() => {
+          document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      } else if (hash === "app" || hash === "apps") {
+        setFilter("App");
+        setSelected(0);
+        requestAnimationFrame(() => {
+          document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
+
   return (
     <LightboxContext.Provider value={openLightbox}>
     <PageWrapper>
@@ -493,11 +966,11 @@ export default function Portfolio() {
         badge="OUR WORK"
         headline="Real Builds."
         highlight="Real Results."
-        subheadline="A look at the websites, booking systems, and growth platforms we've built for healthcare professionals across the United States — and the impact they've made."
+        subheadline="A look at the websites, apps, AI systems, and SEO campaigns we've delivered — and the impact they've made."
         ctaText="Start Your Project"
       />
 
-      <section className="py-16 lg:py-20 bg-[#F8FAFC]">
+      <section id="websites" className="py-16 lg:py-20 bg-[#F8FAFC] scroll-mt-24">
         <div className="max-w-5xl mx-auto px-6">
 
           {/* Category filter */}
@@ -525,7 +998,8 @@ export default function Portfolio() {
             <div className="grid sm:grid-cols-2 gap-4">
               {filtered.map((c, i) => {
                 const isActive = i === selected;
-                const thumb = c.afterImage || c.beforeImage;
+                const thumb = c.thumbImage || c.afterImage || c.beforeImage;
+                const isApp = c.type === "App";
                 return (
                   <button
                     key={c.client}
@@ -535,13 +1009,39 @@ export default function Portfolio() {
                     }`}
                     style={{ borderColor: isActive ? c.accent : undefined, background: "white" }}
                   >
-                    {thumb ? (
+                    {isApp ? (
+                      <div className="aspect-[16/9] flex flex-col items-center justify-center gap-3 bg-[#F8FAFC] px-6">
+                        {c.logo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={c.logo}
+                            alt={c.client}
+                            className="max-h-20 sm:max-h-24 w-auto max-w-[70%] object-contain"
+                          />
+                        ) : (
+                          <p
+                            className="text-2xl sm:text-3xl font-extrabold tracking-tight text-center"
+                            style={{ color: c.accent }}
+                          >
+                            {c.client}
+                          </p>
+                        )}
+                        <span
+                          className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full"
+                          style={{ background: `${c.accent}1A`, color: c.accent }}
+                        >
+                          App
+                        </span>
+                      </div>
+                    ) : thumb ? (
                       <div className="aspect-[16/9] overflow-hidden bg-[#F0F7FA] flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={thumb}
                           alt={c.client}
-                          className={`w-full h-full ${c.heroWide ? "object-contain" : "object-cover object-top"}`}
+                          className={`w-full h-full ${
+                            c.thumbImage || c.heroWide ? "object-contain" : "object-cover object-top"
+                          }`}
                         />
                       </div>
                     ) : (
@@ -552,19 +1052,21 @@ export default function Portfolio() {
                         <p className="text-white font-extrabold text-lg text-center leading-snug">{c.client}</p>
                       </div>
                     )}
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ background: c.accent }} />
-                        <p className="text-sm font-bold text-[#00283C]">{c.client}</p>
+                    {!isApp && (
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="w-2 h-2 rounded-full" style={{ background: c.accent }} />
+                          <p className="text-sm font-bold text-[#00283C]">{c.client}</p>
+                        </div>
+                        <span
+                          className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5"
+                          style={{ background: `${c.accent}1A`, color: c.accent }}
+                        >
+                          {c.type}
+                        </span>
+                        <p className="text-xs text-gray-400 leading-snug">{c.category}</p>
                       </div>
-                      <span
-                        className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full mb-1.5"
-                        style={{ background: `${c.accent}1A`, color: c.accent }}
-                      >
-                        {c.type}
-                      </span>
-                      <p className="text-xs text-gray-400 leading-snug">{c.category}</p>
-                    </div>
+                    )}
                   </button>
                 );
               })}
