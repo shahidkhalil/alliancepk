@@ -52,11 +52,11 @@ export default function AuditPromo() {
               <div className="bg-white border border-gray-100 rounded-xl rounded-bl-sm px-3 py-2 text-xs text-gray-600 max-w-[85%]">
                 👋 Paste your website and I&apos;ll audit it in 30 seconds.
               </div>
-              <div className="bg-[#00283C] text-white rounded-xl rounded-br-sm px-3 py-2 text-xs ml-auto max-w-[60%]">
-                myclinic.pk
+              <div className="bg-[#00283C] text-white rounded-xl rounded-br-sm px-3 py-2 text-xs ml-auto max-w-[70%]">
+                yourclinic.com
               </div>
               <div className="bg-white border border-gray-100 rounded-xl rounded-bl-sm px-3 py-2 text-xs text-gray-600 max-w-[85%]">
-                ⚡ Score: <span className="font-bold text-[#DC2626]">54/100</span> — you&apos;re invisible for &ldquo;dental implants&rdquo; and 3 clinics rank above you…
+                ⚡ Score: <span className="font-bold text-[#DC2626]">54/100</span> — you&apos;re invisible for &ldquo;dental implants Houston&rdquo; and 3 clinics rank above you…
               </div>
             </div>
           </div>

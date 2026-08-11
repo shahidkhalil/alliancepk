@@ -217,6 +217,11 @@ interface CaseStudy {
   chatGallery?: ChatShot[];
   phoneGallery?: ChatShot[];
   featureGallery?: ChatShot[];
+  /** SEO structured insight (no PDF screenshots). */
+  duration?: string;
+  industry?: string;
+  objectives?: string[];
+  activities?: string[];
   services: string[];
   challenge: string;
   built: string;
@@ -398,10 +403,19 @@ const caseStudies: CaseStudy[] = [
       "A 12-month B2B SEO program that put a wholesale packaging site on page one for 500 high-intent keywords and grew organic traffic by 75%.",
     pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
     pdfLabel: "Full SEO Portfolio PDF",
-    afterImage: "/case-studies/seo-cbd-boxes.jpg",
-    afterLabel: "Results Snapshot",
-    heroWide: true,
-    gallery: ["/case-studies/seo-cbd-boxes-results.jpg"],
+    duration: "12 months",
+    industry: "B2B Packaging",
+    objectives: [
+      "Establish a strong online presence for new wholesale products",
+      "Rank for industry-specific and solution-based keywords",
+      "Drive qualified lead generation through organic search",
+    ],
+    activities: [
+      "Comprehensive industry research for high-intent keywords",
+      "Landing pages built around buyer pain points",
+      "Funnel-stage content marketing & blog calendar",
+      "Ongoing ranking and Search Console tracking",
+    ],
     services: [
       "Keyword Research & Strategy",
       "Landing Page SEO",
@@ -437,9 +451,19 @@ const caseStudies: CaseStudy[] = [
       "Local SEO that put a beauty salon #1 in the Google Map Pack for its primary neighborhood search within one month.",
     pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
     pdfLabel: "Full SEO Portfolio PDF",
-    afterImage: "/case-studies/seo-amparo-beauty.jpg",
-    afterLabel: "Map Pack Results",
-    heroWide: true,
+    duration: "1 month",
+    industry: "Beauty & Personal Care",
+    objectives: [
+      "Build a strong local online presence",
+      "Achieve #1 ranking for primary beauty service keywords",
+      "Increase organic traffic and booking inquiries",
+    ],
+    activities: [
+      "Local high-intent beauty keyword research",
+      "Google Business Profile optimization",
+      "Location-specific content and on-page SEO",
+      "Local backlink / authority strategy",
+    ],
     services: [
       "Local Keyword Research",
       "Google Business Profile",
@@ -463,7 +487,7 @@ const caseStudies: CaseStudy[] = [
     metrics: [
       { value: "#1", label: "Map Pack ranking" },
       { value: "1 mo", label: "Time to results" },
-      { value: "Local", label: "Booking inquiries ↑" },
+      { value: "↑", label: "Booking inquiries" },
     ],
     accent: "#E11D48",
   },
@@ -475,10 +499,19 @@ const caseStudies: CaseStudy[] = [
       "A 6-month SEO launch that secured first-page rankings for 250 high-intent keywords and grew organic traffic 35%.",
     pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
     pdfLabel: "Full SEO Portfolio PDF",
-    afterImage: "/case-studies/seo-refine-packaging.jpg",
-    afterLabel: "Results Snapshot",
-    heroWide: true,
-    gallery: ["/case-studies/seo-refine-packaging-keywords.jpg"],
+    duration: "6 months",
+    industry: "B2B Custom Packaging",
+    objectives: [
+      "Launch strong visibility for new packaging products",
+      "Rank for industry and solution-based keywords",
+      "Generate B2B leads from organic search",
+    ],
+    activities: [
+      "In-depth industry keyword research",
+      "Landing pages for commercial-intent terms",
+      "Content marketing supporting product rankings",
+      "Ongoing ranking and traffic reporting",
+    ],
     services: [
       "Industry Keyword Research",
       "Landing Page Development",
@@ -514,10 +547,19 @@ const caseStudies: CaseStudy[] = [
       "A 3-month SEO engagement that lifted rankings, grew organic traffic 25%, and doubled revenue for a supplements e-commerce brand.",
     pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
     pdfLabel: "Full SEO Portfolio PDF",
-    afterImage: "/case-studies/seo-vitaminshouse.jpg",
-    afterLabel: "Results Snapshot",
-    heroWide: true,
-    gallery: ["/case-studies/seo-vitaminshouse-results.jpg"],
+    duration: "3 months",
+    industry: "Healthcare E-Commerce",
+    objectives: [
+      "Improve rankings for vitamins and medicines",
+      "Drive more organic traffic",
+      "Increase sales by 100%",
+    ],
+    activities: [
+      "Keyword research for high-volume / lower-competition terms",
+      "Product page optimization with patient-friendly content",
+      "Schema markup for richer search results",
+      "Technical SEO and ranking tracking",
+    ],
     services: [
       "Healthcare Keyword Research",
       "Product Page Optimization",
@@ -647,9 +689,19 @@ const caseStudies: CaseStudy[] = [
       "A 2-month local SEO push that lifted local visibility 40% and boosted inquiries 25% for a UK furniture retailer.",
     pdfUrl: "/Alliancetech-SEO-Portfolio.pdf",
     pdfLabel: "Full SEO Portfolio PDF",
-    afterImage: "/case-studies/seo-sphynxbeds.jpg",
-    afterLabel: "Keyword Rankings",
-    heroWide: true,
+    duration: "2 months",
+    industry: "Home Furniture (UK)",
+    objectives: [
+      "Improve local search visibility",
+      "Drive more organic traffic from target areas",
+      "Enhance keyword targeting for local services",
+    ],
+    activities: [
+      "Local keyword research with Google Keyword Planner",
+      "Prioritized location-specific terms",
+      "Google Business Profile optimization",
+      "On-page local & commercial keyword improvements",
+    ],
     services: [
       "Local Keyword Research",
       "Google Business Profile",
@@ -692,14 +744,17 @@ function CaseStudyDetails({ c }: { c: CaseStudy }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-9 py-6 border-y border-gray-100">
-        {c.metrics.map((m) => (
-          <div key={m.label} className="text-center">
-            <div className="text-2xl lg:text-3xl font-extrabold" style={{ color: c.accent }}>{m.value}</div>
-            <div className="text-[11px] lg:text-xs text-gray-400 leading-tight mt-1">{m.label}</div>
-          </div>
-        ))}
-      </div>
+      {/* Hide duplicate metrics strip for SEO — already shown in SeoInsightPanel */}
+      {c.type !== "SEO" && (
+        <div className="grid grid-cols-3 gap-4 mb-9 py-6 border-y border-gray-100">
+          {c.metrics.map((m) => (
+            <div key={m.label} className="text-center">
+              <div className="text-2xl lg:text-3xl font-extrabold" style={{ color: c.accent }}>{m.value}</div>
+              <div className="text-[11px] lg:text-xs text-gray-400 leading-tight mt-1">{m.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-7">
         <div>
@@ -733,8 +788,75 @@ function CaseStudyDetails({ c }: { c: CaseStudy }) {
   );
 }
 
+function SeoInsightPanel({ c }: { c: CaseStudy }) {
+  return (
+    <div className="bg-[#F8FAFC] px-7 lg:px-10 py-8 border-b border-gray-100">
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: c.accent }}>
+          SEO Results Snapshot
+        </span>
+        <span className="h-px flex-1 bg-[#E2E8F0]" />
+        {c.industry && (
+          <span className="text-[11px] font-semibold text-gray-500 bg-white border border-gray-200 px-2.5 py-1 rounded-full">
+            {c.industry}
+          </span>
+        )}
+        {c.duration && (
+          <span className="text-[11px] font-semibold text-gray-500 bg-white border border-gray-200 px-2.5 py-1 rounded-full">
+            {c.duration}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-7">
+        {c.metrics.map((m) => (
+          <div
+            key={m.label}
+            className="rounded-xl bg-white border border-gray-100 px-3 py-4 sm:px-4 sm:py-5 text-center shadow-sm"
+          >
+            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight" style={{ color: c.accent }}>
+              {m.value}
+            </div>
+            <div className="text-[10px] sm:text-xs text-gray-400 mt-1.5 leading-snug">{m.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-5">
+        {c.objectives?.length ? (
+          <div className="rounded-xl bg-white border border-gray-100 p-5 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Objectives</h3>
+            <ul className="space-y-2.5">
+              {c.objectives.map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm text-gray-600 leading-snug">
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: c.accent }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {c.activities?.length ? (
+          <div className="rounded-xl bg-white border border-gray-100 p-5 shadow-sm">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Key Activities</h3>
+            <ul className="space-y-2.5">
+              {c.activities.map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm text-gray-600 leading-snug">
+                  <Check className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: c.accent }} />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function CaseStudyBlock({ c, index }: { c: CaseStudy; index: number }) {
   const { entrance, hoverProps } = useCardMotion();
+  const showVisual = Boolean(c.beforeImage || c.afterImage) && c.type !== "SEO";
 
   return (
     <motion.article
@@ -789,8 +911,11 @@ function CaseStudyBlock({ c, index }: { c: CaseStudy; index: number }) {
         </div>
       </div>
 
+      {/* SEO: structured results instead of PDF screenshots */}
+      {c.type === "SEO" ? <SeoInsightPanel c={c} /> : null}
+
       {/* Before / After / App hero visual */}
-      {(c.beforeImage || c.afterImage) && (
+      {showVisual && (
         <div className="bg-[#EEF3F6] px-7 lg:px-10 py-8 border-b border-gray-100">
           <div className={`grid gap-5 ${c.beforeImage && c.afterImage ? "md:grid-cols-2" : "grid-cols-1"}`}>
             {c.beforeImage && (
@@ -913,6 +1038,39 @@ function Lightbox({ images, index, onClose, onNav }: { images: string[]; index: 
 
 const filters: ("All" | ProjectType)[] = ["All", "Website", "AI Automation", "SEO", "App"];
 
+function filterToHash(f: "All" | ProjectType): string {
+  switch (f) {
+    case "Website":
+      return "websites";
+    case "AI Automation":
+      return "ai";
+    case "SEO":
+      return "seo";
+    case "App":
+      return "app";
+    default:
+      return "";
+  }
+}
+
+function hashToFilter(hash: string): "All" | ProjectType | null {
+  const h = hash.replace(/^#/, "").toLowerCase();
+  if (h === "websites" || h === "website") return "Website";
+  if (h === "ai" || h === "ai-automation") return "AI Automation";
+  if (h === "seo" || h === "local-seo") return "SEO";
+  if (h === "app" || h === "apps") return "App";
+  if (h === "all" || h === "") return "All";
+  return null;
+}
+
+function setCategoryUrl(f: "All" | ProjectType) {
+  const hash = filterToHash(f);
+  const next = hash
+    ? `${window.location.pathname}${window.location.search}#${hash}`
+    : `${window.location.pathname}${window.location.search}`;
+  window.history.replaceState(null, "", next);
+}
+
 export default function Portfolio() {
   const [filter, setFilter] = useState<"All" | ProjectType>("All");
   const filtered = filter === "All" ? caseStudies : caseStudies.filter((c) => c.type === filter);
@@ -926,37 +1084,25 @@ export default function Portfolio() {
   const handleFilter = (f: "All" | ProjectType) => {
     setFilter(f);
     setSelected(0);
+    setCategoryUrl(f);
   };
 
   useEffect(() => {
-    const applyHash = () => {
-      const hash = window.location.hash.replace(/^#/, "").toLowerCase();
-      if (hash === "websites" || hash === "website") {
-        setFilter("Website");
-        setSelected(0);
-        requestAnimationFrame(() => {
-          document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      } else if (hash === "ai" || hash === "ai-automation") {
-        setFilter("AI Automation");
-        setSelected(0);
-      } else if (hash === "seo" || hash === "local-seo") {
-        setFilter("SEO");
-        setSelected(0);
-        requestAnimationFrame(() => {
-          document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      } else if (hash === "app" || hash === "apps") {
-        setFilter("App");
-        setSelected(0);
+    const applyHash = (scroll = true) => {
+      const next = hashToFilter(window.location.hash);
+      if (!next) return;
+      setFilter(next);
+      setSelected(0);
+      if (scroll && next !== "All") {
         requestAnimationFrame(() => {
           document.getElementById("websites")?.scrollIntoView({ behavior: "smooth", block: "start" });
         });
       }
     };
-    applyHash();
-    window.addEventListener("hashchange", applyHash);
-    return () => window.removeEventListener("hashchange", applyHash);
+    applyHash(true);
+    const onHashChange = () => applyHash(true);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
   return (
@@ -995,19 +1141,25 @@ export default function Portfolio() {
             <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 text-center">
               Select a project to view the case study
             </p>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${filter === "SEO" ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2"}`}>
               {filtered.map((c, i) => {
                 const isActive = i === selected;
                 const thumb = c.thumbImage || c.afterImage || c.beforeImage;
                 const isApp = c.type === "App";
+                const isSeo = c.type === "SEO";
                 return (
                   <button
                     key={c.client}
                     onClick={() => setSelected(i)}
-                    className={`text-left rounded-xl overflow-hidden border-2 transition-all ${
-                      isActive ? "shadow-lg" : "border-transparent hover:shadow-md opacity-80 hover:opacity-100"
+                    className={`text-left rounded-2xl overflow-hidden border transition-all duration-300 ${
+                      isActive
+                        ? "shadow-[0_12px_40px_-12px_rgba(0,40,60,0.45)] scale-[1.01]"
+                        : "border-transparent hover:shadow-lg opacity-90 hover:opacity-100 hover:-translate-y-0.5"
                     }`}
-                    style={{ borderColor: isActive ? c.accent : undefined, background: "white" }}
+                    style={{
+                      borderColor: isActive ? c.accent : isSeo ? "rgba(0,40,60,0.12)" : undefined,
+                      background: "white",
+                    }}
                   >
                     {isApp ? (
                       <div className="aspect-[16/9] flex flex-col items-center justify-center gap-3 bg-[#F8FAFC] px-6">
@@ -1033,6 +1185,67 @@ export default function Portfolio() {
                           App
                         </span>
                       </div>
+                    ) : isSeo ? (
+                      <div
+                        className="relative aspect-[16/10] overflow-hidden px-6 py-5 flex flex-col justify-between text-left"
+                        style={{
+                          background: `linear-gradient(145deg, #001e2e 0%, #00283C 48%, ${c.accent}33 160%)`,
+                        }}
+                      >
+                        {/* subtle grid / shine */}
+                        <div
+                          className="pointer-events-none absolute inset-0 opacity-[0.07]"
+                          style={{
+                            backgroundImage:
+                              "linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px)",
+                            backgroundSize: "28px 28px",
+                          }}
+                        />
+                        <div
+                          className="pointer-events-none absolute -right-8 -top-10 w-40 h-40 rounded-full blur-3xl opacity-40"
+                          style={{ background: c.accent }}
+                        />
+
+                        <div className="relative z-[1] flex items-start justify-between gap-3">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">
+                            SEO Case Study
+                          </span>
+                          {c.duration && (
+                            <span className="text-[10px] font-semibold text-white/80 bg-white/10 border border-white/15 px-2 py-0.5 rounded-full whitespace-nowrap">
+                              {c.duration}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="relative z-[1] mt-auto">
+                          {c.metrics[0] && (
+                            <div className="mb-3">
+                              <p
+                                className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none"
+                                style={{ color: c.accent }}
+                              >
+                                {c.metrics[0].value}
+                              </p>
+                              <p className="text-[11px] text-white/50 mt-1.5 tracking-wide">
+                                {c.metrics[0].label}
+                              </p>
+                            </div>
+                          )}
+                          <p className="text-base sm:text-lg font-bold text-white tracking-tight leading-snug">
+                            {c.client}
+                          </p>
+                          {c.industry && (
+                            <p className="text-[11px] text-white/45 mt-1 truncate">{c.industry}</p>
+                          )}
+                        </div>
+
+                        {isActive && (
+                          <div
+                            className="absolute inset-x-0 bottom-0 h-0.5"
+                            style={{ background: c.accent }}
+                          />
+                        )}
+                      </div>
                     ) : thumb ? (
                       <div className="aspect-[16/9] overflow-hidden bg-[#F0F7FA] flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1052,7 +1265,7 @@ export default function Portfolio() {
                         <p className="text-white font-extrabold text-lg text-center leading-snug">{c.client}</p>
                       </div>
                     )}
-                    {!isApp && (
+                    {!isApp && !isSeo && (
                       <div className="p-4">
                         <div className="flex items-center gap-2 mb-1.5">
                           <span className="w-2 h-2 rounded-full" style={{ background: c.accent }} />

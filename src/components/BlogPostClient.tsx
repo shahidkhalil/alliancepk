@@ -29,6 +29,8 @@ function PostSkeleton() {
   );
 }
 
+const EMPTY_RELATED: BlogPost[] = [];
+
 function pickRelated(all: BlogPost[], current: BlogPost, limit = 2): BlogPost[] {
   return all
     .filter((p) => p.slug !== current.slug)
@@ -43,7 +45,7 @@ function pickRelated(all: BlogPost[], current: BlogPost, limit = 2): BlogPost[] 
 export default function BlogPostClient({
   slug,
   initialPost = null,
-  initialRelated = [],
+  initialRelated = EMPTY_RELATED,
 }: {
   slug: string;
   initialPost?: BlogPost | null;
@@ -52,11 +54,16 @@ export default function BlogPostClient({
   const hasInitial = Boolean(initialPost && initialPost.slug === slug);
   const [post, setPost] = useState<BlogPost | null>(hasInitial ? initialPost : null);
   const [related, setRelated] = useState<BlogPost[]>(
-    hasInitial ? initialRelated : []
+    hasInitial ? initialRelated : EMPTY_RELATED
   );
   const [status, setStatus] = useState<"loading" | "ready" | "missing" | "error">(
     hasInitial ? "ready" : "loading"
   );
+
+  // Depend on slug (+ baked slug identity), not array/object identity.
+  // Default `initialRelated = []` used to create a new array every render and
+  // re-trigger this effect forever on the post-deploy viewer fallback.
+  const initialSlug = initialPost?.slug ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -94,14 +101,14 @@ export default function BlogPostClient({
     // Viewer / unknown slug path: fetch THIS post first (show ASAP), related later
     setStatus("loading");
     setPost(null);
-    setRelated([]);
+    setRelated(EMPTY_RELATED);
 
     fetchBlogBySlug(slug)
       .then((found) => {
         if (cancelled) return;
         if (!found) {
           setPost(null);
-          setRelated([]);
+          setRelated(EMPTY_RELATED);
           setStatus("missing");
           return;
         }
@@ -121,7 +128,10 @@ export default function BlogPostClient({
     return () => {
       cancelled = true;
     };
-  }, [slug, initialPost, initialRelated]);
+    // initialPost / initialRelated are read from this render; identity must not
+    // be in the dep list (unstable defaults caused an infinite loading loop).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+  }, [slug, initialSlug]);
 
   const articleJsonLd = useMemo(() => {
     if (!post) return null;

@@ -3,7 +3,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
 const results = [
-  { name: "Generic Dental Directory", url: "dentaldirectory.pk", you: false },
+  { name: "Generic Dental Directory", url: "dentaldirectory.com", you: false },
   { name: "Competitor Clinic Houston", url: "competitorclinic.com", you: false },
   { name: "Your Clinic — Dental Implants Houston", url: "yourclinic.com", you: true },
 ];
