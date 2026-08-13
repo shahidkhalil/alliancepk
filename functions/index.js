@@ -42,6 +42,7 @@ exports.packageOrder = require("./packageOrder").packageOrder;
 exports.realtimeToken = require("./realtime").realtimeToken;
 exports.bookAppointmentHttp = require("./realtime").bookAppointmentHttp;
 exports.sendAppointmentReminders = require("./reminders").sendAppointmentReminders;
+exports.adminInsights = require("./adminInsights").adminInsights;
 
 const { handleBusinessAudit, isBusinessAuditRequest } = require("./businessAudit");
 

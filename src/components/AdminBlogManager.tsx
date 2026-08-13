@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
+  ChevronDown,
+  ChevronRight,
   Eye,
   FilePenLine,
+  FileText,
   Loader2,
   Plus,
   Search,
@@ -25,17 +28,25 @@ type Mode = { type: "list" } | { type: "create" } | { type: "edit"; blog: AdminB
 
 export default function AdminBlogManager({
   onCountChange,
+  initialFilter,
 }: {
   onCountChange?: (total: number, drafts: number) => void;
+  initialFilter?: Filter;
 }) {
   const [blogs, setBlogs] = useState<AdminBlogDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(initialFilter ?? "all");
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<Mode>({ type: "list" });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionMsg, setActionMsg] = useState("");
+  const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (initialFilter) setFilter(initialFilter);
+  }, [initialFilter]);
 
   useEffect(() => {
     setLoading(true);
@@ -85,6 +96,7 @@ export default function AdminBlogManager({
   const run = async (id: string, fn: () => Promise<void>, okMsg: string) => {
     setBusyId(id);
     setActionMsg("");
+    setPublishedSlug(null);
     try {
       await fn();
       setActionMsg(okMsg);
@@ -95,13 +107,17 @@ export default function AdminBlogManager({
     }
   };
 
+  const toggleExpand = (id: string) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   if (mode.type === "create") {
     return (
       <div className="space-y-4">
         <button
           type="button"
           onClick={() => setMode({ type: "list" })}
-          className="text-sm font-semibold text-[#0077A8] hover:text-[#00283C]"
+          className="text-sm font-semibold text-[#0077A8] hover:text-[#00283C] cursor-pointer"
         >
           ← Back to all blogs
         </button>
@@ -119,7 +135,7 @@ export default function AdminBlogManager({
         <button
           type="button"
           onClick={() => setMode({ type: "list" })}
-          className="text-sm font-semibold text-[#0077A8] hover:text-[#00283C]"
+          className="text-sm font-semibold text-[#0077A8] hover:text-[#00283C] cursor-pointer"
         >
           ← Back to all blogs
         </button>
@@ -159,10 +175,10 @@ export default function AdminBlogManager({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search title, slug, city…"
-            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0077A8]"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#0077A8] bg-white"
           />
         </div>
-        <div className="flex rounded-xl border border-gray-200 overflow-hidden text-xs font-bold">
+        <div className="flex rounded-xl border border-gray-200 overflow-hidden text-xs font-bold bg-white">
           {(
             [
               ["all", `All (${counts.all})`],
@@ -174,10 +190,10 @@ export default function AdminBlogManager({
               key={id}
               type="button"
               onClick={() => setFilter(id)}
-              className={`px-3 py-2.5 ${
+              className={`px-3 py-2.5 cursor-pointer ${
                 filter === id
                   ? "bg-[#00283C] text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               {label}
@@ -187,14 +203,45 @@ export default function AdminBlogManager({
         <button
           type="button"
           onClick={() => setMode({ type: "create" })}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00283C] text-white text-sm font-bold hover:bg-[#003d5c]"
+          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00283C] text-white text-sm font-bold hover:bg-[#003d5c] cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           New blog
         </button>
       </div>
 
-      {actionMsg && (
+      {filter === "draft" && (
+        <p className="text-sm text-gray-500">
+          Review drafts here — expand to read, then Publish or Edit. Auto-generated GSC
+          drafts show their search trigger when available.
+        </p>
+      )}
+
+      {publishedSlug && (
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex flex-wrap items-center gap-2">
+          <Check className="w-4 h-4 shrink-0" />
+          <span>
+            Published. Live at{" "}
+            <a
+              href={`/blog/${publishedSlug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold underline underline-offset-2"
+            >
+              /blog/{publishedSlug}
+            </a>
+          </span>
+          <button
+            type="button"
+            onClick={() => setPublishedSlug(null)}
+            className="ml-auto text-xs font-semibold text-emerald-700/70 hover:text-emerald-900 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {actionMsg && !publishedSlug && (
         <div className="rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm text-[#00283C]">
           {actionMsg}
         </div>
@@ -202,12 +249,20 @@ export default function AdminBlogManager({
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center text-gray-400 text-sm">
-          No blogs match. Create one with <strong>New blog</strong>.
+          {filter === "draft" ? (
+            <>No drafts waiting. Create one with <strong>New blog</strong>.</>
+          ) : (
+            <>
+              No blogs match. Create one with <strong>New blog</strong>.
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map((blog) => {
             const busy = busyId === blog.docId;
+            const open = Boolean(expanded[blog.docId]);
+            const sections = blog.sections || [];
             return (
               <div
                 key={blog.docId}
@@ -242,8 +297,15 @@ export default function AdminBlogManager({
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
                       {blog.location}, {blog.state} · {blog.date || "—"} ·{" "}
-                      {(blog.sections || []).length} sections
+                      {sections.length} sections
                     </p>
+                    {blog.gscOpportunity && (
+                      <p className="text-xs text-[#0077A8] mt-1.5">
+                        GSC: “{blog.gscOpportunity.query}” · impr{" "}
+                        {blog.gscOpportunity.impressions} · pos{" "}
+                        {blog.gscOpportunity.position.toFixed(1)}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2 shrink-0">
@@ -262,7 +324,7 @@ export default function AdminBlogManager({
                       type="button"
                       disabled={busy}
                       onClick={() => setMode({ type: "edit", blog })}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-[#00283C] hover:border-[#0077A8] disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-[#00283C] hover:border-[#0077A8] disabled:opacity-60 cursor-pointer"
                     >
                       <FilePenLine className="w-3.5 h-3.5" />
                       Edit
@@ -278,7 +340,7 @@ export default function AdminBlogManager({
                             `Unpublished ${blog.slug}`
                           )
                         }
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-100 text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:opacity-60"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-100 text-xs font-bold text-amber-700 hover:bg-amber-50 disabled:opacity-60 cursor-pointer"
                       >
                         {busy ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -292,13 +354,12 @@ export default function AdminBlogManager({
                         type="button"
                         disabled={busy}
                         onClick={() =>
-                          run(
-                            blog.docId,
-                            () => approveBlog(blog.docId),
-                            `Published ${blog.slug}`
-                          )
+                          run(blog.docId, async () => {
+                            await approveBlog(blog.docId);
+                            setPublishedSlug(blog.slug);
+                          }, `Published ${blog.slug}`)
                         }
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00283C] text-white text-xs font-bold hover:bg-[#003d5c] disabled:opacity-60"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#00283C] text-white text-xs font-bold hover:bg-[#003d5c] disabled:opacity-60 cursor-pointer"
                       >
                         {busy ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -325,13 +386,115 @@ export default function AdminBlogManager({
                           `Deleted ${blog.slug}`
                         );
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-100 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-100 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete
                     </button>
                   </div>
                 </div>
+
+                {!blog.published && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(blog.docId)}
+                      className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-[#0077A8] hover:text-[#00283C] cursor-pointer"
+                    >
+                      {open ? (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      )}
+                      <FileText className="w-3.5 h-3.5" />
+                      {open ? "Hide preview" : "Read full blog"}
+                    </button>
+
+                    {open && (
+                      <article className="mt-4 rounded-xl border border-gray-100 bg-[#F8FAFC] overflow-hidden">
+                        <div
+                          className="px-5 py-6 text-white"
+                          style={{
+                            background:
+                              blog.imageGradient ||
+                              "linear-gradient(135deg, #00283C 0%, #005C7A 50%, #00B4D8 100%)",
+                          }}
+                        >
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-white/80 mb-2">
+                            {blog.location}, {blog.state}
+                          </p>
+                          <h2 className="text-xl sm:text-2xl font-extrabold leading-snug">
+                            {blog.title}
+                          </h2>
+                          <p className="text-white/70 text-sm mt-2">
+                            {blog.date || "—"} · {blog.readTime}
+                          </p>
+                        </div>
+                        <div className="px-5 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                          {blog.excerpt && (
+                            <p className="text-base text-gray-600 leading-relaxed border-l-4 border-[#0077A8] pl-4">
+                              {blog.excerpt}
+                            </p>
+                          )}
+                          {(blog.metaTitle || blog.metaDescription) && (
+                            <div className="rounded-lg border border-gray-200 bg-white p-4 text-xs space-y-1.5">
+                              <p className="font-bold uppercase tracking-wider text-gray-400">
+                                SEO meta
+                              </p>
+                              {blog.metaTitle && (
+                                <p>
+                                  <span className="text-gray-400">Title: </span>
+                                  <span className="text-[#00283C] font-medium">
+                                    {blog.metaTitle}
+                                  </span>
+                                </p>
+                              )}
+                              {blog.metaDescription && (
+                                <p>
+                                  <span className="text-gray-400">Description: </span>
+                                  <span className="text-[#00283C]">
+                                    {blog.metaDescription}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          {sections.length === 0 ? (
+                            <p className="text-sm text-gray-400">No body content yet.</p>
+                          ) : (
+                            sections.map((section, i) => (
+                              <section key={`${blog.docId}-full-${i}`}>
+                                <h3 className="text-lg font-bold text-[#00283C] mb-3">
+                                  {section.heading}
+                                </h3>
+                                <div className="space-y-3">
+                                  {section.paragraphs.map((para, pi) => (
+                                    <p
+                                      key={`${blog.docId}-${i}-${pi}`}
+                                      className="text-gray-600 leading-relaxed text-sm sm:text-base"
+                                    >
+                                      {para}
+                                    </p>
+                                  ))}
+                                </div>
+                              </section>
+                            ))
+                          )}
+                          {blog.serviceLink && (
+                            <aside className="rounded-2xl border border-[#0077A8]/15 bg-white p-5">
+                              <p className="text-sm leading-relaxed text-gray-600">
+                                {blog.serviceLink.description}
+                              </p>
+                              <p className="mt-3 inline-flex items-center font-bold text-[#0077A8]">
+                                {blog.serviceLink.label} → {blog.serviceLink.href}
+                              </p>
+                            </aside>
+                          )}
+                        </div>
+                      </article>
+                    )}
+                  </>
+                )}
               </div>
             );
           })}
