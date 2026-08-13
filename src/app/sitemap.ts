@@ -20,13 +20,11 @@ const staticRoutes = [
   { path: "/aesthetic-clinic-growth", priority: 0.7 },
   { path: "/dental-clinic-houston", priority: 0.7 },
   { path: "/about", priority: 0.5 },
-  { path: "/our-mission", priority: 0.5 },
   { path: "/portfolio", priority: 0.7 },
   { path: "/pricing", priority: 0.9 },
   { path: "/blog", priority: 0.8 },
   { path: "/free-website-audit", priority: 0.8 },
   { path: "/business-growth-audit", priority: 0.8 },
-  { path: "/contact", priority: 0.5 },
   { path: "/privacy-policy", priority: 0.3 },
   { path: "/terms-of-service", priority: 0.3 },
 ];

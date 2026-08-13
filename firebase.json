@@ -26,6 +26,16 @@
         "source": "/blogs/**",
         "destination": "/blog",
         "type": 301
+      },
+      {
+        "source": "/our-mission",
+        "destination": "/about#mission",
+        "type": 301
+      },
+      {
+        "source": "/contact",
+        "destination": "/about#contact",
+        "type": 301
       }
     ],
     "rewrites": [

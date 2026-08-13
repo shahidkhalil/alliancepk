@@ -82,11 +82,12 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {[
                 { label: "About Us", href: "/about" },
+                { label: "Our Mission", href: "/about#mission" },
+                { label: "Contact", href: "/about#contact" },
+                { label: "FAQ", href: "/about#faq" },
                 { label: "Case Studies", href: "/portfolio" },
                 { label: "Blog", href: "/blog" },
                 { label: "Pricing", href: "/pricing" },
-                { label: "Contact", href: "/contact" },
-                { label: "Dental Clinics Houston", href: "/dental-clinic-houston" },
               ].map((l) => (
                 <li key={l.label}>
                   <a href={l.href} className="text-sm text-white/60 hover:text-white transition-colors">{l.label}</a>
@@ -102,7 +103,7 @@ export default function Footer() {
               <a href={`mailto:${SALES_EMAIL}`} className="block text-sm text-white/60 hover:text-white transition-colors">
                 {SALES_EMAIL}
               </a>
-              <a href="/contact" className="block text-sm text-white/60 hover:text-white transition-colors">
+              <a href="/about#contact" className="block text-sm text-white/60 hover:text-white transition-colors">
                 Contact us
               </a>
               <a

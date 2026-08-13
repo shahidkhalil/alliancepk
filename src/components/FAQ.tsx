@@ -18,7 +18,7 @@ const faqs = [
 
   { q: "How does the AI Receptionist work?", a: "It's connected to your clinic's phone number and WhatsApp. It answers in English, qualifies the patient, and books them directly into your appointment calendar — 24/7 without any staff involvement." },
 
-  { q: "Do you work with aesthetic clinics too?", a: "Yes. About half our clients are aesthetic and skin clinics. We have specific campaigns, content, and SEO strategies for botox, fillers, laser, and skin treatments." },
+  { q: "What kinds of clinics do you work with?", a: "Healthcare clinics that take appointments — dental, aesthetic/med spa, dermatology, chiropractic, physio, urgent care, ENT, and other outpatient practices. If patients call, search, and book, we can help fill the calendar." },
 
   { q: "What is the EHR platform?", a: "EHR stands for Electronic Health Records. It's a digital system that replaces your paper register — patient records, prescriptions, billing, and appointment management all in one screen. We build it and train your staff on it." },
 
@@ -38,7 +38,7 @@ export default function FAQ() {
 
   return (
 
-    <section className="py-16 lg:py-20 bg-[#F8FAFC]" id="faq">
+    <section className="py-16 lg:py-20 bg-[#F8FAFC] scroll-mt-24" id="faq">
 
       <div className="max-w-3xl mx-auto px-6">
 

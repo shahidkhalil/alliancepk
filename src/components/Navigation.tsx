@@ -49,28 +49,9 @@ const navLinks: NavLink[] = [
     },
   },
   {
-    label: "Who It's For",
-    href: "#",
-    dropdown: {
-      heading: "Who It's For",
-      links: [
-        { label: "Dental Clinics", href: "/dental-clinic-growth" },
-        { label: "Aesthetic Clinics", href: "/aesthetic-clinic-growth" },
-      ],
-    },
-  },
-  {
-    label: "Company",
-    href: "#",
-    dropdown: {
-      heading: "Company",
-      links: [
-        { label: "About Us", href: "/about" },
-        { label: "Our Mission", href: "/our-mission" },
-        { label: "Contact Us", href: "/contact" },
-        { label: "FAQ", href: "/#faq" },
-      ],
-    },
+    label: "About Us",
+    href: "/about",
+    dropdown: null,
   },
   {
     label: "Case Studies",
