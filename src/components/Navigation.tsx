@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Menu, X, ChevronDown, MapPin, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "@/context/FormContext";
 
 interface DropdownLink { label: string; href: string; }
@@ -82,6 +83,47 @@ const navLinks: NavLink[] = [
   },
 ];
 
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
+function DropdownPanel({ dropdown }: { dropdown: Dropdown }) {
+  return (
+    <div className="nav-dropdown-panel">
+      {dropdown.groups ? (
+        <>
+          {dropdown.top?.map((d) => (
+            <a key={d.label} href={d.href} className="nav-dropdown-link nav-dropdown-link--strong">
+              {d.label}
+            </a>
+          ))}
+          {dropdown.groups.map((g, gi) => (
+            <div key={g.title} className={gi > 0 ? "mt-1 border-t border-[#E8F4F8] pt-2" : "mt-1"}>
+              <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
+                {g.title}
+              </p>
+              {g.links.map((d) => (
+                <a key={d.label} href={d.href} className="nav-dropdown-link">
+                  {d.label}
+                </a>
+              ))}
+            </div>
+          ))}
+        </>
+      ) : (
+        <>
+          <p className="px-3.5 pb-2 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
+            {dropdown.heading}
+          </p>
+          {dropdown.links!.map((d) => (
+            <a key={d.label} href={d.href} className="nav-dropdown-link">
+              {d.label}
+            </a>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -89,194 +131,295 @@ export default function Navigation() {
   const { openForm } = useForm();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 40);
+        ticking = false;
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
+  const closeMobile = useCallback(() => {
+    setMobileOpen(false);
+    setMobileExpanded(null);
   }, []);
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-white border-b border-gray-100 shadow-sm" : "bg-white/95 backdrop-blur-sm"
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+      <motion.header
+        initial={{ opacity: 0, y: -15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: easeOut }}
+        className="pointer-events-none fixed inset-x-0 top-0 z-50"
+      >
+        <div
+          className={`pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            scrolled
+              ? "mx-3 mt-3 sm:mx-5 lg:mx-8"
+              : "mx-0 mt-0"
+          }`}
+        >
+          <nav
+            className={`nav-shell transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              scrolled ? "nav-shell--floating" : "nav-shell--top"
+            }`}
+            aria-label="Primary"
+          >
+            <div
+              className={`mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-500 ${
+                scrolled ? "max-w-6xl h-[3.75rem]" : "max-w-7xl h-20"
+              }`}
+            >
+              {/* Logo + location */}
+              <div className="flex min-w-0 items-center gap-3">
+                <a
+                  href="/"
+                  className="nav-logo group flex items-center bg-transparent"
+                  onClick={closeMobile}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/logo-horizontal.png"
+                    alt="Alliance Tech"
+                    width={1043}
+                    height={200}
+                    className={`w-auto object-contain bg-transparent transition-all duration-500 group-hover:scale-[1.02] group-hover:brightness-110 ${
+                      scrolled ? "h-8 lg:h-9" : "h-9 lg:h-11"
+                    }`}
+                    decoding="async"
+                    fetchPriority="high"
+                  />
+                </a>
+                <a
+                  href="/dental-clinic-houston"
+                  className="nav-location hidden xl:inline-flex"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-[#00B4D8]" strokeWidth={2.2} />
+                  <span>Houston, TX</span>
+                </a>
+              </div>
 
-            {/* Logo — horizontal lockup fits a header bar properly */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <a href="/" className="flex items-center bg-transparent">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/logo-horizontal.png"
-                  alt="Alliance Tech"
-                  width={1043}
-                  height={200}
-                  className="h-9 lg:h-11 w-auto object-contain bg-transparent"
-                  decoding="async"
-                  fetchPriority="high"
-                />
-              </a>
-              <a href="/dental-clinic-houston"
-                className="hidden xl:inline-flex items-center gap-1 text-xs font-semibold text-gray-400 hover:text-[#00283C] border-l border-gray-200 pl-3 transition-colors">
-                📍 Houston, TX
-              </a>
-            </div>
-
-            {/* Desktop nav */}
-            <div className="hidden lg:flex items-center gap-1">
-              {navLinks.map((link) =>
-                link.dropdown ? (
-                  <div key={link.label} className="relative group">
-                    <button
-                      type="button"
-                      aria-label={`${link.label} menu`}
-                      aria-haspopup="true"
-                      className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-[#00283C] transition-colors px-3 py-2 rounded-md hover:bg-gray-50"
-                    >
-                      {link.label}
-                      <ChevronDown className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-200" />
-                    </button>
-
-                    {/* Transparent bridge + dropdown panel — pt-2 closes the hover gap */}
-                    <div className={`absolute top-full left-0 pt-2 ${link.dropdown.groups ? "w-64" : "w-56"} opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 z-50`}>
-                      <div className="rounded-xl py-3 bg-white shadow-xl border border-gray-100">
-                        {link.dropdown.groups ? (
-                          <>
-                            {link.dropdown.top?.map((d) => (
-                              <a key={d.label} href={d.href}
-                                className="block px-4 py-2 text-sm font-semibold text-[#00283C] hover:bg-[#F0F7FA] transition-colors">
-                                {d.label}
-                              </a>
-                            ))}
-                            {link.dropdown.groups.map((g, gi) => (
-                              <div key={g.title} className={gi > 0 ? "mt-1 pt-2 border-t border-gray-100" : "mt-1"}>
-                                <p className="px-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{g.title}</p>
-                                {g.links.map((d) => (
-                                  <a key={d.label} href={d.href}
-                                    className="block px-4 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] transition-colors">
-                                    {d.label}
-                                  </a>
-                                ))}
-                              </div>
-                            ))}
-                          </>
-                        ) : (
-                          <>
-                            <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{link.dropdown.heading}</p>
-                            {link.dropdown.links!.map((d) => (
-                              <a key={d.label} href={d.href}
-                                className="block px-4 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] transition-colors">
-                                {d.label}
-                              </a>
-                            ))}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <a key={link.label} href={link.href}
-                    className="text-sm font-medium text-gray-700 hover:text-[#00283C] transition-colors px-3 py-2 rounded-md hover:bg-gray-50 relative group">
-                    {link.label}
-                    <span className="absolute bottom-0 left-3 right-3 h-px bg-[#00283C] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                  </a>
-                )
-              )}
-            </div>
-
-            {/* Desktop CTA */}
-            <div className="hidden lg:flex items-center gap-3">
-              <button
-                onClick={openForm}
-                data-analytics-label="book_consultation"
-                data-analytics-location="desktop_navigation"
-                className="btn-dark px-5 py-2.5 text-sm"
-              >
-                Book a Free Audit
-              </button>
-            </div>
-
-            {/* Mobile toggle */}
-            <button onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileOpen}
-              className="lg:hidden p-2 rounded-lg text-gray-600 hover:text-[#00283C] hover:bg-gray-100 transition-colors">
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-          <div className="fixed top-20 left-0 right-0 z-40 bg-white border-b border-gray-100 shadow-lg max-h-[80vh] overflow-y-auto">
-            <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <div key={link.label}>
-                  {link.dropdown ? (
-                    <>
+              {/* Desktop links */}
+              <div className="hidden items-center gap-0.5 lg:flex">
+                {navLinks.map((link) =>
+                  link.dropdown ? (
+                    <div key={link.label} className="group relative">
                       <button
                         type="button"
-                        aria-expanded={mobileExpanded === link.label}
-                        onClick={() => setMobileExpanded(mobileExpanded === link.label ? null : link.label)}
-                        className="w-full flex items-center justify-between px-3 py-3 text-sm font-semibold text-gray-700 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
+                        aria-label={`${link.label} menu`}
+                        aria-haspopup="true"
+                        className="nav-link"
+                      >
                         {link.label}
-                        <ChevronDown className={`w-4 h-4 transition-transform ${mobileExpanded === link.label ? "rotate-180" : ""}`} />
+                        <ChevronDown className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180" />
+                        <span className="nav-link-underline" aria-hidden />
                       </button>
-                      {mobileExpanded === link.label && (
-                          <div className="overflow-hidden pl-4">
-                            {link.dropdown.groups ? (
-                              <>
-                                {link.dropdown.top?.map((d) => (
-                                  <a key={d.label} href={d.href} onClick={() => setMobileOpen(false)}
-                                    className="block px-3 py-2 text-sm font-semibold text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
-                                    {d.label}
-                                  </a>
-                                ))}
-                                {link.dropdown.groups.map((g) => (
-                                  <div key={g.title} className="mt-1">
-                                    <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{g.title}</p>
-                                    {g.links.map((d) => (
-                                      <a key={d.label} href={d.href} onClick={() => setMobileOpen(false)}
-                                        className="block px-3 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
-                                        {d.label}
-                                      </a>
-                                    ))}
-                                  </div>
-                                ))}
-                              </>
-                            ) : (
-                              link.dropdown.links!.map((d) => (
-                                <a key={d.label} href={d.href} onClick={() => setMobileOpen(false)}
-                                  className="block px-3 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
-                                  {d.label}
-                                </a>
-                              ))
-                            )}
-                          </div>
-                        )}
-                    </>
+
+                      <div
+                        className={`absolute left-0 top-full z-50 pt-3 opacity-0 pointer-events-none translate-y-[-6px] transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
+                          link.dropdown.groups ? "w-64" : "w-56"
+                        }`}
+                      >
+                        <DropdownPanel dropdown={link.dropdown} />
+                      </div>
+                    </div>
                   ) : (
-                    <a href={link.href} onClick={() => setMobileOpen(false)}
-                      className="block px-3 py-3 text-sm font-semibold text-gray-700 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
+                    <a key={link.label} href={link.href} className="nav-link">
                       {link.label}
+                      <span className="nav-link-underline" aria-hidden />
                     </a>
-                  )}
-                </div>
-              ))}
-              <div className="pt-3 border-t border-gray-100 mt-2">
+                  )
+                )}
+              </div>
+
+              {/* Desktop CTA */}
+              <div className="hidden lg:flex">
                 <button
                   type="button"
-                  onClick={() => { setMobileOpen(false); openForm(); }}
+                  onClick={openForm}
                   data-analytics-label="book_consultation"
-                  data-analytics-location="mobile_navigation"
-                  className="btn-dark w-full py-3 text-sm">
+                  data-analytics-location="desktop_navigation"
+                  className="nav-cta group"
+                >
                   Book a Free Audit
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
                 </button>
               </div>
+
+              {/* Mobile toggle */}
+              <button
+                type="button"
+                onClick={() => setMobileOpen((o) => !o)}
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileOpen}
+                className="nav-mobile-toggle lg:hidden"
+              >
+                {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
             </div>
-          </div>
+          </nav>
+        </div>
+      </motion.header>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Close menu overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="fixed inset-0 z-40 bg-[#020810]/45 backdrop-blur-[2px] lg:hidden"
+              onClick={closeMobile}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: easeOut }}
+              className={`fixed left-3 right-3 z-40 max-h-[min(78vh,640px)] overflow-y-auto rounded-2xl border border-[#00B4D8]/15 bg-white/95 shadow-2xl backdrop-blur-xl lg:hidden ${
+                scrolled ? "top-[4.5rem]" : "top-[5.25rem]"
+              }`}
+            >
+              <div className="flex flex-col gap-0.5 p-3 sm:p-4">
+                {navLinks.map((link, i) => (
+                  <motion.div
+                    key={link.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.04 + i * 0.045, duration: 0.3, ease: easeOut }}
+                  >
+                    {link.dropdown ? (
+                      <>
+                        <button
+                          type="button"
+                          aria-expanded={mobileExpanded === link.label}
+                          onClick={() =>
+                            setMobileExpanded(mobileExpanded === link.label ? null : link.label)
+                          }
+                          className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#00283C] transition-colors hover:bg-[#F0F7FA]"
+                        >
+                          {link.label}
+                          <ChevronDown
+                            className={`h-4 w-4 text-[#0077A8] transition-transform duration-300 ${
+                              mobileExpanded === link.label ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {mobileExpanded === link.label && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25, ease: easeOut }}
+                              className="overflow-hidden pl-2"
+                            >
+                              {link.dropdown.groups ? (
+                                <>
+                                  {link.dropdown.top?.map((d) => (
+                                    <a
+                                      key={d.label}
+                                      href={d.href}
+                                      onClick={closeMobile}
+                                      className="block rounded-lg px-3 py-2 text-sm font-semibold text-[#00283C] hover:bg-[#F0F7FA]"
+                                    >
+                                      {d.label}
+                                    </a>
+                                  ))}
+                                  {link.dropdown.groups.map((g) => (
+                                    <div key={g.title} className="mt-1">
+                                      <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
+                                        {g.title}
+                                      </p>
+                                      {g.links.map((d) => (
+                                        <a
+                                          key={d.label}
+                                          href={d.href}
+                                          onClick={closeMobile}
+                                          className="block rounded-lg px-3 py-2 text-sm text-[#00283C]/70 hover:bg-[#F0F7FA] hover:text-[#00283C]"
+                                        >
+                                          {d.label}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  ))}
+                                </>
+                              ) : (
+                                link.dropdown.links!.map((d) => (
+                                  <a
+                                    key={d.label}
+                                    href={d.href}
+                                    onClick={closeMobile}
+                                    className="block rounded-lg px-3 py-2 text-sm text-[#00283C]/70 hover:bg-[#F0F7FA] hover:text-[#00283C]"
+                                  >
+                                    {d.label}
+                                  </a>
+                                ))
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    ) : (
+                      <a
+                        href={link.href}
+                        onClick={closeMobile}
+                        className="block rounded-xl px-3 py-3 text-sm font-semibold text-[#00283C] transition-colors hover:bg-[#F0F7FA]"
+                      >
+                        {link.label}
+                      </a>
+                    )}
+                  </motion.div>
+                ))}
+
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35, duration: 0.3 }}
+                  className="mt-2 border-t border-[#E8F4F8] pt-3"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMobile();
+                      openForm();
+                    }}
+                    data-analytics-label="book_consultation"
+                    data-analytics-location="mobile_navigation"
+                    className="nav-cta w-full justify-center py-3 text-sm"
+                  >
+                    Book a Free Audit
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </>
         )}
+      </AnimatePresence>
     </>
   );
 }

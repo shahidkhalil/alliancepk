@@ -3,6 +3,7 @@ import { FormProvider, useForm } from "@/context/FormContext";
 import dynamic from "next/dynamic";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
+import CapabilityStrip from "@/components/CapabilityStrip";
 import Footer from "@/components/Footer";
 import FinalCTA from "@/components/FinalCTA";
 import HomeBelowFold from "@/components/HomeBelowFold";
@@ -20,6 +21,7 @@ function HomeContent() {
       <AuditChatWidget />
       <Navigation />
       <Hero />
+      <CapabilityStrip />
       <HomeBelowFold />
       <FinalCTA />
       <Footer />
