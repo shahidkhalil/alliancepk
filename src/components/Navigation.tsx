@@ -1,18 +1,50 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Menu, X, ChevronDown, MapPin, ArrowRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  Menu,
+  X,
+  ChevronDown,
+  MapPin,
+  ArrowRight,
+  PhoneCall,
+  MessageCircle,
+  SearchCheck,
+  Megaphone,
+  Search,
+  MapPinned,
+  Globe,
+  Smartphone,
+  ClipboardList,
+  LayoutGrid,
+  Sparkles,
+  Bot,
+  LineChart,
+} from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useForm } from "@/context/FormContext";
 
-interface DropdownLink { label: string; href: string; }
-interface DropdownGroup { title: string; links: DropdownLink[]; }
+interface DropdownLink {
+  label: string;
+  href: string;
+  icon?: typeof PhoneCall;
+  hint?: string;
+}
+interface DropdownGroup {
+  title: string;
+  links: DropdownLink[];
+}
 interface Dropdown {
   heading: string;
   links?: DropdownLink[];
   top?: DropdownLink[];
   groups?: DropdownGroup[];
+  mega?: boolean;
 }
-interface NavLink { label: string; href: string; dropdown: Dropdown | null; }
+interface NavLink {
+  label: string;
+  href: string;
+  dropdown: Dropdown | null;
+}
 
 const navLinks: NavLink[] = [
   {
@@ -20,30 +52,31 @@ const navLinks: NavLink[] = [
     href: "/#services",
     dropdown: {
       heading: "Services",
-      top: [{ label: "All Services", href: "/services" }],
+      mega: true,
+      top: [{ label: "All Services", href: "/services", icon: LayoutGrid, hint: "Browse the full menu" }],
       groups: [
         {
           title: "AI Automation",
           links: [
-            { label: "AI Receptionist", href: "/ai-receptionist" },
-            { label: "WhatsApp channel", href: "/whatsapp-ai-automation" },
-            { label: "Free Website Audit", href: "/free-website-audit" },
+            { label: "AI Receptionist", href: "/ai-receptionist", icon: PhoneCall, hint: "24/7 call + chat booking" },
+            { label: "WhatsApp channel", href: "/whatsapp-ai-automation", icon: MessageCircle, hint: "Chat-first appointments" },
+            { label: "Free Website Audit", href: "/free-website-audit", icon: SearchCheck, hint: "Instant clinic checkup" },
           ],
         },
         {
           title: "Growth & Marketing",
           links: [
-            { label: "Digital Marketing", href: "/digital-marketing-for-clinics" },
-            { label: "SEO for Clinics", href: "/seo-for-clinics" },
-            { label: "Local SEO for Clinics", href: "/local-seo-for-clinics" },
-            { label: "Clinic Websites", href: "/clinic-website-design" },
+            { label: "Digital Marketing", href: "/digital-marketing-for-clinics", icon: Megaphone, hint: "Ads tied to bookings" },
+            { label: "SEO for Clinics", href: "/seo-for-clinics", icon: Search, hint: "Rank for treatments" },
+            { label: "Local SEO for Clinics", href: "/local-seo-for-clinics", icon: MapPinned, hint: "Maps + near-me" },
+            { label: "Clinic Websites", href: "/clinic-website-design", icon: Globe, hint: "Sites that convert" },
           ],
         },
         {
           title: "Platform",
           links: [
-            { label: "Patient Mobile App", href: "/clinic-mobile-app" },
-            { label: "EHR Platform", href: "/ehr-platform" },
+            { label: "Patient Mobile App", href: "/clinic-mobile-app", icon: Smartphone, hint: "iOS + Android" },
+            { label: "EHR Platform", href: "/ehr-platform", icon: ClipboardList, hint: "Records + billing" },
           ],
         },
       ],
@@ -64,10 +97,11 @@ const navLinks: NavLink[] = [
     href: "#",
     dropdown: {
       heading: "Try It Live",
+      mega: false,
       links: [
-        { label: "Free Website Audit", href: "/free-website-audit" },
-        { label: "AI Business Growth Audit", href: "/business-growth-audit" },
-        { label: "AI Receptionist", href: "/ai-receptionist" },
+        { label: "Free Website Audit", href: "/free-website-audit", icon: SearchCheck, hint: "Score + fixes in minutes" },
+        { label: "AI Business Growth Audit", href: "/business-growth-audit", icon: LineChart, hint: "Tailored growth plan" },
+        { label: "AI Receptionist", href: "/ai-receptionist", icon: Bot, hint: "Talk to Maya live" },
       ],
     },
   },
@@ -86,41 +120,115 @@ const navLinks: NavLink[] = [
 const easeOut = [0.22, 1, 0.36, 1] as const;
 
 function DropdownPanel({ dropdown }: { dropdown: Dropdown }) {
-  return (
-    <div className="nav-dropdown-panel">
-      {dropdown.groups ? (
-        <>
-          {dropdown.top?.map((d) => (
-            <a key={d.label} href={d.href} className="nav-dropdown-link nav-dropdown-link--strong">
-              {d.label}
-            </a>
-          ))}
+  const reduceMotion = useReducedMotion();
+
+  if (dropdown.groups && dropdown.mega) {
+    return (
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={reduceMotion ? undefined : { opacity: 0, y: 6, scale: 0.99 }}
+        transition={{ duration: 0.28, ease: easeOut }}
+        className="nav-mega"
+      >
+        <div aria-hidden className="nav-mega-glow" />
+        <div aria-hidden className="nav-mega-grid" />
+
+        <div className="relative z-[1] flex items-center justify-between gap-4 border-b border-white/10 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <span className="nav-mega-chip">
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
+            </span>
+            <div>
+              <p className="text-xs font-bold text-white">Clinic growth systems</p>
+              <p className="text-[10px] text-white/45">AI · Marketing · Platform</p>
+            </div>
+          </div>
+          {dropdown.top?.map((d) => {
+            const Icon = d.icon ?? LayoutGrid;
+            return (
+              <a key={d.label} href={d.href} className="nav-mega-all">
+                <Icon className="h-3.5 w-3.5" />
+                {d.label}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            );
+          })}
+        </div>
+
+        <div className="relative z-[1] grid gap-1 p-3 sm:grid-cols-3">
           {dropdown.groups.map((g, gi) => (
-            <div key={g.title} className={gi > 0 ? "mt-1 border-t border-[#E8F4F8] pt-2" : "mt-1"}>
-              <p className="px-3.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
+            <div key={g.title} className="nav-mega-col">
+              <p className="nav-mega-col-title">
+                <span>{String(gi + 1).padStart(2, "0")}</span>
                 {g.title}
               </p>
-              {g.links.map((d) => (
-                <a key={d.label} href={d.href} className="nav-dropdown-link">
-                  {d.label}
-                </a>
-              ))}
+              <div className="space-y-1">
+                {g.links.map((d) => {
+                  const Icon = d.icon ?? ArrowRight;
+                  return (
+                    <a key={d.label} href={d.href} className="nav-mega-item group">
+                      <span className="nav-mega-item-icon">
+                        <Icon className="h-4 w-4" strokeWidth={1.9} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-white/90 group-hover:text-white">
+                          {d.label}
+                        </span>
+                        {d.hint ? (
+                          <span className="mt-0.5 block truncate text-[10px] text-white/40 group-hover:text-[#7DD3EA]/80">
+                            {d.hint}
+                          </span>
+                        ) : null}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-[#5ce1ff]" />
+                    </a>
+                  );
+                })}
+              </div>
             </div>
           ))}
-        </>
-      ) : (
-        <>
-          <p className="px-3.5 pb-2 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
-            {dropdown.heading}
-          </p>
-          {dropdown.links!.map((d) => (
-            <a key={d.label} href={d.href} className="nav-dropdown-link">
-              {d.label}
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={reduceMotion ? undefined : { opacity: 0, y: 4 }}
+      transition={{ duration: 0.24, ease: easeOut }}
+      className="nav-try"
+    >
+      <div aria-hidden className="nav-try-glow" />
+      <p className="relative z-[1] px-3.5 pb-2 pt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#7DD3EA]">
+        {dropdown.heading}
+      </p>
+      <div className="relative z-[1] space-y-1 px-1.5 pb-1.5">
+        {dropdown.links!.map((d) => {
+          const Icon = d.icon ?? Sparkles;
+          return (
+            <a key={d.label} href={d.href} className="nav-try-item group">
+              <span className="nav-try-item-icon">
+                <Icon className="h-4 w-4" strokeWidth={1.9} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px] font-semibold text-white/90 group-hover:text-white">
+                  {d.label}
+                </span>
+                {d.hint ? (
+                  <span className="mt-0.5 block text-[10px] text-white/40 group-hover:text-[#7DD3EA]/85">
+                    {d.hint}
+                  </span>
+                ) : null}
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 text-white/25 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-[#5ce1ff]" />
             </a>
-          ))}
-        </>
-      )}
-    </div>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 }
 
@@ -128,7 +236,9 @@ export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { openForm } = useForm();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     let ticking = false;
@@ -158,6 +268,15 @@ export default function Navigation() {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    if (!openMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenu(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openMenu]);
+
   const closeMobile = useCallback(() => {
     setMobileOpen(false);
     setMobileExpanded(null);
@@ -166,16 +285,14 @@ export default function Navigation() {
   return (
     <>
       <motion.header
-        initial={{ opacity: 0, y: -15 }}
+        initial={reduceMotion ? false : { opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: easeOut }}
         className="pointer-events-none fixed inset-x-0 top-0 z-50"
       >
         <div
           className={`pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            scrolled
-              ? "mx-3 mt-3 sm:mx-5 lg:mx-8"
-              : "mx-0 mt-0"
+            scrolled ? "mx-3 mt-3 sm:mx-5 lg:mx-8" : "mx-0 mt-0"
           }`}
         >
           <nav
@@ -222,25 +339,45 @@ export default function Navigation() {
               <div className="hidden items-center gap-0.5 lg:flex">
                 {navLinks.map((link) =>
                   link.dropdown ? (
-                    <div key={link.label} className="group relative">
+                    <div
+                      key={link.label}
+                      className="relative"
+                      onMouseEnter={() => setOpenMenu(link.label)}
+                      onMouseLeave={() => setOpenMenu(null)}
+                      onFocus={() => setOpenMenu(link.label)}
+                    >
                       <button
                         type="button"
                         aria-label={`${link.label} menu`}
                         aria-haspopup="true"
-                        className="nav-link"
+                        aria-expanded={openMenu === link.label}
+                        className={`nav-link ${openMenu === link.label ? "nav-link--open" : ""}`}
+                        onClick={() =>
+                          setOpenMenu((cur) => (cur === link.label ? null : link.label))
+                        }
                       >
                         {link.label}
-                        <ChevronDown className="h-3.5 w-3.5 transition-transform duration-300 group-hover:rotate-180" />
+                        <ChevronDown
+                          className={`h-3.5 w-3.5 transition-transform duration-300 ${
+                            openMenu === link.label ? "rotate-180" : ""
+                          }`}
+                        />
                         <span className="nav-link-underline" aria-hidden />
                       </button>
 
-                      <div
-                        className={`absolute left-0 top-full z-50 pt-3 opacity-0 pointer-events-none translate-y-[-6px] transition-all duration-300 ease-out group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 ${
-                          link.dropdown.groups ? "w-64" : "w-56"
-                        }`}
-                      >
-                        <DropdownPanel dropdown={link.dropdown} />
-                      </div>
+                      <AnimatePresence>
+                        {openMenu === link.label && (
+                          <div
+                            className={`absolute top-full z-50 pt-3 ${
+                              link.dropdown.mega
+                                ? "left-1/2 w-[min(92vw,44rem)] -translate-x-1/2"
+                                : "left-0 w-[19rem]"
+                            }`}
+                          >
+                            <DropdownPanel dropdown={link.dropdown} />
+                          </div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   ) : (
                     <a key={link.label} href={link.href} className="nav-link">
@@ -291,7 +428,7 @@ export default function Navigation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }}
-              className="fixed inset-0 z-40 bg-[#020810]/45 backdrop-blur-[2px] lg:hidden"
+              className="fixed inset-0 z-40 bg-[#020810]/55 backdrop-blur-[3px] lg:hidden"
               onClick={closeMobile}
             />
             <motion.div
@@ -299,7 +436,7 @@ export default function Navigation() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3, ease: easeOut }}
-              className={`fixed left-3 right-3 z-40 max-h-[min(78vh,640px)] overflow-y-auto rounded-2xl border border-[#00B4D8]/15 bg-white/95 shadow-2xl backdrop-blur-xl lg:hidden ${
+              className={`nav-mobile-panel fixed left-3 right-3 z-40 max-h-[min(78vh,640px)] overflow-y-auto lg:hidden ${
                 scrolled ? "top-[4.5rem]" : "top-[5.25rem]"
               }`}
             >
@@ -319,11 +456,11 @@ export default function Navigation() {
                           onClick={() =>
                             setMobileExpanded(mobileExpanded === link.label ? null : link.label)
                           }
-                          className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-[#00283C] transition-colors hover:bg-[#F0F7FA]"
+                          className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                         >
                           {link.label}
                           <ChevronDown
-                            className={`h-4 w-4 text-[#0077A8] transition-transform duration-300 ${
+                            className={`h-4 w-4 text-[#5ce1ff] transition-transform duration-300 ${
                               mobileExpanded === link.label ? "rotate-180" : ""
                             }`}
                           />
@@ -335,7 +472,7 @@ export default function Navigation() {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.25, ease: easeOut }}
-                              className="overflow-hidden pl-2"
+                              className="overflow-hidden pl-1"
                             >
                               {link.dropdown.groups ? (
                                 <>
@@ -344,40 +481,49 @@ export default function Navigation() {
                                       key={d.label}
                                       href={d.href}
                                       onClick={closeMobile}
-                                      className="block rounded-lg px-3 py-2 text-sm font-semibold text-[#00283C] hover:bg-[#F0F7FA]"
+                                      className="mb-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#7DD3EA] hover:bg-white/5"
                                     >
                                       {d.label}
+                                      <ArrowRight className="h-3.5 w-3.5" />
                                     </a>
                                   ))}
                                   {link.dropdown.groups.map((g) => (
                                     <div key={g.title} className="mt-1">
-                                      <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#0077A8]/55">
+                                      <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-[#5ce1ff]/70">
                                         {g.title}
                                       </p>
-                                      {g.links.map((d) => (
-                                        <a
-                                          key={d.label}
-                                          href={d.href}
-                                          onClick={closeMobile}
-                                          className="block rounded-lg px-3 py-2 text-sm text-[#00283C]/70 hover:bg-[#F0F7FA] hover:text-[#00283C]"
-                                        >
-                                          {d.label}
-                                        </a>
-                                      ))}
+                                      {g.links.map((d) => {
+                                        const Icon = d.icon ?? ArrowRight;
+                                        return (
+                                          <a
+                                            key={d.label}
+                                            href={d.href}
+                                            onClick={closeMobile}
+                                            className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                                          >
+                                            <Icon className="h-4 w-4 text-[#5ce1ff]/80" strokeWidth={1.9} />
+                                            {d.label}
+                                          </a>
+                                        );
+                                      })}
                                     </div>
                                   ))}
                                 </>
                               ) : (
-                                link.dropdown.links!.map((d) => (
-                                  <a
-                                    key={d.label}
-                                    href={d.href}
-                                    onClick={closeMobile}
-                                    className="block rounded-lg px-3 py-2 text-sm text-[#00283C]/70 hover:bg-[#F0F7FA] hover:text-[#00283C]"
-                                  >
-                                    {d.label}
-                                  </a>
-                                ))
+                                link.dropdown.links!.map((d) => {
+                                  const Icon = d.icon ?? Sparkles;
+                                  return (
+                                    <a
+                                      key={d.label}
+                                      href={d.href}
+                                      onClick={closeMobile}
+                                      className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                                    >
+                                      <Icon className="h-4 w-4 text-[#5ce1ff]/80" strokeWidth={1.9} />
+                                      {d.label}
+                                    </a>
+                                  );
+                                })
                               )}
                             </motion.div>
                           )}
@@ -387,7 +533,7 @@ export default function Navigation() {
                       <a
                         href={link.href}
                         onClick={closeMobile}
-                        className="block rounded-xl px-3 py-3 text-sm font-semibold text-[#00283C] transition-colors hover:bg-[#F0F7FA]"
+                        className="block rounded-xl px-3 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/5"
                       >
                         {link.label}
                       </a>
@@ -399,7 +545,7 @@ export default function Navigation() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.35, duration: 0.3 }}
-                  className="mt-2 border-t border-[#E8F4F8] pt-3"
+                  className="mt-2 border-t border-white/10 pt-3"
                 >
                   <button
                     type="button"

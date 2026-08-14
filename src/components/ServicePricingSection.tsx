@@ -13,11 +13,11 @@ function ComparisonTable({ service }: { service: ServicePricing }) {
   }
 
   return (
-    <div className="mt-8 border border-gray-200 rounded-xl overflow-hidden">
+    <div className="service-compare mt-8 overflow-hidden rounded-2xl">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 bg-[#F8FAFC] hover:bg-[#F0F9FC] transition-colors"
+        className="service-compare-trigger flex w-full items-center justify-between px-5 py-4"
       >
         <span className="text-sm font-bold text-[#00283C]">Compare all features</span>
         <ChevronDown className={`w-4 h-4 text-[#0077A8] transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
@@ -42,7 +42,7 @@ function ComparisonTable({ service }: { service: ServicePricing }) {
               ))}
             </div>
             {service.comparison.map((row, i) => (
-              <div key={row.feature} className={`grid grid-cols-4 border-t border-gray-100 ${i % 2 === 0 ? "bg-white" : "bg-[#FAFCFE]"}`}>
+              <div key={row.feature} className={`service-compare-row grid grid-cols-4 ${i % 2 === 0 ? "service-compare-row--even" : ""}`}>
                 <div className="px-5 py-3 text-sm text-gray-600">{row.feature}</div>
                 {([row.basic, row.standard, row.premium] as (string | boolean)[]).map((v, vi) => (
                   <div key={vi} className="px-4 py-3 flex items-center justify-center">
@@ -64,11 +64,11 @@ function ComparisonTable({ service }: { service: ServicePricing }) {
 function FAQSection({ faqs }: { faqs: ServicePricing["faqs"] }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
-    <div className="mt-10">
+    <div className="service-pricing-faq mt-10">
       <h3 className="text-sm font-black text-[#00283C] mb-4 uppercase tracking-widest">Common Questions</h3>
       <div className="space-y-2">
         {faqs.map((faq, i) => (
-          <div key={i} className={`rounded-xl border overflow-hidden transition-colors duration-150 ${open === i ? "border-[#00B4D8]/30" : "border-gray-200"}`}>
+          <div key={i} className={`service-faq-item overflow-hidden rounded-xl ${open === i ? "service-faq-item--open" : ""}`}>
             <button
               type="button"
               onClick={() => setOpen(open === i ? null : i)}
@@ -102,8 +102,10 @@ function TrustBar({ service }: { service: ServicePricing }) {
   return (
     <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {items.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex gap-3 p-4 rounded-xl bg-[#F8FAFC] border border-gray-100">
-          <Icon className="w-4 h-4 text-[#0077A8] flex-shrink-0 mt-0.5" />
+        <div key={label} className="service-trust-card flex gap-3 rounded-xl p-4">
+          <span className="service-trust-icon">
+            <Icon className="h-4 w-4" />
+          </span>
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{label}</p>
             <p className="text-xs text-gray-600 leading-relaxed">{value}</p>
@@ -120,10 +122,10 @@ export default function ServicePricingSection({ service }: { service: ServicePri
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="service-pricing-block">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.4 }}>
         <div className="mb-7">
-          <span className="inline-block text-[10px] font-black uppercase tracking-[0.16em] text-[#0077A8] bg-[#E0F4F9] px-3 py-1 rounded-full mb-3">
+          <span className="service-pricing-badge mb-3 inline-block">
             {service.category}
           </span>
           <h2 className="text-2xl lg:text-3xl font-black text-[#00283C] tracking-tight mb-2">

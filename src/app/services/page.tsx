@@ -150,7 +150,7 @@ function ServicesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F8FB]">
+    <div className="site-shell min-h-screen bg-[#F4F8FB]">
       <ConsultationForm isOpen={isOpen} onClose={closeForm} />
       <AuditChatWidget />
       <Navigation />
@@ -204,7 +204,7 @@ function ServicesContent() {
                 href="/free-website-audit"
                 data-analytics-label="start_website_audit"
                 data-analytics-location="services_hero"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white text-[#00283C] font-bold px-7 py-3.5 text-sm hover:bg-[#E8F7FB] transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#00283C] shadow-[0_10px_28px_rgba(0,180,216,0.18)] transition-colors hover:bg-[#E8F7FB]"
               >
                 Get a free clinic audit
               </a>
@@ -213,7 +213,7 @@ function ServicesContent() {
                 onClick={openForm}
                 data-analytics-label="book_consultation"
                 data-analytics-location="services_hero"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 text-white font-semibold px-7 py-3.5 text-sm hover:bg-white/10 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
                 Book a strategy call
               </button>
@@ -244,7 +244,7 @@ function ServicesContent() {
       </section>
 
       {/* Sticky filter */}
-      <div className="sticky top-20 z-30 border-b border-[#00283C]/08 bg-[#F4F8FB]/90 backdrop-blur-md">
+      <div className="sticky top-20 z-30 border-b border-[#00B4D8]/15 bg-white/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <ActiveTabBar tabs={tabs} active={active} onChange={goTo} />
         </div>

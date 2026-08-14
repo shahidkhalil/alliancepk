@@ -1,13 +1,33 @@
 "use client";
+import { useRef } from "react";
 import { useForm } from "@/context/FormContext";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 export default function FinalCTA() {
   const { openForm } = useForm();
+  const ref = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const glowY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [40, -40]);
+  const contentY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [18, -18]);
 
   return (
-    <section className="final-cta-section relative overflow-hidden py-16 lg:py-20">
+    <section ref={ref} className="final-cta-section relative overflow-hidden py-16 lg:py-20">
       <div aria-hidden className="final-cta-bg absolute inset-0" />
-      <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
+      <motion.div
+        aria-hidden
+        style={{ y: glowY }}
+        className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-[#00B4D8]/20 blur-3xl"
+      />
+      <motion.div
+        aria-hidden
+        style={{ y: glowY }}
+        className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-[#0077A8]/18 blur-3xl"
+      />
+      <motion.div style={{ y: contentY }} className="relative z-10 mx-auto max-w-3xl px-6 text-center">
         <p className="mb-4 text-sm font-bold uppercase tracking-widest text-[#5ce1ff]">
           ONLY ACCEPTING 10 NEW CLINICS THIS MONTH
         </p>
@@ -53,7 +73,7 @@ export default function FinalCTA() {
           ★★★★★ Rated 4.9/5 by 100+ clinics across the United States · 3–6 month
           minimum · Results guaranteed
         </p>
-      </div>
+      </motion.div>
     </section>
   );
 }

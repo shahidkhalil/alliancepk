@@ -7,10 +7,10 @@ export default function BusinessGrowthAuditPage() {
   return (
     <PageWrapper>
       <section
-        className="relative pt-28 pb-16 lg:pt-36 lg:pb-24 overflow-hidden"
+        className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-24"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,180,216,0.08) 0%, transparent 60%), linear-gradient(180deg, #f8fcfe 0%, #ffffff 50%, #ffffff 100%)",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,180,216,0.16) 0%, transparent 60%), linear-gradient(180deg, #041820 0%, #f6fbfd 38%, #ffffff 100%)",
         }}
       >
         <div className="max-w-5xl mx-auto px-6 lg:px-8">

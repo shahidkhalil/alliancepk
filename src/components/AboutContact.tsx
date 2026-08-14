@@ -204,7 +204,7 @@ export default function AboutContact() {
     >
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F7FB] border border-[#D6EEF5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] mb-4">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-[#E8F7FB] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
             Contact
           </span>

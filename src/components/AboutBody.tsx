@@ -21,7 +21,7 @@ import {
 import { ServiceCardGrid } from "@/components/ui/Card";
 
 const softSurface =
-  "rounded-2xl bg-white border border-[#E8EEF2] shadow-[0_1px_2px_rgba(0,40,60,0.04),0_12px_32px_rgba(0,40,60,0.06)]";
+  "rounded-2xl bg-white/95 border border-[#00B4D8]/12 shadow-[0_1px_2px_rgba(0,40,60,0.04),0_14px_34px_rgba(0,40,60,0.07)]";
 
 const services = [
   {
@@ -126,8 +126,8 @@ const steps = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F7FB] border border-[#D6EEF5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] mb-4">
-      <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
+    <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-[#E8F7FB] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
       {children}
     </span>
   );

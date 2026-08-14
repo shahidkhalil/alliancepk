@@ -38,30 +38,30 @@ function WhySection() {
 function BottomCTA() {
   const { openForm } = useForm();
   return (
-    <section className="py-16 bg-[#00283C]">
-      <div className="max-w-2xl mx-auto px-6 text-center">
-        <p className="text-[#00B4D8] text-xs font-black uppercase tracking-widest mb-4">NEXT STEP</p>
-        <h2 className="text-2xl lg:text-3xl font-black text-white tracking-tight mb-4">
+    <section className="pricing-cta-band relative overflow-hidden py-16">
+      <div className="relative mx-auto max-w-2xl px-6 text-center">
+        <p className="mb-4 text-xs font-black uppercase tracking-widest text-[#5ce1ff]">NEXT STEP</p>
+        <h2 className="mb-4 text-2xl font-black tracking-tight text-white lg:text-3xl">
           Not sure which plan fits?
         </h2>
-        <p className="text-white/55 text-sm leading-relaxed mb-8">
+        <p className="mb-8 text-sm leading-relaxed text-white/55">
           Start with a free clinic audit — then we&apos;ll recommend the exact package for your budget on a 30-minute call.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a
             href="/free-website-audit"
             data-analytics-label="start_website_audit"
             data-analytics-location="pricing_bottom"
-            className="px-8 py-3.5 bg-white text-[#00283C] rounded-xl font-black text-sm hover:bg-[#E8F7FB] transition-colors shadow flex items-center gap-2"
+            className="service-hero-cta"
           >
-            Run Free Website Audit <ArrowRight className="w-4 h-4" />
+            Run Free Website Audit <ArrowRight className="h-4 w-4" />
           </a>
           <button
             type="button"
             onClick={openForm}
             data-analytics-label="book_consultation"
             data-analytics-location="pricing_bottom"
-            className="px-8 py-3.5 border border-white/30 text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-colors"
+            className="service-hero-back border border-white/15 bg-white/[0.04]"
           >
             Book Free Strategy Call
           </button>
@@ -119,46 +119,38 @@ function PricingContent() {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="relative pt-36 pb-14 bg-white border-b border-gray-100 overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(0,40,60,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,40,60,0.03) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
-          }}
-        />
-        <div
-          className="absolute top-0 right-0 w-[500px] h-[350px] pointer-events-none opacity-[0.06]"
-          style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", filter: "blur(80px)" }}
-        />
-        <div className="relative max-w-4xl mx-auto px-6">
+      <section className="service-hero relative overflow-hidden">
+        <div aria-hidden className="service-hero-atmosphere absolute inset-0" />
+        <div aria-hidden className="service-hero-grid absolute inset-0" />
+        <div aria-hidden className="service-hero-orb service-hero-orb--one" />
+        <div aria-hidden className="service-hero-beam" />
+        <div className="relative mx-auto max-w-4xl px-6 pb-16 pt-32 sm:pb-20 sm:pt-36">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="badge-light mb-5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8] animate-pulse" />
-              PRICING
+            <span className="service-hero-badge mb-5 inline-flex items-center gap-2">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#5ce1ff]" />
+              Pricing
             </span>
-            <h1 className="text-4xl lg:text-5xl font-black text-[#00283C] tracking-tight leading-tight mt-4 mb-4">
+            <h1 className="mb-4 mt-4 text-4xl font-black leading-tight tracking-tight text-white lg:text-5xl">
               Transparent Pricing.<br />
-              <span className="gradient-heading">No Surprises, Ever.</span>
+              <span className="service-hero-highlight">No Surprises, Ever.</span>
             </h1>
-            <p className="text-gray-500 text-base leading-relaxed mb-6 max-w-2xl">
+            <p className="mb-6 max-w-2xl text-base leading-relaxed text-[#a8c6d3]">
               Every service has three clearly defined packages with published prices and feature lists. Pick what you need and know exactly what you&apos;re paying before you sign anything.
             </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
+            <div className="mb-6 flex flex-col flex-wrap gap-3 sm:flex-row">
               <a
                 href="/ai-receptionist"
                 data-analytics-label="start_ai_demo"
                 data-analytics-location="pricing_hero"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-black hover:bg-[#003D5C] transition-colors"
+                className="service-hero-cta"
               >
-                Try Maya Live <ArrowRight className="w-4 h-4" />
+                Try Maya Live <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="/free-website-audit"
                 data-analytics-label="start_website_audit"
                 data-analytics-location="pricing_hero"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
+                className="service-hero-back border border-white/15 bg-white/[0.04]"
               >
                 Free Clinic Audit
               </a>
@@ -167,18 +159,18 @@ function PricingContent() {
                 onClick={openForm}
                 data-analytics-label="book_consultation"
                 data-analytics-location="pricing_hero"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
+                className="service-hero-back border border-white/15 bg-white/[0.04]"
               >
                 Book Strategy Call
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-5 max-w-xl">
+            <p className="mb-5 max-w-xl text-xs text-white/45">
               Built for Houston dental &amp; aesthetic clinics that need more booked appointments — not vanity traffic.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               {["No hidden fees", "Cancel monthly plans anytime", "You own everything we build", "US market pricing"].map((t) => (
-                <span key={t} className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <Check className="w-3 h-3 text-[#00B4D8]" strokeWidth={3} /> {t}
+                <span key={t} className="flex items-center gap-1.5 text-xs text-white/50">
+                  <Check className="h-3 w-3 text-[#5ce1ff]" strokeWidth={3} /> {t}
                 </span>
               ))}
             </div>
