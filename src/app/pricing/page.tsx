@@ -196,10 +196,10 @@ function PricingContent() {
                         <li key={s.id}>
                           <button
                             onClick={() => setActiveId(s.id)}
-                            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 ${
+                            className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition-all duration-150 ${
                               activeId === s.id
-                                ? "bg-[#00283C] text-white"
-                                : "text-gray-500 hover:text-[#00283C] hover:bg-gray-100"
+                                ? "bg-[#0077A8] text-white"
+                                : "text-[#a8c6d3] hover:bg-white/10 hover:text-white"
                             }`}
                           >
                             {s.name}
@@ -230,7 +230,7 @@ function PricingContent() {
                 type="button"
                 aria-expanded={pickerOpen}
                 onClick={() => setPickerOpen((o) => !o)}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left bg-gradient-to-br from-white to-[#F0F9FC]"
+                className="flex w-full items-center gap-3 bg-gradient-to-br from-[#0b2d3c] to-[#04181f] px-4 py-3.5 text-left"
               >
                 <span
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-white text-xs font-black"

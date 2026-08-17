@@ -68,7 +68,7 @@ export default function FreeWebsiteAudit() {
 
       <section className="px-4 pb-20 sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <div className="audit-chat-shell overflow-hidden rounded-2xl">
+          <div className="audit-chat-shell light-island overflow-hidden rounded-2xl">
             {/* Chat header */}
             <div className="flex items-center gap-3 bg-[#041820] px-5 py-3.5">
               <div className="relative">

@@ -150,10 +150,13 @@ function ServicesContent() {
   };
 
   return (
-    <div className="site-shell min-h-screen bg-[#F4F8FB]">
+    <div className="site-shell relative min-h-screen w-full max-w-full overflow-x-clip">
+      <div aria-hidden className="site-shell-glow site-shell-glow--one" />
+      <div aria-hidden className="site-shell-glow site-shell-glow--two" />
       <ConsultationForm isOpen={isOpen} onClose={closeForm} />
       <AuditChatWidget />
       <Navigation />
+      <main className="relative w-full max-w-full overflow-x-clip">
 
       {/* Atmospheric hero */}
       <section
@@ -244,7 +247,7 @@ function ServicesContent() {
       </section>
 
       {/* Sticky filter */}
-      <div className="sticky top-20 z-30 border-b border-[#00B4D8]/15 bg-white/80 backdrop-blur-md">
+      <div className="sticky top-20 z-30 border-b border-[#00B4D8]/15 bg-[#041820]/85 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 lg:px-8">
           <ActiveTabBar tabs={tabs} active={active} onChange={goTo} />
         </div>
@@ -275,10 +278,10 @@ function ServicesContent() {
                         </span>
                         <span className="h-px w-8 bg-[#00B4D8]/50" />
                       </div>
-                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#00283C] tracking-tight">
+                      <h2 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
                         {meta.title}
                       </h2>
-                      <p className="text-sm sm:text-base text-[#00283C]/55 mt-2 max-w-xl">
+                      <p className="mt-2 max-w-xl text-sm text-[#a8c6d3] sm:text-base">
                         {meta.blurb}
                       </p>
                     </div>
@@ -388,10 +391,10 @@ function ServicesContent() {
               style={{ background: "radial-gradient(circle, rgba(0,180,216,0.25), transparent 70%)" }}
             />
             <div className="relative">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#00283C] tracking-tight">
+              <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
                 Not sure where to start?
               </h2>
-              <p className="text-sm text-[#00283C]/55 mt-2 max-w-md">
+              <p className="mt-2 max-w-md text-sm text-[#a8c6d3]">
                 Book a free clinic audit — we’ll map the right mix of AI, growth, and platform for you.
               </p>
             </div>
@@ -409,7 +412,7 @@ function ServicesContent() {
                 onClick={openForm}
                 data-analytics-label="book_consultation"
                 data-analytics-location="services_next_step"
-                className="inline-flex items-center gap-1.5 px-6 py-3 text-sm font-semibold text-[#00283C] border border-[#00283C]/15 rounded-md hover:border-[#0077A8] hover:text-[#0077A8] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-6 py-3 text-sm font-semibold text-white/80 transition-colors hover:border-[#00B4D8] hover:text-white"
               >
                 Book a strategy call
               </button>
@@ -419,6 +422,7 @@ function ServicesContent() {
       </section>
 
       <FinalCTA />
+      </main>
       <Footer />
       <MobileStickySalesBar />
     </div>

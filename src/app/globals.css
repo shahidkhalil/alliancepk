@@ -772,38 +772,63 @@ body {
 .nav-shell {
   width: 100%;
 }
+/* At the top the bar disappears into the hero — no slab, no border. */
 .nav-shell--top {
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(0, 40, 60, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
 }
+/* Once scrolled it lifts into a light frosted pill, brighter than the page. */
 .nav-shell--floating {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(0, 180, 216, 0.22);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)),
+    rgba(9, 42, 56, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 1.15rem;
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 10px 30px rgba(0, 40, 60, 0.08),
-    0 20px 50px rgba(0, 119, 168, 0.1);
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
+.nav-scrim {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 5.75rem;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(3, 16, 23, 0.85) 0%,
+    rgba(3, 16, 23, 0.6) 50%,
+    transparent 100%
+  );
+  transition: opacity 0.4s ease;
+}
+.nav-scrim--on {
+  opacity: 1;
+}
+
+/* Wordmark is dark-on-light artwork; lift it so it reads on the teal bar */
+.nav-logo img {
+  filter: brightness(1.85) saturate(1.1) contrast(1.02);
 }
 
 .nav-location {
   align-items: center;
   gap: 0.35rem;
-  border-left: 1px solid rgba(0, 40, 60, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
   padding-left: 0.85rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(0, 40, 60, 0.45);
+  color: rgba(255, 255, 255, 0.5);
   text-decoration: none;
   transition: color 0.25s ease;
 }
 .nav-location:hover {
-  color: #00283c;
+  color: #7dd3ea;
 }
 
 .nav-link {
@@ -815,7 +840,7 @@ body {
   border-radius: 0.55rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(0, 40, 60, 0.72);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
   background: transparent;
   border: none;
@@ -823,8 +848,8 @@ body {
   transition: color 0.25s ease, background 0.25s ease;
 }
 .nav-link:hover {
-  color: #00283c;
-  background: rgba(0, 180, 216, 0.06);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
 }
 .nav-link-underline {
   position: absolute;
@@ -843,11 +868,23 @@ body {
 }
 
 .nav-link--open {
-  color: #00283c;
-  background: rgba(0, 180, 216, 0.08);
+  color: #ffffff;
+  background: rgba(0, 180, 216, 0.16);
 }
 .nav-link--open .nav-link-underline {
   transform: scaleX(1);
+}
+/* Current route — underline only, no filled chip */
+.nav-link--active {
+  color: #ffffff;
+}
+.nav-link--active .nav-link-underline {
+  transform: scaleX(1);
+  background: linear-gradient(90deg, #00b4d8, #5ce1ff);
+}
+/* Legacy global .nav-link underline would double up inside the navbar */
+.nav-shell .nav-link::after {
+  content: none;
 }
 
 /* Unique dark glass mega menu */
@@ -1045,8 +1082,8 @@ body {
   font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(135deg, #00283c 0%, #003d5c 55%, #0077a8 160%);
-  box-shadow: 0 8px 22px rgba(0, 40, 60, 0.22);
+  background: linear-gradient(135deg, #0077a8 0%, #00b4d8 100%);
+  box-shadow: 0 8px 22px rgba(0, 180, 216, 0.28);
   transition:
     transform 0.25s ease,
     box-shadow 0.25s ease,
@@ -1067,15 +1104,15 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(0, 40, 60, 0.08);
-  background: rgba(248, 250, 252, 0.9);
-  color: #00283c;
+  border: 1px solid rgba(0, 180, 216, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 .nav-mobile-toggle:hover {
-  background: rgba(0, 180, 216, 0.08);
-  border-color: rgba(0, 180, 216, 0.25);
+  background: rgba(0, 180, 216, 0.16);
+  border-color: rgba(0, 180, 216, 0.45);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4059,15 +4096,14 @@ body {
   isolation: isolate;
   overflow: hidden;
   border-radius: 1.4rem;
-  border: 1px solid rgba(0, 119, 168, 0.2);
+  border: 1px solid rgba(0, 180, 216, 0.22);
   background:
     radial-gradient(ellipse 85% 60% at 100% 0%, rgba(0, 180, 216, 0.16), transparent 58%),
-    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(0, 119, 168, 0.12), transparent 62%),
-    linear-gradient(158deg, #ffffff 0%, #eef8fc 58%, #e3f3fa 100%);
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(0, 119, 168, 0.14), transparent 62%),
+    linear-gradient(158deg, rgba(11, 45, 60, 0.95), rgba(4, 22, 31, 0.97));
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 10px 24px rgba(0, 40, 60, 0.08),
-    0 24px 56px rgba(0, 60, 90, 0.08);
+    0 1px 0 rgba(92, 225, 255, 0.08) inset,
+    0 18px 44px rgba(0, 0, 0, 0.35);
   transition:
     transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.35s ease,
@@ -4430,15 +4466,21 @@ body {
 
 /* ========== Company-wide public page system ========== */
 .site-shell {
-  --site-ink: #00283c;
+  --site-ink: #ffffff;
   --site-blue: #0077a8;
   --site-cyan: #00b4d8;
-  --site-mist: #eef7fa;
-  --site-line: rgba(0, 119, 168, 0.13);
+  --site-mist: #062430;
+  --site-line: rgba(0, 180, 216, 0.16);
+  --band: #041820;
+  --band-soft: #062430;
+  --band-ink: #ffffff;
+  --band-body: #a8c6d3;
+  --band-muted: #7fa3b4;
+  --band-line: rgba(0, 180, 216, 0.16);
   background:
-    radial-gradient(ellipse 60% 30% at 0% 25%, rgba(0, 180, 216, 0.06), transparent 65%),
-    radial-gradient(ellipse 50% 25% at 100% 70%, rgba(0, 119, 168, 0.05), transparent 65%),
-    #f8fbfd;
+    radial-gradient(ellipse 60% 30% at 0% 20%, rgba(0, 180, 216, 0.1), transparent 65%),
+    radial-gradient(ellipse 50% 25% at 100% 70%, rgba(0, 119, 168, 0.1), transparent 65%),
+    #031219;
 }
 .site-shell-glow {
   position: fixed;
@@ -4447,7 +4489,7 @@ body {
   height: 30rem;
   border-radius: 50%;
   filter: blur(90px);
-  opacity: 0.07;
+  opacity: 0.14;
   pointer-events: none;
 }
 .site-shell-glow--one {
@@ -4465,15 +4507,15 @@ body {
   isolation: isolate;
 }
 .site-shell main > section:not(.service-hero):not(.faq-section):not(.final-cta-section) {
-  border-color: rgba(0, 119, 168, 0.09) !important;
+  border-color: rgba(0, 180, 216, 0.14) !important;
 }
 .site-shell .badge-light {
-  border-color: rgba(0, 180, 216, 0.3);
-  background: rgba(255, 255, 255, 0.82);
-  color: #0077a8;
+  border-color: rgba(0, 180, 216, 0.35);
+  background: rgba(4, 24, 32, 0.72);
+  color: #7dd3ea;
   box-shadow:
-    0 0 0 4px rgba(0, 180, 216, 0.04),
-    0 8px 22px rgba(0, 119, 168, 0.07);
+    0 0 0 4px rgba(0, 180, 216, 0.06),
+    0 8px 22px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(10px);
 }
 .site-shell .btn-dark {
@@ -4495,25 +4537,25 @@ body {
     0 0 24px rgba(0, 180, 216, 0.13);
 }
 .site-shell .card-white {
-  border-color: rgba(0, 119, 168, 0.12);
+  border-color: rgba(0, 180, 216, 0.2);
   border-radius: 1.35rem;
   background:
-    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(0, 180, 216, 0.1), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(0, 119, 168, 0.06), transparent 55%),
-    linear-gradient(155deg, rgba(255, 255, 255, 0.98), rgba(244, 250, 252, 0.96));
+    radial-gradient(ellipse 70% 45% at 100% 0%, rgba(0, 180, 216, 0.14), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(0, 119, 168, 0.12), transparent 55%),
+    linear-gradient(155deg, rgba(11, 45, 60, 0.94), rgba(4, 22, 31, 0.96));
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.95) inset,
-    0 14px 34px rgba(0, 40, 60, 0.07);
+    0 1px 0 rgba(92, 225, 255, 0.07) inset,
+    0 18px 44px rgba(0, 0, 0, 0.35);
   transition:
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     border-color 0.3s ease,
     box-shadow 0.35s ease;
 }
 .site-shell .card-white:hover {
-  border-color: rgba(0, 180, 216, 0.34);
+  border-color: rgba(0, 180, 216, 0.45);
   transform: translateY(-4px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.98) inset,
+    0 1px 0 rgba(92, 225, 255, 0.1) inset,
     0 20px 44px rgba(0, 119, 168, 0.12),
     0 0 30px rgba(0, 180, 216, 0.1);
 }
@@ -4955,11 +4997,226 @@ body {
   background: linear-gradient(180deg, #00b4d8, #0077a8);
 }
 
-/* Soft polish for service/content section bands */
+/* ==========================================================================
+   Sitewide dark teal theme
+   Scope: page content bands only (`.site-shell main > section`).
+   Forms, chat widgets, product mockups (`.light-island`), and admin keep
+   their own light UI so functionality and readability are unaffected.
+   ========================================================================== */
+
+/* --- Section bands ------------------------------------------------------ */
+.site-shell main {
+  background-color: transparent;
+}
 .site-shell main > section.bg-white,
-.site-shell main > section.bg-\[\#F8FAFC\] {
+.site-shell main > section[class*="to-white"],
+.site-shell main > section[class*="from-white"] {
+  background-color: var(--band) !important;
   background-image:
-    radial-gradient(ellipse 55% 30% at 50% 0%, rgba(0, 180, 216, 0.035), transparent 60%);
+    radial-gradient(ellipse 60% 34% at 50% 0%, rgba(0, 180, 216, 0.09), transparent 62%) !important;
+  border-color: var(--band-line) !important;
+}
+.site-shell main > section.bg-gray-50,
+.site-shell main > section[class*="#F8FAFC"],
+.site-shell main > section[class*="#F4F8FB"],
+.site-shell main > section[class*="#F5F9FB"],
+.site-shell main > section[class*="#F4FBFD"] {
+  background-color: var(--band-soft) !important;
+  background-image:
+    radial-gradient(ellipse 60% 34% at 50% 100%, rgba(0, 119, 168, 0.12), transparent 62%) !important;
+  border-color: var(--band-line) !important;
+}
+.site-shell main > section[class*="border-gray-100"],
+.site-shell main > section[class*="border-gray-200"] {
+  border-color: var(--band-line) !important;
+}
+
+/* --- Typography inside dark bands ---------------------------------------
+   Depth-limited on purpose: only copy sitting near the top of a band is
+   recoloured, so nested product mockups keep their own palette. */
+.site-shell main > section > :is(h1, h2, h3, h4, p),
+.site-shell main > section > div > :is(h1, h2, h3, h4, p),
+.site-shell main > section > div > div > :is(h1, h2, h3, h4, p),
+.site-shell main > div > div > :is(h1, h2, h3, h4, p) {
+  color: var(--band-body);
+}
+.site-shell main > section > :is(h1, h2, h3, h4),
+.site-shell main > section > div > :is(h1, h2, h3, h4),
+.site-shell main > section > div > div > :is(h1, h2, h3, h4),
+.site-shell main > div > div > :is(h1, h2, h3, h4) {
+  color: var(--band-ink);
+}
+.site-shell main > section > div > div > .text-\[\#00283C\],
+.site-shell main > section > div > div > div > .text-\[\#00283C\] {
+  color: var(--band-ink);
+}
+.site-shell main > section > div > div > :is(.text-gray-400, .text-gray-500),
+.site-shell main > section > div > div > div > :is(.text-gray-400, .text-gray-500) {
+  color: var(--band-muted);
+}
+.site-shell main > section .gradient-heading {
+  color: transparent;
+}
+.site-shell main > section > div > strong,
+.site-shell main > section > div > p strong {
+  color: #d8ecf4;
+}
+
+/* --- Card + panel surfaces --------------------------------------------- */
+.site-shell .card-white,
+.site-shell .feature-card-pro,
+.site-shell .service-faq-item,
+.site-shell .service-trust-card,
+.site-shell .service-compare {
+  border-color: rgba(0, 180, 216, 0.2);
+  background:
+    radial-gradient(ellipse 85% 60% at 100% 0%, rgba(0, 180, 216, 0.14), transparent 58%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(0, 119, 168, 0.12), transparent 62%),
+    linear-gradient(158deg, rgba(11, 45, 60, 0.92), rgba(4, 22, 31, 0.96));
+  box-shadow:
+    0 1px 0 rgba(92, 225, 255, 0.07) inset,
+    0 18px 44px rgba(0, 0, 0, 0.35);
+}
+.site-shell .service-compare-trigger {
+  background: rgba(4, 24, 32, 0.72);
+}
+.site-shell .service-compare-trigger:hover {
+  background: rgba(11, 45, 60, 0.85);
+}
+.site-shell .service-compare-row {
+  border-color: rgba(0, 180, 216, 0.1);
+  background: rgba(4, 24, 32, 0.55);
+}
+.site-shell .service-compare-row--even {
+  background: rgba(11, 45, 60, 0.45);
+}
+.site-shell .card-white:hover,
+.site-shell .feature-card-pro:hover,
+.site-shell .service-faq-item:hover,
+.site-shell .service-trust-card:hover {
+  border-color: rgba(0, 180, 216, 0.45);
+  box-shadow:
+    0 1px 0 rgba(92, 225, 255, 0.1) inset,
+    0 26px 56px rgba(0, 0, 0, 0.45),
+    0 0 42px rgba(0, 180, 216, 0.16);
+}
+.site-shell :is(.card-white, .feature-card-pro, .service-faq-item, .service-trust-card)
+  :is(h1, h2, h3, h4):not(.gradient-heading) {
+  color: #ffffff;
+}
+.site-shell :is(.card-white, .feature-card-pro, .service-faq-item, .service-trust-card)
+  :is(p, li) {
+  color: var(--band-body);
+}
+.site-shell :is(.card-white, .feature-card-pro)
+  [class*="text-[#00283C]"],
+.site-shell :is(.card-white, .feature-card-pro)
+  .text-\[\#00283C\] {
+  color: #ffffff;
+}
+.site-shell :is(.card-white, .feature-card-pro)
+  [class*="text-[#00283C]/"],
+.site-shell :is(.card-white, .feature-card-pro)
+  [class*="text-[#00283C]/"] {
+  color: var(--band-body);
+}
+.site-shell .feature-card-pro-watermark {
+  -webkit-text-stroke-color: rgba(92, 225, 255, 0.26);
+}
+.site-shell .feature-card-pro-badge {
+  color: #9fe6fb;
+}
+.site-shell .feature-card-pro-icon {
+  color: #5ce1ff;
+}
+
+.site-shell .card-footer-rule {
+  background: linear-gradient(90deg, rgba(0, 180, 216, 0.45) 0%, rgba(255, 255, 255, 0.08) 60%, transparent 100%);
+}
+.site-shell .card-stat-pill {
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.16) 0%, rgba(0, 119, 168, 0.12) 100%);
+  color: #7dd3ea;
+  border-color: rgba(0, 180, 216, 0.28);
+}
+.site-shell .svc-icon-chip {
+  background: linear-gradient(145deg, rgba(0, 180, 216, 0.18) 0%, rgba(4, 24, 32, 0.9) 100%);
+  border-color: rgba(0, 180, 216, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(92, 225, 255, 0.12),
+    0 8px 18px rgba(0, 0, 0, 0.28);
+}
+.site-shell .svc-icon-chip::after {
+  border-color: rgba(92, 225, 255, 0.12);
+}
+
+/* Catch remaining navy copy inside public bands (mockups opt out via .light-island) */
+.site-shell main > section [class*="text-[#00283C]"],
+.site-shell main > div [class*="text-[#00283C]"] {
+  color: #ffffff;
+}
+.site-shell main > section [class*="text-[#00283C]/"],
+.site-shell main > div [class*="text-[#00283C]/"] {
+  color: var(--band-body);
+}
+.site-shell main > section :is(.text-gray-500, .text-gray-600),
+.site-shell main > div :is(.text-gray-500, .text-gray-600) {
+  color: var(--band-body);
+}
+.site-shell main > section :is(.text-gray-400, .text-gray-300),
+.site-shell main > div :is(.text-gray-400, .text-gray-300) {
+  color: var(--band-muted);
+}
+
+/* Legal document panel */
+.legal-page {
+  background:
+    radial-gradient(ellipse 55% 35% at 50% 0%, rgba(0, 180, 216, 0.12), transparent 55%),
+    linear-gradient(180deg, #041820 0%, #031219 100%);
+}
+.legal-page-inner {
+  border-color: rgba(0, 180, 216, 0.2);
+  background: linear-gradient(158deg, rgba(11, 45, 60, 0.9), rgba(4, 22, 31, 0.95));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+.legal-page :is(h1, h2) {
+  color: #ffffff;
+}
+.legal-page :is(p, li, div) {
+  color: var(--band-body, #a8c6d3);
+}
+.legal-page a {
+  color: #5ce1ff;
+}
+
+/* --- Light islands: product mockups + demos keep their real-app palette -- */
+.site-shell .light-island :is(h1, h2, h3, h4, p, .text-\[\#00283C\]) {
+  color: #00283c !important;
+}
+.site-shell .light-island :is(.text-gray-500, .text-gray-600, .text-gray-700) {
+  color: #6b7280 !important;
+}
+.site-shell .light-island :is(.text-gray-400, .text-gray-300) {
+  color: #9ca3af !important;
+}
+.site-shell .light-island :is(.text-white, [class*="text-white/"]) {
+  color: #ffffff !important;
+}
+.site-shell .light-island .gradient-heading {
+  color: transparent !important;
+}
+.site-shell .light-island .card-white {
+  background: linear-gradient(155deg, #ffffff 0%, #f6fcfe 100%);
+  border-color: rgba(0, 119, 168, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 40, 60, 0.1);
+}
+.site-shell .light-island .card-white :is(h1, h2, h3, h4) {
+  color: #00283c !important;
+}
+.site-shell .light-island input,
+.site-shell .light-island textarea,
+.site-shell .light-island select {
+  color: #1f2937 !important;
+  background-color: #ffffff;
 }
 
 @media (max-width: 639px) {

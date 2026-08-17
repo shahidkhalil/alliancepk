@@ -53,7 +53,7 @@ export default function WhatsAppDemo() {
 
           {/* Right — WhatsApp mock */}
           <motion.div initial={{ opacity: 0, x: 24 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6, delay: 0.1 }}>
-            <div className="rounded-2xl overflow-hidden shadow-2xl border border-gray-100 max-w-sm mx-auto lg:mx-0 lg:ml-auto">
+            <div className="light-island mx-auto max-w-sm overflow-hidden rounded-2xl border border-gray-100 shadow-2xl lg:mx-0 lg:ml-auto">
               {/* WA header */}
               <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#075E54" }}>
                 <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">AT</div>

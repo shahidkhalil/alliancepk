@@ -222,10 +222,10 @@ export function FeatureCard({
           )}
         </div>
 
-        <h3 className="relative z-[2] mb-2.5 text-base font-extrabold leading-snug tracking-tight text-[#00283C] transition-transform duration-300 ease-out group-hover:translate-x-0.5">
+        <h3 className="relative z-[2] mb-2.5 text-base font-extrabold leading-snug tracking-tight text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5">
           {title}
         </h3>
-        <p className="relative z-[2] text-sm leading-relaxed text-[#00283C]/70">{description}</p>
+        <p className="relative z-[2] text-sm leading-relaxed text-[#a8c6d3]">{description}</p>
         <hr className="card-footer-rule relative z-[2] mt-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         {children}
       </div>
@@ -283,7 +283,7 @@ export function FeatureCardGrid({
           const FallbackIcon = fallbackIcons[i % fallbackIcons.length];
           const icon =
             typeof item.icon === "string" ? (
-              <FallbackIcon className="h-5 w-5 text-[#0077A8]" strokeWidth={1.8} />
+              <FallbackIcon className="h-5 w-5 text-[#5ce1ff]" strokeWidth={1.8} />
             ) : (
               item.icon
             );
@@ -440,8 +440,8 @@ export function ServiceCard({
         <ServiceCardArrow />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-extrabold text-[#00283C] leading-snug tracking-tight mb-2">{title}</h3>
-        <p className="text-sm text-[#00283C]/55 leading-relaxed">{description}</p>
+        <h3 className="mb-2 text-[15px] font-extrabold leading-snug tracking-tight text-white">{title}</h3>
+        <p className="text-sm leading-relaxed text-[#a8c6d3]">{description}</p>
       </div>
       <hr className="card-footer-rule mt-1" />
     </AnimatedLinkCard>
@@ -504,10 +504,10 @@ export function ServiceShowcaseCard({
         <p className={`text-[10px] font-bold uppercase tracking-[0.14em] mb-1.5 ${popular ? "text-[#7DD3EA]/80" : "text-[#00B4D8]"}`}>
           {subtitle}
         </p>
-        <h3 className={`text-base font-extrabold mb-2 leading-snug tracking-tight ${popular ? "text-white" : "text-[#00283C]"}`}>
+        <h3 className="mb-2 text-base font-extrabold leading-snug tracking-tight text-white">
           {title}
         </h3>
-        <p className={`text-xs leading-relaxed ${popular ? "text-white/65" : "text-[#00283C]/55"}`}>
+        <p className={`text-xs leading-relaxed ${popular ? "text-white/65" : "text-[#a8c6d3]"}`}>
           {description}
         </p>
       </div>
@@ -582,14 +582,14 @@ export function ActiveTabBar<T extends string>({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`relative flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-              selected ? "text-white" : "text-[#00283C]/55 hover:text-[#00283C] hover:bg-white"
+            className={`relative flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              selected ? "text-white" : "text-white/50 hover:bg-white/10 hover:text-white"
             }`}
           >
             {selected && (
               <motion.div
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-full bg-[#00283C]"
+                className="absolute inset-0 rounded-full bg-[#0077A8]"
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
               />
             )}
@@ -624,12 +624,12 @@ export function ContentCardList({
             <span aria-hidden className="feature-card-pro-rail" />
             <span aria-hidden className="feature-card-pro-scan" />
             <div className="relative z-[1] mb-3 flex items-center justify-between gap-3">
-              <h3 className="font-bold text-[#00283C]">{title}</h3>
+              <h3 className="font-bold text-white">{title}</h3>
               <span className="feature-card-pro-badge" aria-hidden>
                 {String(i + 1).padStart(2, "0")}
               </span>
             </div>
-            <p className="relative z-[1] text-sm leading-relaxed text-gray-500">{body}</p>
+            <p className="relative z-[1] text-sm leading-relaxed text-[#a8c6d3]">{body}</p>
           </motion.div>
         );
       })}

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Menu,
   X,
@@ -21,6 +21,7 @@ import {
   LineChart,
 } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { usePathname } from "next/navigation";
 import { useForm } from "@/context/FormContext";
 
 interface DropdownLink {
@@ -239,6 +240,38 @@ export default function Navigation() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { openForm } = useForm();
   const reduceMotion = useReducedMotion();
+  const pathname = usePathname();
+
+  // Pages such as /ai-receptionist live under more than one menu, so score every
+  // nav item by its best href match and highlight only the strongest one.
+  const activeLabel = useMemo(() => {
+    if (!pathname) return null;
+
+    const score = (link: NavLink) => {
+      const hrefs = link.dropdown
+        ? [
+            ...(link.dropdown.top ?? []),
+            ...(link.dropdown.links ?? []),
+            ...(link.dropdown.groups ?? []).flatMap((g) => g.links),
+          ].map((d) => d.href)
+        : [link.href];
+
+      return hrefs.reduce((best, href) => {
+        if (!href.startsWith("/")) return best;
+        const matches = href === "/" ? pathname === "/" : pathname.startsWith(href);
+        return matches ? Math.max(best, href.length) : best;
+      }, 0);
+    };
+
+    let winner: { label: string; score: number } | null = null;
+    for (const link of navLinks) {
+      const value = score(link);
+      if (value > 0 && (!winner || value > winner.score)) {
+        winner = { label: link.label, score: value };
+      }
+    }
+    return winner?.label ?? null;
+  }, [pathname]);
 
   useEffect(() => {
     let ticking = false;
@@ -290,6 +323,8 @@ export default function Navigation() {
         transition={{ duration: 0.6, ease: easeOut }}
         className="pointer-events-none fixed inset-x-0 top-0 z-50"
       >
+        {/* Covers the gap above the floating pill so content can't peek through */}
+        <div aria-hidden className={`nav-scrim ${scrolled ? "nav-scrim--on" : ""}`} />
         <div
           className={`pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             scrolled ? "mx-3 mt-3 sm:mx-5 lg:mx-8" : "mx-0 mt-0"
@@ -351,7 +386,9 @@ export default function Navigation() {
                         aria-label={`${link.label} menu`}
                         aria-haspopup="true"
                         aria-expanded={openMenu === link.label}
-                        className={`nav-link ${openMenu === link.label ? "nav-link--open" : ""}`}
+                        className={`nav-link ${openMenu === link.label ? "nav-link--open" : ""} ${
+                          activeLabel === link.label ? "nav-link--active" : ""
+                        }`}
                         onClick={() =>
                           setOpenMenu((cur) => (cur === link.label ? null : link.label))
                         }
@@ -380,7 +417,12 @@ export default function Navigation() {
                       </AnimatePresence>
                     </div>
                   ) : (
-                    <a key={link.label} href={link.href} className="nav-link">
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      aria-current={activeLabel === link.label ? "page" : undefined}
+                      className={`nav-link ${activeLabel === link.label ? "nav-link--active" : ""}`}
+                    >
                       {link.label}
                       <span className="nav-link-underline" aria-hidden />
                     </a>

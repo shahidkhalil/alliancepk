@@ -15,18 +15,22 @@ const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySale
 function HomeContent() {
   const { isOpen, closeForm } = useForm();
   return (
-    <main className="relative min-h-screen w-full max-w-full overflow-x-clip bg-white">
+    <div className="site-shell relative min-h-screen w-full max-w-full overflow-x-clip">
+      <div aria-hidden className="site-shell-glow site-shell-glow--one" />
+      <div aria-hidden className="site-shell-glow site-shell-glow--two" />
       {/* Only download form/Firebase when the user opens the audit modal */}
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}
       <AuditChatWidget />
       <Navigation />
-      <Hero />
-      <CapabilityStrip />
-      <HomeBelowFold />
-      <FinalCTA />
+      <main className="relative w-full max-w-full overflow-x-clip">
+        <Hero />
+        <CapabilityStrip />
+        <HomeBelowFold />
+        <FinalCTA />
+      </main>
       <Footer />
       <MobileStickySalesBar />
-    </main>
+    </div>
   );
 }
 

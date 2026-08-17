@@ -234,10 +234,11 @@ export default function BlogPostClient({
           </div>
         </header>
 
-        <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className="light-island mx-auto max-w-3xl px-6 py-12">
+          <div className="rounded-2xl border border-[#00B4D8]/15 bg-[#F8FBFD] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)] sm:p-8">
           <p
             itemProp="description"
-            className="text-lg text-gray-600 leading-relaxed mb-8 border-l-4 border-[#0077A8] pl-4"
+            className="mb-8 border-l-4 border-[#0077A8] pl-4 text-lg leading-relaxed text-gray-600"
           >
             {post.excerpt}
           </p>
@@ -282,6 +283,7 @@ export default function BlogPostClient({
               </a>
             </aside>
           )}
+          </div>
         </div>
       </article>
 

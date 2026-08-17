@@ -14,7 +14,7 @@ export default function AICallMockup() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <div ref={ref} className="relative max-w-[280px] mx-auto">
+    <div ref={ref} className="light-island relative mx-auto max-w-[280px]">
       <div className="rounded-[2rem] border-[6px] border-[#00283C] overflow-hidden shadow-2xl bg-[#00283C]">
         <div className="h-6 flex items-center justify-center">
           <div className="w-16 h-2 bg-white/20 rounded-full" />

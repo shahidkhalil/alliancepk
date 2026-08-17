@@ -7,7 +7,7 @@ export default function GoogleMapsMockup() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <div ref={ref} className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 max-w-2xl mx-auto">
+    <div ref={ref} className="light-island mx-auto max-w-2xl overflow-hidden rounded-2xl border border-gray-200 shadow-2xl">
       <div className="grid sm:grid-cols-2">
         {/* Map area */}
         <div className="relative bg-[#E8EEF1] min-h-[220px] overflow-hidden">

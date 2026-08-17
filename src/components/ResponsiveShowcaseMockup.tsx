@@ -30,7 +30,7 @@ export default function ResponsiveShowcaseMockup() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <div ref={ref} className="relative py-10">
+    <div ref={ref} className="light-island relative py-10">
       {/* Ambient glow + grid */}
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: "linear-gradient(rgba(0,40,60,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(0,40,60,0.035) 1px, transparent 1px)",
