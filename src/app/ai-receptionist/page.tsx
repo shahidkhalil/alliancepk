@@ -4,7 +4,6 @@ import ServicePageHero from "@/components/ServicePageHero";
 import AICallMockup from "@/components/AICallMockup";
 import ReceptionistDemo from "@/components/ReceptionistDemo";
 import FinalCTA from "@/components/FinalCTA";
-import ParallaxSection from "@/components/ParallaxSection";
 import { FeatureCardGrid, ContentCardList } from "@/components/ui/Card";
 import { useForm } from "@/context/FormContext";
 
@@ -119,23 +118,17 @@ export default function AIReceptionist() {
         <AICallMockup />
       </section>
 
-      <ParallaxSection className="border-b border-[#00B4D8]/10 bg-gradient-to-b from-[#F4FBFD] to-white py-16" intensity={34}>
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="mb-10 text-center">
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] shadow-sm">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#00B4D8]" />
-              Capabilities
-            </span>
-            <h2 className="mb-3 text-3xl font-extrabold tracking-tight text-[#00283C]">
-              What the AI <span className="gradient-heading">Handles For You</span>
-            </h2>
-            <p className="mx-auto max-w-xl text-gray-500">
-              Every phone interaction your clinic receives — automated, professional, and never on hold.
-            </p>
-          </div>
-          <FeatureCardGrid items={features} className="grid gap-5 md:grid-cols-2 lg:grid-cols-3" />
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-extrabold text-[#00283C] text-center mb-3">
+            What the AI <span className="gradient-heading">Handles For You</span>
+          </h2>
+          <p className="text-gray-500 text-center mb-10 max-w-xl mx-auto">
+            Every phone interaction your clinic receives — automated, professional, and never on hold.
+          </p>
+          <FeatureCardGrid items={features} className="grid md:grid-cols-2 lg:grid-cols-3 gap-5" />
         </div>
-      </ParallaxSection>
+      </section>
 
       {/* SEO content — targets high-volume clinics by their pain */}
       <section className="py-16 bg-[#F8FAFC] border-y border-gray-100">

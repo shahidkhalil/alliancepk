@@ -104,7 +104,7 @@ export default function PackageOrderForm() {
             transition={{ duration: 0.25 }}
             className="fixed inset-0 z-[81] flex items-center justify-center p-4 pointer-events-none"
           >
-            <div className="light-island pointer-events-auto relative max-h-[92vh] w-full max-w-md overflow-hidden overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div className="relative w-full max-w-md pointer-events-auto rounded-2xl bg-white shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
               {/* Header */}
               <div className="bg-[#00283C] px-6 py-5 flex items-start justify-between gap-3">
                 <div className="min-w-0">

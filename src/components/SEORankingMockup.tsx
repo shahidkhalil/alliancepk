@@ -13,7 +13,7 @@ export default function SEORankingMockup() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <div ref={ref} className="light-island mx-auto max-w-2xl overflow-hidden rounded-2xl border border-gray-200 shadow-2xl">
+    <div ref={ref} className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 max-w-2xl mx-auto">
       <div className="bg-white px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
         <span className="text-[#0077A8]">🔍</span>
         <span className="text-sm text-gray-600">dental implants cost Houston</span>

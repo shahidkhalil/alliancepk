@@ -29,7 +29,7 @@ export default function EHRDashboard() {
 
           {/* Left — EHR mockup */}
           <motion.div initial={{ opacity: 0, x: -24 }} animate={inView ? { opacity: 1, x: 0 } : {}} transition={{ duration: 0.6 }}>
-            <div className="light-island overflow-hidden rounded-2xl border border-gray-200 shadow-2xl">
+            <div className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200">
               {/* Header bar */}
               <div className="bg-[#00283C] px-5 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">

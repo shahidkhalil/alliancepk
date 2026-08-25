@@ -1128,7 +1128,7 @@ export default function Portfolio() {
                 className={`px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors ${
                   filter === f
                     ? "bg-[#00283C] border-[#00283C] text-white"
-                    : "border-white/15 bg-white/5 text-[#a8c6d3] hover:border-[#00B4D8] hover:text-white"
+                    : "bg-white border-gray-200 text-gray-500 hover:border-[#00283C] hover:text-[#00283C]"
                 }`}
               >
                 {f}
