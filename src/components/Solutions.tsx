@@ -1,333 +1,369 @@
 "use client";
+import { motion, useInView, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
-  motion,
-  useInView,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
-import {
   Bot,
-  MessagesSquare,
-  Megaphone,
-  Globe2,
-  Search,
-  MapPin,
-  Smartphone,
+  MessageCircle,
+  CalendarCheck,
+  BellRing,
   ClipboardList,
   ArrowRight,
-  type LucideIcon,
+  MapPin,
+  Check,
 } from "lucide-react";
 
-const services: {
-  Icon: LucideIcon;
-  title: string;
-  subtitle: string;
-  desc: string;
-  stat: string;
-  href: string;
-  popular: boolean;
-}[] = [
+const workflow = [
   {
-    Icon: Bot,
+    verb: "Answer",
     title: "AI Receptionist",
-    subtitle: "Your Houston clinic's AI front desk · from $500/mo",
-    desc: "One AI front desk for Houston clinics — voice, WhatsApp, and web chat. Answers, books, sends reminders, and never misses a patient.",
-    stat: "0 missed calls, 24/7",
+    desc: "Every call gets picked up — nights, weekends, and peak hours — in your clinic's voice.",
+    outcome: "0 missed calls",
     href: "/ai-receptionist",
-    popular: true,
+    Icon: Bot,
+    feed: [
+      "Incoming call · 7:42 PM",
+      "AI: “Thanks for calling — how can I help?”",
+      "Patient qualified → sent to booking",
+    ],
   },
   {
-    Icon: MessagesSquare,
-    title: "WhatsApp AI Automation",
-    subtitle: "Replies in under 5 seconds",
-    desc: "Patients message on WhatsApp — the AI replies instantly, qualifies them, and books the appointment automatically.",
-    stat: "3x more bookings",
+    verb: "Reply",
+    title: "WhatsApp & Chat AI",
+    desc: "Messages get an instant answer, the patient is qualified, and nothing sits unread.",
+    outcome: "Replies in seconds",
     href: "/whatsapp-ai-automation",
-    popular: false,
+    Icon: MessageCircle,
+    feed: [
+      "New WhatsApp message received",
+      "AI replied in 4 seconds",
+      "Treatment + insurance confirmed",
+    ],
   },
   {
-    Icon: Megaphone,
-    title: "Digital Marketing",
-    subtitle: "Google & Meta Ads",
-    desc: "Targeted campaigns built specifically for dental and aesthetic clinics — not generic templates. Every dollar tracked.",
-    stat: "4x avg. ROAS",
-    href: "/digital-marketing-for-clinics",
-    popular: false,
+    verb: "Book",
+    title: "Auto Booking",
+    desc: "Open slots are offered and confirmed automatically — no phone tag, no waiting.",
+    outcome: "Booked on first contact",
+    href: "/ai-receptionist",
+    Icon: CalendarCheck,
+    feed: [
+      "Checking live calendar availability",
+      "Tue 10:30 AM offered and accepted",
+      "Appointment written to your system",
+    ],
   },
   {
-    Icon: Globe2,
-    title: "Clinic Websites",
-    subtitle: "Fast. Professional. Converting.",
-    desc: "Built for American clinics — mobile-first, SEO-ready, and designed to turn visitors into booked appointments.",
-    stat: "Live in 7 days",
-    href: "/clinic-website-design",
-    popular: false,
-  },
-  {
-    Icon: Search,
-    title: "SEO for Clinics",
-    subtitle: "Long-term organic growth",
-    desc: "Rank on page 1 for high-intent treatment searches. Dental implants, whitening, fillers — the terms that convert.",
-    stat: "100% organic",
-    href: "/seo-for-clinics",
-    popular: false,
-  },
-  {
-    Icon: MapPin,
-    title: "Local SEO",
-    subtitle: "Dominate Google Maps",
-    desc: "When a patient searches 'dentist near me' in your city — your clinic appears first. We make that happen.",
-    stat: "#1 in 60 days",
-    href: "/local-seo-for-clinics",
-    popular: false,
-  },
-  {
-    Icon: Smartphone,
-    title: "Patient Mobile App",
-    subtitle: "Your brand on every phone",
-    desc: "Branded iOS & Android app. Patients book, view records, get reminders, and pay — with your clinic's logo.",
-    stat: "Branded & custom",
+    verb: "Remind",
+    title: "App & Reminders",
+    desc: "Confirmations, reminders, and recovery messages run themselves so chairs stay full.",
+    outcome: "Fewer no-shows",
     href: "/clinic-mobile-app",
-    popular: false,
+    Icon: BellRing,
+    feed: [
+      "Confirmation sent instantly",
+      "Reminders at 24h and 2h before",
+      "Missed? Rebooking offer goes out",
+    ],
   },
   {
-    Icon: ClipboardList,
-    title: "EHR Platform",
-    subtitle: "Go fully paperless",
-    desc: "Patient records, prescriptions, billing, and appointments — all in one screen. Built for US clinics.",
-    stat: "100% paperless",
+    verb: "Record",
+    title: "Records & Admin",
+    desc: "Intake, charting, and billing stay paperless and connected to every booking.",
+    outcome: "100% paperless",
     href: "/ehr-platform",
-    popular: false,
+    Icon: ClipboardList,
+    feed: [
+      "Digital intake completed before arrival",
+      "Chart and billing updated",
+      "Zero paperwork at the front desk",
+    ],
   },
 ];
 
-const easeOut = [0.22, 1, 0.36, 1] as const;
-
-/** L R L R … entrance directions */
-function enterX(index: number, mobile: boolean, reduced: boolean) {
-  if (reduced) return 0;
-  const dist = mobile ? 48 : 80;
-  return index % 2 === 0 ? -dist : dist;
-}
+const STEP_MS = 3000;
 
 export default function Solutions() {
-  const ref = useRef<HTMLElement | null>(null);
-  const inView = useInView(ref, { once: true, amount: 0.12 });
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: false, margin: "-120px" });
   const reduceMotion = useReducedMotion();
-  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [active, setActive] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
+    if (!autoplay || reduceMotion || !inView) return;
+    const timer = setInterval(() => {
+      setActive((prev) => (prev + 1) % workflow.length);
+    }, STEP_MS);
+    return () => clearInterval(timer);
+  }, [autoplay, reduceMotion, inView]);
 
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const glowY = useTransform(scrollYProgress, [0, 1], reduceMotion || isMobile ? [0, 0] : [18, -18]);
-  const dotsY = useTransform(scrollYProgress, [0, 1], reduceMotion || isMobile ? [0, 0] : [-8, 8]);
+  const current = workflow[active];
+  const progress = (active / (workflow.length - 1)) * 100;
+
+  const selectStep = (index: number) => {
+    setActive(index);
+    setAutoplay(false);
+  };
 
   return (
     <section
-      className="solutions-section relative overflow-x-clip py-16 lg:py-24"
+      className="py-16 lg:py-24 relative overflow-hidden"
       id="services"
       ref={ref}
+      style={{
+        background:
+          "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,180,216,0.07) 0%, transparent 60%), linear-gradient(180deg, #f8fcfe 0%, #ffffff 40%, #ffffff 100%)",
+      }}
     >
-      <div aria-hidden className="solutions-bg absolute inset-0" />
-      <motion.div
-        aria-hidden
-        className="solutions-glow solutions-glow--a absolute"
-        style={{ y: glowY }}
-      />
-      <motion.div
-        aria-hidden
-        className="solutions-glow solutions-glow--b absolute"
-        style={{ y: dotsY }}
-      />
-      <motion.div
-        aria-hidden
-        className="solutions-dots absolute inset-0"
-        style={{ y: dotsY }}
-      />
-      <div aria-hidden className="solutions-grid absolute inset-0" />
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 relative">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-2xl mx-auto text-center mb-12 lg:mb-16"
+        >
+          <span className="badge-light mb-5">WHAT WE AUTOMATE</span>
+          <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight text-[#00283C] mt-4 mb-4 leading-tight">
+            Your patient workflow —<br />
+            <span className="gradient-heading">running on autopilot.</span>
+          </h2>
+          <p className="text-gray-500 text-base leading-relaxed">
+            One connected pipeline for healthcare clinics. Watch a patient move through it, or tap any step.
+          </p>
+        </motion.div>
 
-      {/* Subtle connection rail behind first row on desktop */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-[42%] z-[1] hidden h-px w-[min(920px,78%)] -translate-x-1/2 lg:block"
-      >
-        <div className="solutions-rail h-full w-full" />
-        <span className="solutions-rail-node absolute left-[12.5%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <span className="solutions-rail-node absolute left-[37.5%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <span className="solutions-rail-node absolute left-[62.5%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
-        <span className="solutions-rail-node absolute left-[87.5%] top-1/2 -translate-x-1/2 -translate-y-1/2" />
-      </div>
+        {/* ── Animated pipeline rail ── */}
+        <div
+          className="relative mb-8 lg:mb-10"
+          onMouseEnter={() => setAutoplay(false)}
+          role="tablist"
+          aria-label="Clinic automation workflow steps"
+        >
+          {/* Rail track spans first node center to last node center */}
+          <div aria-hidden className="absolute left-[10%] right-[10%] top-7 hidden sm:block">
+            <div className="relative h-[2px] rounded-full bg-[#00283C]/10">
+              <motion.div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#0077A8] via-[#00B4D8] to-[#7DD3EA]"
+                animate={{ width: `${progress}%` }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.7, ease: "easeInOut" }}
+              />
+            </div>
+          </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto mb-12 max-w-3xl text-center lg:mb-14">
-          <motion.span
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, ease: easeOut }}
-            className="solutions-badge mb-5 inline-flex items-center gap-2"
-          >
-            <span className="solutions-badge-dot" />
-            WHAT WE DO
-          </motion.span>
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
+            {workflow.map((step, i) => {
+              const isActive = i === active;
+              const isDone = i < active;
+              return (
+                <button
+                  key={step.verb}
+                  type="button"
+                  role="tab"
+                  id={`flow-tab-${i}`}
+                  aria-selected={isActive}
+                  aria-controls="flow-panel"
+                  onClick={() => selectStep(i)}
+                  onFocus={() => selectStep(i)}
+                  className="group relative flex flex-col items-center gap-3 pt-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0077A8] focus-visible:ring-offset-4 rounded-xl"
+                >
+                  <span className="relative flex items-center justify-center w-14 h-14">
+                    {/* Pulse rings on the active node */}
+                    {isActive && !reduceMotion && (
+                      <motion.span
+                        aria-hidden
+                        className="absolute inset-0 rounded-full border border-[#00B4D8]"
+                        initial={{ opacity: 0.55, scale: 1 }}
+                        animate={{ opacity: 0, scale: 1.7 }}
+                        transition={{ duration: 1.8, repeat: Infinity, ease: "easeOut" }}
+                      />
+                    )}
+                    <motion.span
+                      className={`relative z-[1] w-14 h-14 rounded-full flex items-center justify-center border transition-colors duration-300 ${
+                        isActive
+                          ? "bg-[#00283C] border-[#00B4D8]/50 shadow-[0_10px_30px_rgba(0,40,60,0.28)]"
+                          : isDone
+                            ? "bg-[#E8F7FB] border-[#00B4D8]/40"
+                            : "bg-white border-[#00283C]/10 group-hover:border-[#0077A8]/35"
+                      }`}
+                      animate={reduceMotion ? {} : { scale: isActive ? 1.06 : 1 }}
+                      transition={{ type: "spring", stiffness: 320, damping: 22 }}
+                    >
+                      {isDone ? (
+                        <Check className="w-5 h-5 text-[#0077A8]" strokeWidth={2.6} aria-hidden />
+                      ) : (
+                        <step.Icon
+                          className={`w-5 h-5 ${isActive ? "text-white" : "text-[#0077A8]"}`}
+                          strokeWidth={2}
+                          aria-hidden
+                        />
+                      )}
+                    </motion.span>
+                  </span>
 
-          <motion.h2
-            initial={{ opacity: 0, y: 18 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1, ease: easeOut }}
-            className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-white lg:text-4xl"
-          >
-            Every service your clinic needs —
-            <br />
-            <span className="gradient-heading">under one roof.</span>
-          </motion.h2>
+                  <span className="text-center">
+                    <span
+                      className={`block text-[11px] sm:text-sm font-extrabold tracking-tight transition-colors duration-300 ${
+                        isActive ? "text-[#00283C]" : "text-[#00283C]/45 group-hover:text-[#00283C]/75"
+                      }`}
+                    >
+                      {step.verb}
+                    </span>
+                    <span className="hidden sm:block text-[10px] font-semibold text-[#00283C]/30 mt-0.5">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </span>
 
-          <motion.p
-            initial={{ opacity: 0, y: 14 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.18, ease: easeOut }}
-            className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#8eb4c4]"
-          >
-            We don&apos;t do general marketing. Everything we build is designed for dental and
-            aesthetic clinics across the United States — the right audience, the right channels,
-            real results.
-          </motion.p>
+                  {/* Autoplay progress underline */}
+                  {isActive && autoplay && !reduceMotion && (
+                    <motion.span
+                      aria-hidden
+                      className="absolute -bottom-1 h-[2px] rounded-full bg-[#00B4D8]/70"
+                      initial={{ width: 0 }}
+                      animate={{ width: "60%" }}
+                      transition={{ duration: STEP_MS / 1000, ease: "linear" }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="solutions-grid-cards grid gap-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6">
-          {services.map((s, i) => {
-            const Icon = s.Icon;
-            const isHovered = hoveredHref === s.href;
-            const dimOthers =
-              !isMobile && hoveredHref != null && hoveredHref !== s.href;
-
-            return (
-              <motion.a
-                key={s.title}
-                href={s.href}
-                initial={{
-                  opacity: 0,
-                  x: enterX(i, isMobile, !!reduceMotion),
-                  scale: reduceMotion ? 1 : 0.97,
-                }}
-                whileInView={{ opacity: 1, x: 0, scale: 1 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{
-                  duration: reduceMotion ? 0.25 : 0.8,
-                  delay: reduceMotion ? 0 : 0.22 + i * 0.14,
-                  ease: easeOut,
-                }}
-                whileHover={
-                  reduceMotion || isMobile
-                    ? undefined
-                    : { y: -8, transition: { duration: 0.35, ease: easeOut } }
-                }
-                onPointerEnter={() => !isMobile && setHoveredHref(s.href)}
-                onPointerLeave={() =>
-                  setHoveredHref((prev) => (prev === s.href ? null : prev))
-                }
-                className={`solutions-card group relative flex h-full flex-col overflow-hidden ${
-                  s.popular ? "solutions-card--featured" : ""
-                } ${dimOthers ? "solutions-card--dim" : ""} ${
-                  isHovered ? "solutions-card--active" : ""
-                }`}
-                data-analytics-label={`service_${s.title}`}
-                data-analytics-location="solutions"
+        {/* ── Active step panel ── */}
+        <div
+          id="flow-panel"
+          role="tabpanel"
+          aria-labelledby={`flow-tab-${active}`}
+          onMouseEnter={() => setAutoplay(false)}
+          className="relative rounded-[1.5rem] overflow-hidden mb-8 card-cta-dark card-cta-glow"
+        >
+          <div className="relative z-[1] grid lg:grid-cols-[1.05fr_1fr] gap-8 lg:gap-10 p-7 lg:p-10">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`copy-${active}`}
+                initial={reduceMotion ? {} : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? {} : { opacity: 0, y: -10 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
               >
-                {s.popular && (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5, duration: 0.5, ease: easeOut }}
-                    className="solutions-popular"
-                  >
-                    <span className="solutions-popular-shine" aria-hidden />
-                    MOST POPULAR
-                  </motion.span>
-                )}
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7DD3EA] mb-3">
+                  Step {String(active + 1).padStart(2, "0")} · {current.verb}
+                </p>
+                <h3 className="text-2xl lg:text-[2rem] font-extrabold text-white leading-tight tracking-tight mb-4">
+                  {current.title}
+                </h3>
+                <p className="text-sm lg:text-base text-white/70 leading-relaxed mb-7 max-w-md">
+                  {current.desc}
+                </p>
 
-                <div className="relative z-[2] flex h-full flex-col p-6 lg:p-7">
-                  <div className="mb-5 flex items-start justify-between gap-3">
-                    <div className="solutions-icon">
-                      <Icon
-                        className={`h-6 w-6 ${
-                          s.popular ? "text-white" : "text-[#0077A8]"
-                        } transition-colors duration-300 group-hover:text-white`}
-                        strokeWidth={1.8}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold text-white">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
+                    {current.outcome}
+                  </span>
+                  <a
+                    href={current.href}
+                    className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-[#7DD3EA] transition-colors group/link"
+                  >
+                    Explore {current.title}
+                    <ArrowRight
+                      className="w-4 h-4 group-hover/link:translate-x-0.5 transition-transform"
+                      aria-hidden
+                    />
+                  </a>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Live activity feed */}
+            <div className="relative">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/10">
+                  <span className="relative flex w-2 h-2">
+                    {!reduceMotion && (
+                      <motion.span
+                        className="absolute inset-0 rounded-full bg-[#00B4D8]"
+                        animate={{ opacity: [1, 0.25, 1] }}
+                        transition={{ duration: 1.6, repeat: Infinity }}
+                        aria-hidden
                       />
-                    </div>
-                    <span className="solutions-arrow" aria-hidden>
-                      <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.4} />
-                    </span>
-                  </div>
-
-                  <p
-                    className={`mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
-                      s.popular ? "text-[#7DD3EA]/85" : "text-[#00B4D8]"
-                    }`}
-                  >
-                    {s.subtitle}
-                  </p>
-                  <h3
-                    className={`mb-2 text-base font-extrabold leading-snug tracking-tight ${
-                      s.popular ? "text-white" : "text-white"
-                    }`}
-                  >
-                    {s.title}
-                  </h3>
-                  <p
-                    className={`mb-5 flex-1 text-xs leading-relaxed ${
-                      s.popular ? "text-white/65" : "text-white/55"
-                    }`}
-                  >
-                    {s.desc}
-                  </p>
-
-                  <div className="solutions-stat mt-auto">
-                    <span>{s.stat}</span>
-                  </div>
+                    )}
+                    <span className="w-2 h-2 rounded-full bg-[#00B4D8]" aria-hidden />
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">
+                    Automation running
+                  </span>
                 </div>
 
-                {s.popular && <span aria-hidden className="solutions-featured-glow" />}
-              </motion.a>
-            );
-          })}
+                <AnimatePresence mode="wait">
+                  <motion.ul key={`feed-${active}`} className="space-y-3">
+                    {current.feed.map((line, i) => (
+                      <motion.li
+                        key={line}
+                        initial={reduceMotion ? {} : { opacity: 0, x: -12 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: reduceMotion ? 0 : 0.12 + i * 0.18, duration: 0.35 }}
+                        className="flex items-start gap-3"
+                      >
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#00B4D8]/15 border border-[#00B4D8]/30 flex items-center justify-center mt-px">
+                          <Check className="w-3 h-3 text-[#7DD3EA]" strokeWidth={3} aria-hidden />
+                        </span>
+                        <span className="text-sm text-white/75 leading-relaxed">{line}</span>
+                      </motion.li>
+                    ))}
+                  </motion.ul>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.55, ease: easeOut, delay: 0.1 }}
-          className="card-cta-dark card-cta-glow mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl p-5 sm:flex-row"
+          viewport={{ once: true }}
+          className="rounded-2xl border border-[#00283C]/10 bg-[#F8FCFE] p-6 lg:px-8 lg:py-7 flex flex-col sm:flex-row sm:items-center gap-5 mb-8"
         >
-          <div className="relative z-[1] flex items-center gap-3">
-            <MapPin className="h-5 w-5 flex-shrink-0 text-[#00B4D8]" strokeWidth={2} />
-            <div>
-              <p className="text-sm font-bold text-white">
-                Houston-based — serving clinics across the United States
-              </p>
-              <p className="mt-0.5 text-xs text-white/50">
-                Houston · Los Angeles · Chicago · Dallas · and beyond
-              </p>
-            </div>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0077A8] mb-1.5">
+              START ANYWHERE IN THE FLOW
+            </p>
+            <h3 className="text-lg font-extrabold text-[#00283C] mb-1.5 leading-snug tracking-tight">
+              Most clinics begin with Answer and Book
+            </h3>
+            <p className="text-sm text-[#00283C]/60 leading-relaxed">
+              Stop the missed calls first, then layer on messaging, reminders, and records. We&apos;ll map the right order in a free audit.
+            </p>
           </div>
           <a
-            href="/dental-clinic-houston"
-            className="relative z-[1] flex-shrink-0 whitespace-nowrap rounded-full bg-white px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#E8F4F8]"
+            href="/free-website-audit"
+            data-analytics-label="start_website_audit"
+            data-analytics-location="services"
+            className="btn-dark inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm flex-shrink-0 min-h-[48px]"
           >
+            Run My Free Audit
+            <ArrowRight className="w-4 h-4" aria-hidden />
+          </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ type: "spring", stiffness: 300, damping: 26 }}
+          whileHover={{ scale: 1.01, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          className="rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 card-cta-dark card-cta-glow"
+        >
+          <div className="flex items-center gap-3 relative z-[1]">
+            <MapPin className="w-5 h-5 text-[#00B4D8] flex-shrink-0" strokeWidth={2} aria-hidden />
+            <div>
+              <p className="text-white font-bold text-sm">Houston-based — automating clinics across the United States</p>
+              <p className="text-white/50 text-xs mt-0.5">Houston · Los Angeles · Chicago · Dallas · and beyond</p>
+            </div>
+          </div>
+          <a href="/dental-clinic-houston" className="relative z-[1] flex-shrink-0 btn-dark px-5 py-2.5 text-sm whitespace-nowrap">
             Houston Clinics →
           </a>
         </motion.div>

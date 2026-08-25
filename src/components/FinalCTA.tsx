@@ -1,79 +1,67 @@
 "use client";
-import { useRef } from "react";
 import { useForm } from "@/context/FormContext";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 export default function FinalCTA() {
   const { openForm } = useForm();
-  const ref = useRef<HTMLElement>(null);
-  const reduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const glowY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [40, -40]);
-  const contentY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [18, -18]);
 
   return (
-    <section ref={ref} className="final-cta-section relative overflow-hidden py-16 lg:py-20">
-      <div aria-hidden className="final-cta-bg absolute inset-0" />
-      <motion.div
-        aria-hidden
-        style={{ y: glowY }}
-        className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-[#00B4D8]/20 blur-3xl"
+    <section className="relative py-20 lg:py-28 overflow-hidden">
+      <div className="absolute inset-0 bg-[#00283C]" />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0,180,216,0.2), transparent 70%)",
+        }}
       />
-      <motion.div
-        aria-hidden
-        style={{ y: glowY }}
-        className="pointer-events-none absolute -right-16 bottom-0 h-80 w-80 rounded-full bg-[#0077A8]/18 blur-3xl"
-      />
-      <motion.div style={{ y: contentY }} className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-        <p className="mb-4 text-sm font-bold uppercase tracking-widest text-[#5ce1ff]">
+
+      <div className="relative max-w-3xl mx-auto px-6 text-center">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#00B4D8] mb-5">
           ONLY ACCEPTING 10 NEW CLINICS THIS MONTH
         </p>
-        <h2 className="mb-4 text-3xl font-extrabold tracking-tight text-white lg:text-4xl">
-          Ready to Grow Your Clinic?
+        <h2 className="text-3xl lg:text-4xl font-extrabold text-white tracking-tight mb-4">
+          Ready to Automate Your Clinic?
         </h2>
-        <p className="mx-auto mb-8 max-w-xl leading-relaxed text-[#8eb4c4]">
-          After 10,000+ audit hours and 100+ clinics served, we know exactly what
-          it takes to fill your appointment book. Start with a free audit —
-          minimum 3–6 month engagement.
+        <p className="text-white/80 mb-8 max-w-xl mx-auto leading-relaxed">
+          After 10,000+ audit hours and 100+ clinics automated, we know exactly which workflows
+          fill an appointment book. Start with a free automation audit — minimum 3–6 month
+          engagement.
         </p>
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
             href="/free-website-audit"
             data-analytics-label="start_website_audit"
             data-analytics-location="final_cta"
-            className="w-full rounded-full bg-gradient-to-r from-[#00B4D8] to-[#0077A8] px-8 py-4 text-center text-base font-bold text-white shadow-[0_0_32px_rgba(0,180,216,0.35)] transition-transform hover:-translate-y-0.5 sm:w-auto"
+            className="bg-white text-[#00283C] font-bold px-8 py-4 rounded-md text-base hover:bg-[#E6F4F8] transition-colors w-full sm:w-auto text-center"
           >
-            Get Your Free Clinic Audit
+            Book a Free Audit
           </a>
           <a
             href="/pricing"
             data-analytics-label="view_pricing"
             data-analytics-location="final_cta"
-            className="flex w-full items-center justify-center gap-2 rounded-full border border-[#00B4D8]/35 bg-white/5 px-6 py-4 text-sm font-semibold text-white transition-colors hover:border-[#5ce1ff] hover:bg-white/10 sm:w-auto"
+            className="text-sm font-semibold text-white border border-white/30 px-6 py-4 rounded-md hover:bg-white/10 transition-colors w-full sm:w-auto text-center"
           >
-            See Plans &amp; Pricing
+            See Plans & Pricing
           </a>
         </div>
-        <p className="mt-5 text-sm text-[#8eb4c4]">
+        <p className="mt-6 text-sm text-white/60">
           Ready to buy?{" "}
           <button
             type="button"
             onClick={openForm}
             data-analytics-label="book_consultation"
             data-analytics-location="final_cta"
-            className="font-semibold text-[#5ce1ff] underline underline-offset-2 hover:text-white"
+            className="font-semibold text-[#00B4D8] hover:underline"
           >
-            Book a free strategy call
+            Book a Free Strategy Call
           </button>
         </p>
-        <p className="mt-6 text-xs text-white/40">
-          ★★★★★ Rated 4.9/5 by 100+ clinics across the United States · 3–6 month
-          minimum · Results guaranteed
+        <p className="mt-4 text-xs text-white/45">
+          ★★★★★ Rated 4.9/5 by 100+ clinics across the United States · Live in 2 weeks · Results
+          guaranteed
         </p>
-      </motion.div>
+      </div>
     </section>
   );
 }

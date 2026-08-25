@@ -12,6 +12,9 @@ const inter = Inter({
   preload: true,
 });
 
+/** Public GA4 measurement ID — also present in initial HTML so Google can detect the tag. */
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-TR2J78K3F0";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://alliancetechltd.com"),
   title: "AI Automation & Growth for Clinics in Houston, TX | Alliance Tech",
@@ -59,6 +62,40 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        {/* GA4 in initial HTML (detectable by Google). Storage stays denied until consent. */}
+        <script
+          id="alliance-ga-consent"
+          dangerouslySetInnerHTML={{
+            __html: `
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+window.gtag = gtag;
+gtag('consent', 'default', {
+  analytics_storage: 'denied',
+  ad_storage: 'denied',
+  ad_user_data: 'denied',
+  ad_personalization: 'denied',
+  functionality_storage: 'denied',
+  personalization_storage: 'denied',
+  security_storage: 'granted',
+  wait_for_update: 500
+});
+gtag('js', new Date());
+gtag('config', '${GA_ID}', {
+  send_page_view: false,
+  anonymize_ip: true,
+  allow_google_signals: false
+});
+            `.trim(),
+          }}
+        />
+        <script
+          async
+          id="alliance-ga4"
+          src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(GA_ID)}`}
+        />
+      </head>
       <body className="antialiased">
         <OrganizationSchema />
         <AnalyticsProvider>{children}</AnalyticsProvider>

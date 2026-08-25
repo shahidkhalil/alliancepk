@@ -31,7 +31,6 @@ export default function LocalSEOForClinics() {
         headline="Rank #1 on Google Maps"
         highlight="in Your City"
         subheadline="When patients search 'dentist near me' or 'aesthetic clinic in Houston' — your clinic appears first. We make that happen in 60 days."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">

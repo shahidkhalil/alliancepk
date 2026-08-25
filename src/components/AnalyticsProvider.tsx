@@ -75,7 +75,13 @@ function loadGtm() {
 }
 
 function loadGa4() {
-  if (!GA_ID || document.getElementById("alliance-ga4")) return;
+  // Script is already in root layout HTML (id=alliance-ga4) so Google can detect it.
+  // Only inject if somehow missing (e.g. older cached page).
+  if (!GA_ID || document.getElementById("alliance-ga4")) {
+    window.__allianceUsesGtm = false;
+    bootstrapGtag();
+    return;
+  }
   window.__allianceUsesGtm = false;
   bootstrapGtag();
   const script = document.createElement("script");

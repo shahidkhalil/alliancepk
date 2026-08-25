@@ -38,12 +38,12 @@ const allServices: ServicePricing[] = [
     id: "ai-automation",
     name: "AI Receptionist",
     category: "AI & Automation",
-    tagline: "One flagship AI front desk — voice, WhatsApp, and web chat. Answers, books, and follows up 24/7.",
+    tagline: "One flagship AI front desk — phone, voice, and website chat. Answers, books, and follows up 24/7.",
     packages: [
       {
         name: "Basic",
-        price: "$500",
-        period: "/ month",
+        price: "$2,000",
+        period: "one-time",
         description: "Put an AI assistant on your website that answers patients and captures every lead, 24/7.",
         features: [
           "AI website chat assistant (trained on your clinic)",
@@ -60,15 +60,15 @@ const allServices: ServicePricing[] = [
       },
       {
         name: "Standard",
-        price: "$1,000",
-        period: "/ month",
+        price: "$4,000",
+        period: "one-time",
         savings: "Most popular with busy clinics",
-        description: "A full AI receptionist across web + WhatsApp that books patients and confirms automatically.",
+        description: "A full AI receptionist on phone + website chat that books patients and confirms automatically.",
         features: [
           "Everything in Basic",
-          "AI receptionist on website + WhatsApp",
+          "AI receptionist on phone + website chat",
           "Books appointments straight into your calendar",
-          "Automatic booking confirmations (email + WhatsApp)",
+          "Automatic booking confirmations (email + SMS)",
           "Automated appointment reminders (cut no-shows)",
           "Voice notes — patients can speak to the AI",
           "Up to 2,000 conversations / month",
@@ -80,12 +80,12 @@ const allServices: ServicePricing[] = [
       },
       {
         name: "Premium",
-        price: "$2,000",
-        period: "/ month",
+        price: "$6,000",
+        period: "one-time",
         description: "A real-time voice + chat AI agent that runs your front desk end to end, at scale.",
         features: [
           "Everything in Standard",
-          "Live real-time voice agent (patients call your site)",
+          "Live real-time voice agent (patients call your clinic)",
           "Urgency triage + instant priority alerts to staff",
           "Post-visit review requests (grow your Google rating)",
           "Full CRM / EHR / calendar integration",
@@ -100,7 +100,7 @@ const allServices: ServicePricing[] = [
     ],
     comparison: [
       { feature: "Website chat assistant", basic: true, standard: true, premium: true },
-      { feature: "WhatsApp AI receptionist", basic: false, standard: true, premium: true },
+      { feature: "Phone answering", basic: false, standard: true, premium: true },
       { feature: "Books into your calendar", basic: "Requests", standard: true, premium: true },
       { feature: "Voice notes (patient speaks)", basic: false, standard: true, premium: true },
       { feature: "Live real-time voice agent", basic: false, standard: false, premium: true },
@@ -110,14 +110,15 @@ const allServices: ServicePricing[] = [
       { feature: "Monthly conversations", basic: "500", standard: "2,000", premium: "Unlimited" },
     ],
     faqs: [
-      { q: "What is the AI Receptionist?", a: "It's your clinic's AI front desk — one product with clear channels (website chat, WhatsApp, and voice on higher tiers). It answers patient questions, books appointments, sends reminders, and follows up 24/7." },
-      { q: "Is this different from a separate WhatsApp bot or voice agent?", a: "No — those are channels of the same AI Receptionist, not separate products. You pick the channels you need; Standard includes web + WhatsApp, Premium adds live voice." },
+      { q: "What is the AI Receptionist?", a: "It's your clinic's AI front desk for phone calls and website chat (with live voice on Premium). It answers patient questions, books appointments, sends reminders, and follows up 24/7. WhatsApp automation is a separate product." },
+      { q: "Is this a monthly subscription?", a: "No. Basic ($2,000), Standard ($4,000), and Premium ($6,000) are one-time project fees for build, training, and go-live. Optional add-ons can be monthly if you need them." },
+      { q: "Is WhatsApp included?", a: "No. WhatsApp AI Automation is sold separately. AI Receptionist covers phone, website chat, and voice — so you can buy either product alone or both together." },
       { q: "Will it work with my current systems?", a: "Yes. Standard and Premium integrate with your calendar, CRM, and EHR so bookings and patient details flow in automatically — no double entry." },
       { q: "How fast can we go live?", a: "Typically 5 business days. We train the AI on your services, prices, and hours, test it with you, then switch it on." },
-      { q: "Is it only for dental clinics?", a: "No — it works for dental, aesthetic, dermatology, and multi-specialty clinics. It's trained on your specific services." },
+      { q: "Is it only for dental clinics?", a: "No — it works for healthcare clinics broadly: dental, aesthetic, dermatology, primary care, and multi-specialty practices. It's trained on your specific services." },
     ],
     timeline: "Live in 5 business days",
-    technologies: ["GPT-4o", "Realtime voice AI", "WhatsApp Business API", "Calendar & EHR integrations"],
+    technologies: ["GPT-4o", "Realtime voice AI", "Phone & web chat", "Calendar & EHR integrations"],
     support: "Included ongoing support; dedicated success manager on Premium.",
     guarantee: "30-day money-back guarantee if it doesn't reduce your missed patients.",
   },
@@ -149,7 +150,7 @@ const allServices: ServicePricing[] = [
         cta: "Get Clinic Automation",
         popular: true,
         addOns: [
-          "AI Receptionist (front desk) sold separately — from $500/mo",
+          "AI Receptionist (front desk) sold separately — from $2,000 one-time",
           "Extra locations from $399/mo each",
         ],
       },
@@ -158,7 +159,7 @@ const allServices: ServicePricing[] = [
     faqs: [
       {
         q: "How is this different from the AI Receptionist?",
-        a: "AI Receptionist is your front desk — it answers calls, chats, and WhatsApp and books appointments live. AI Automation for Clinics runs the follow-up engine behind the scenes: reminders, no-show recovery, reviews, and lead chase. You can buy either alone or both together.",
+        a: "AI Receptionist is your front desk — it answers phone calls and website chat and books appointments live. WhatsApp AI Automation is a separate product. AI Automation for Clinics runs the follow-up engine behind the scenes: reminders, no-show recovery, reviews, and lead chase. You can buy each alone or combine them.",
       },
       {
         q: "Is the price really fixed?",
@@ -255,7 +256,7 @@ const allServices: ServicePricing[] = [
         ],
         cta: "Book a Strategy Call",
         popular: false,
-        addOns: ["Ongoing SEO from $1,199/mo", "AI Receptionist from $399/mo"],
+        addOns: ["Ongoing SEO from $1,199/mo", "AI Receptionist from $2,000 one-time"],
       },
     ],
     comparison: [
@@ -388,8 +389,8 @@ const allServices: ServicePricing[] = [
     packages: [
       {
         name: "Basic",
-        price: "$249",
-        period: "/ month",
+        price: "$1,500",
+        period: "one-time",
         description: "Automated appointment reminders and instant replies — stop losing patients to unanswered WhatsApp messages.",
         features: [
           "500 outbound messages / month",
@@ -406,8 +407,8 @@ const allServices: ServicePricing[] = [
       },
       {
         name: "Standard",
-        price: "$499",
-        period: "/ month",
+        price: "$3,500",
+        period: "one-time",
         savings: "Most practices recoup the cost in 2 recovered bookings",
         description: "A full patient journey on WhatsApp — from first inquiry through confirmed booking and post-visit follow-up.",
         features: [
@@ -428,8 +429,8 @@ const allServices: ServicePricing[] = [
       },
       {
         name: "Premium",
-        price: "$999",
-        period: "/ month",
+        price: "$5,000",
+        period: "one-time",
         description: "Unlimited messaging, AI-driven conversations, EMR sync, and broadcast campaigns — the full WhatsApp automation stack.",
         features: [
           "Unlimited outbound messages",
@@ -463,6 +464,7 @@ const allServices: ServicePricing[] = [
       { feature: "Setup time", basic: "5 days", standard: "3 days", premium: "2 days" },
     ],
     faqs: [
+      { q: "Is WhatsApp Automation a monthly subscription?", a: "No. Basic ($1,500), Standard ($3,500), and Premium ($5,000) are one-time project fees for build, flows, and go-live. Optional extras can be monthly if you need them." },
       { q: "Do you use the official WhatsApp Business API?", a: "Yes — we integrate through Meta's official Business API, which means no risk of your number being banned and full broadcast capability." },
       { q: "Can patients book appointments directly in WhatsApp?", a: "Yes on Standard and Premium. The AI guides them through a natural-language booking flow, checks availability, confirms, and sends a calendar invite." },
       { q: "Is patient data safe over WhatsApp?", a: "WhatsApp uses end-to-end encryption for messages. We don't store PHI beyond what's needed for booking sync, and comply with HIPAA data handling principles." },

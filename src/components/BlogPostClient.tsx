@@ -208,9 +208,8 @@ export default function BlogPostClient({
         />
       )}
       <article itemScope itemType="https://schema.org/Article">
-        <header className="relative overflow-hidden pt-28 pb-14" style={{ background: post.imageGradient }}>
-          <div aria-hidden className="absolute inset-0 bg-[#021016]/30" />
-          <div className="relative max-w-3xl mx-auto px-6 flex flex-col gap-5 sm:gap-6">
+        <header className="pt-28 pb-14" style={{ background: post.imageGradient }}>
+          <div className="max-w-3xl mx-auto px-6 flex flex-col gap-5 sm:gap-6">
             <a
               href="/blog"
               className="self-start text-sm font-semibold text-white/70 hover:text-white transition-colors"
@@ -234,11 +233,10 @@ export default function BlogPostClient({
           </div>
         </header>
 
-        <div className="light-island mx-auto max-w-3xl px-6 py-12">
-          <div className="rounded-2xl border border-[#00B4D8]/15 bg-[#F8FBFD] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.25)] sm:p-8">
+        <div className="max-w-3xl mx-auto px-6 py-12">
           <p
             itemProp="description"
-            className="mb-8 border-l-4 border-[#0077A8] pl-4 text-lg leading-relaxed text-gray-600"
+            className="text-lg text-gray-600 leading-relaxed mb-8 border-l-4 border-[#0077A8] pl-4"
           >
             {post.excerpt}
           </p>
@@ -271,7 +269,7 @@ export default function BlogPostClient({
           </div>
 
           {post.serviceLink && (
-            <aside className="mt-10 rounded-2xl border border-[#00B4D8]/20 bg-gradient-to-br from-[#F0FAFD] to-white p-6 shadow-[0_12px_32px_rgba(0,119,168,0.08)]">
+            <aside className="mt-10 rounded-2xl border border-[#0077A8]/15 bg-[#F0FAFD] p-6">
               <p className="text-sm leading-relaxed text-gray-600">
                 {post.serviceLink.description}
               </p>
@@ -283,7 +281,6 @@ export default function BlogPostClient({
               </a>
             </aside>
           )}
-          </div>
         </div>
       </article>
 

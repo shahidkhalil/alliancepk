@@ -31,7 +31,6 @@ export default function AestheticClinicGrowth() {
         headline="More Aesthetic Patients,"
         highlight="More Revenue"
         subheadline="We help aesthetic clinics across the United States attract high-value patients through targeted ads, SEO, and social media — everything under one roof."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="py-12 border-b border-gray-100 bg-[#F8FAFC]">

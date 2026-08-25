@@ -35,7 +35,6 @@ export default function SEOForClinics() {
         headline="Page 1 for the Treatments"
         highlight="Patients Search For"
         subheadline="Long-term organic rankings for dental implants, teeth whitening, botox, and every other treatment your patients are already searching for on Google."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">

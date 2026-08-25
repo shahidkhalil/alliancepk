@@ -61,7 +61,6 @@ export default function DigitalMarketingForClinics() {
         headline="Patients Actively Searching"
         highlight="For Your Treatments"
         subheadline="Google and Meta ad campaigns built exclusively for dental and aesthetic clinics across the United States, targeted by city and treatment, not generic templates."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">

@@ -37,10 +37,10 @@ const faqs = [
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className={`service-faq-item overflow-hidden rounded-xl ${open ? "service-faq-item--open" : ""}`}>
+    <div className="border border-gray-100 rounded-xl bg-white">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left">
         <span className="font-bold text-[#00283C] text-sm">{q}</span>
-        <ChevronDown className={`w-4 h-4 text-[#0077A8] flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && <p className="px-5 pb-4 text-sm text-gray-500 leading-relaxed">{a}</p>}
     </div>
@@ -50,27 +50,25 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function FreeWebsiteAudit() {
   return (
     <PageWrapper>
-      <section className="service-hero relative overflow-hidden" style={{ minHeight: "auto" }}>
-        <div aria-hidden className="service-hero-atmosphere absolute inset-0" />
-        <div aria-hidden className="service-hero-grid absolute inset-0" />
-        <div className="relative mx-auto max-w-2xl px-6 pb-8 pt-28 text-center sm:pt-32">
-          <span className="service-hero-badge mb-4 inline-flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" /> FREE AI WEBSITE AUDIT
+      <section className="pt-28 pb-8 bg-gradient-to-b from-[#F8FAFC] to-white">
+        <div className="max-w-2xl mx-auto px-6 text-center">
+          <span className="badge-light mb-4 inline-flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" /> FREE AI WEBSITE AUDIT
           </span>
-          <h1 className="mt-4 mb-3 text-3xl font-extrabold tracking-tight text-white lg:text-4xl">
-            Is Your Houston Clinic Website <span className="service-hero-highlight">Losing You Patients?</span>
+          <h1 className="text-3xl lg:text-4xl font-extrabold text-[#00283C] tracking-tight mt-4 mb-3">
+            Is Your Houston Clinic Website <span className="gradient-heading">Losing You Patients?</span>
           </h1>
-          <p className="mx-auto max-w-md text-sm text-[#a8c6d3]">
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
             Chat with our AI auditor, built for Houston and Texas clinics. Real data, plain answers, free.
           </p>
         </div>
       </section>
 
-      <section className="px-4 pb-20 sm:px-6">
-        <div className="mx-auto max-w-2xl">
-          <div className="audit-chat-shell light-island overflow-hidden rounded-2xl">
+      <section className="pb-20 px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Chat header */}
-            <div className="flex items-center gap-3 bg-[#041820] px-5 py-3.5">
+            <div className="bg-[#00283C] px-5 py-3.5 flex items-center gap-3">
               <div className="relative">
                 <BotAvatar />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#00283C]" />

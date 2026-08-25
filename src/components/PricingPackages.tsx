@@ -1,476 +1,240 @@
 "use client";
-
-import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useInView,
-  useReducedMotion,
-} from "framer-motion";
-import {
-  ArrowRight,
-  Check,
-  Zap,
-  Star,
-  Bot,
-  Globe2,
-  MapPin,
-  Megaphone,
-  type LucideIcon,
-} from "lucide-react";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
+import { ArrowRight, Check } from "lucide-react";
 import { pricingServices } from "@/lib/pricingData";
+import { AnimatedLinkCard, ServiceCardArrow, StaggerGrid } from "@/components/ui/Card";
 
-const FEATURED_IDS = ["ai-automation", "healthcare-website", "local-seo", "google-ads"];
-
-const SERVICE_ICONS: Record<string, LucideIcon> = {
-  "ai-automation": Bot,
-  "healthcare-website": Globe2,
-  "local-seo": MapPin,
-  "google-ads": Megaphone,
-};
-
-const COLS =
-  "grid grid-cols-[1fr_110px_140px_110px] lg:grid-cols-[1fr_150px_180px_150px]";
-
-const trustItems = [
-  "No hidden fees",
-  "Cancel anytime",
-  "You own everything",
-  "US-market pricing",
+// Homepage shows automation only — marketing/web stay on /pricing.
+const FEATURED_IDS = [
+  "ai-automation",
+  "whatsapp-automation",
+  "emr-ehr",
 ];
 
-const tiers = ["Basic", "Standard", "Premium"] as const;
+const automationServices = FEATURED_IDS
+  .map((id) => pricingServices.find((s) => s.id === id))
+  .filter(Boolean) as typeof pricingServices;
 
-const easeOut = [0.22, 1, 0.36, 1] as const;
+// Table layout is sm+ only — phones get the stacked card list instead.
+const COLS = "grid grid-cols-[1fr_110px_140px_110px] lg:grid-cols-[1fr_150px_180px_150px]";
 
 export default function PricingPackages() {
-  const ref = useRef<HTMLElement | null>(null);
-  const inView = useInView(ref, { once: true, amount: 0.15 });
-  const reduceMotion = useReducedMotion();
-  const [activeTier, setActiveTier] = useState(1); // Standard
-  const [scanRow, setScanRow] = useState(-1);
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  const featured = FEATURED_IDS.map((id) =>
-    pricingServices.find((s) => s.id === id)
-  ).filter(Boolean) as typeof pricingServices;
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const sync = () => setIsMobile(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    if (!inView || reduceMotion || isMobile) {
-      if (reduceMotion) setScanRow(featured.length);
-      return;
-    }
-    let cancelled = false;
-    let i = 0;
-    const tick = () => {
-      if (cancelled) return;
-      setScanRow(i);
-      i += 1;
-      if (i <= featured.length) {
-        timer = setTimeout(tick, 420);
-      }
-    };
-    let timer = setTimeout(tick, 500);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [inView, reduceMotion, isMobile, featured.length]);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const featured = automationServices;
 
   return (
     <section
       ref={ref}
       id="pricing"
-      className="pricing-section relative overflow-x-clip py-20 lg:py-28"
+      className="relative py-20 lg:py-28 bg-gradient-to-b from-[#F8FAFC] via-white to-[#F8FAFC] overflow-hidden"
     >
-      <div aria-hidden className="pricing-bg absolute inset-0" />
-      <div aria-hidden className="pricing-glow absolute" />
-      <div aria-hidden className="pricing-grid absolute inset-0" />
-      <div aria-hidden className="pricing-dots absolute inset-0" />
+      {/* Soft ambient accent */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[720px] h-[360px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(0,119,168,0.06) 0%, transparent 70%)" }}
+      />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6">
-        <div className="mb-14 text-center">
-          <motion.span
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, ease: easeOut }}
-            className="pricing-badge mb-6 inline-flex items-center gap-2"
-          >
-            <span className="pricing-badge-dot" />
-            PRICING
-          </motion.span>
+      <div className="relative max-w-5xl mx-auto px-6">
 
-          <motion.h2
-            initial={{ opacity: 0, y: 18 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.55, delay: 0.08, ease: easeOut }}
-            className="mt-6 mb-4 text-3xl font-extrabold leading-tight tracking-tight text-white lg:text-5xl"
-          >
-            Every Price,{" "}
-            <span className="gradient-heading">Published Upfront.</span>
-          </motion.h2>
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          className="text-center mb-14"
+        >
+          <span className="badge-light mb-6">AUTOMATION PRICING</span>
 
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.5, delay: 0.14, ease: easeOut }}
-            className="mx-auto mb-8 max-w-lg text-base leading-relaxed text-[#8eb4c4]"
-          >
-            {pricingServices.length} services · clear published prices · no
-            hidden quotes.
-            <span className="mt-1 block text-sm italic text-white/45">
-              A few of our most popular below — see all {pricingServices.length}{" "}
-              on the pricing page.
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-[#00283C] tracking-tight leading-tight mt-6 mb-4">
+            Clear Prices for <span className="gradient-heading">Clinic Automation.</span>
+          </h2>
+
+          <p className="text-gray-500 text-base max-w-lg mx-auto leading-relaxed mb-8">
+            {featured.length} automation plans · published prices · no hidden quotes.
+            <span className="block text-sm text-gray-400 mt-1">
+              Receptionist, WhatsApp, workflows, and records — see full details on the pricing page.
             </span>
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.45, delay: 0.2, ease: easeOut }}
-            className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5"
-          >
-            {trustItems.map((t) => (
-              <span
-                key={t}
-                className="flex items-center gap-1.5 text-sm font-medium text-[#8eb4c4]"
-              >
-                <span className="pricing-check">
-                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5">
+            {["No hidden fees", "Cancel anytime", "You own everything", "US-market pricing"].map((t) => (
+              <span key={t} className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
+                <span className="w-4 h-4 rounded-full bg-[#00B4D8]/10 flex items-center justify-center">
+                  <Check className="w-2.5 h-2.5 text-[#0077A8]" strokeWidth={3} />
                 </span>
                 {t}
               </span>
             ))}
-          </motion.div>
-        </div>
-
-        {/* Interactive tier chips — innovative highlight control */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.45, delay: 0.24, ease: easeOut }}
-          className="pricing-tier-switch mb-6 hidden justify-center gap-2 sm:flex"
-          role="tablist"
-          aria-label="Highlight pricing tier"
-        >
-          {tiers.map((tier, i) => (
-            <button
-              key={tier}
-              type="button"
-              role="tab"
-              aria-selected={activeTier === i}
-              onClick={() => setActiveTier(i)}
-              className={`pricing-tier-chip ${
-                activeTier === i ? "pricing-tier-chip--active" : ""
-              }`}
-            >
-              {i === 1 && <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} />}
-              {tier}
-            </button>
-          ))}
+          </div>
         </motion.div>
 
-        {/* Mobile cards */}
-        <div className="space-y-4 sm:hidden">
-          {featured.map((service, si) => {
-            const Icon = SERVICE_ICONS[service.id] ?? Bot;
-            return (
-              <motion.a
-                key={service.id}
-                href={`/pricing#${service.id}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{
-                  delay: reduceMotion ? 0 : 0.15 + si * 0.08,
-                  duration: 0.5,
-                  ease: easeOut,
-                }}
-                className="pricing-mobile-card block overflow-hidden"
-              >
-                <div className="flex items-start justify-between gap-2 px-4 pb-3 pt-4">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span className="pricing-svc-icon">
-                      <Icon className="h-4 w-4" strokeWidth={1.9} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[15px] font-bold leading-snug text-white">
-                        {service.name}
-                      </p>
-                      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
-                        {service.category}
-                      </p>
-                    </div>
+        {/* ── Mobile: stacked cards (the 4-col table can't fit a phone) ── */}
+        <StaggerGrid className="sm:hidden space-y-4">
+          {featured.map((service) => (
+            <AnimatedLinkCard
+              key={service.id}
+              href={`/pricing#${service.id}`}
+              skipEntrance
+              className="block shadow-md overflow-hidden"
+            >
+              <div className="px-4 pt-4 pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold text-[#00283C] leading-snug">{service.name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{service.category}</p>
                   </div>
                   {service.id === "ai-automation" && (
-                    <span className="pricing-hot flex-shrink-0">
-                      <Zap className="h-3 w-3" strokeWidth={2.4} /> Hot
-                    </span>
+                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-wider text-white bg-gradient-to-r from-[#F97316] to-[#EF4444] px-1.5 py-0.5 rounded-full">Popular</span>
                   )}
                 </div>
-                <div
-                  className={`grid border-t border-[#00283C]/08 ${
-                    service.packages.length === 1
-                      ? "grid-cols-1"
-                      : "grid-cols-3"
-                  }`}
-                >
-                  {service.packages.map((pkg, pi) => (
-                    <div
-                      key={pkg.name}
-                      className={`flex flex-col items-center justify-center px-1 py-3 text-center ${
-                        pi === 1 || service.packages.length === 1
-                          ? "bg-[#0077A8]/[0.07]"
-                          : ""
-                      } ${pi > 0 ? "border-l border-[#00283C]/06" : ""}`}
-                    >
-                      <span
-                        className={`mb-1 text-[9px] font-black uppercase tracking-wider ${
-                          pi === 1 || service.packages.length === 1
-                            ? "text-[#0077A8]"
-                            : "text-white/45"
-                        }`}
-                      >
-                        {service.fixedPrice ? "Fixed" : pkg.name}
-                      </span>
-                      <span
-                        className={`text-sm font-extrabold leading-none ${
-                          pi === 1 || service.packages.length === 1
-                            ? "text-[#0077A8]"
-                            : "text-white"
-                        }`}
-                      >
-                        {pkg.price}
-                      </span>
-                      <span
-                        className={`mt-1 text-[9px] leading-none ${
-                          pi === 1 || service.packages.length === 1
-                            ? "text-[#0077A8]/60"
-                            : "text-white/45"
-                        }`}
-                      >
-                        {pkg.period === "one-time"
-                          ? "one-time"
-                          : pkg.period.replace("/ month + ad spend", "+spend")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.a>
-            );
-          })}
+              </div>
+              <div className={`grid border-t border-gray-100 ${service.packages.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
+                {service.packages.map((pkg, pi) => (
+                  <div
+                    key={pkg.name}
+                    className={`py-3 px-1 flex flex-col items-center justify-center text-center ${pi === 1 || service.packages.length === 1 ? "bg-[#0077A8]/[0.06]" : ""} ${pi > 0 ? "border-l border-gray-100" : ""}`}
+                  >
+                    <span className={`text-[9px] font-black uppercase tracking-wider mb-1 ${pi === 1 || service.packages.length === 1 ? "text-[#0077A8]" : "text-gray-400"}`}>
+                      {service.fixedPrice ? "Fixed" : pkg.name}
+                    </span>
+                    <span className={`text-sm font-extrabold leading-none ${pi === 1 || service.packages.length === 1 ? "text-[#0077A8]" : "text-[#00283C]"}`}>
+                      {pkg.price}
+                    </span>
+                    <span className={`text-[9px] mt-1 leading-none ${pi === 1 || service.packages.length === 1 ? "text-[#0077A8]/60" : "text-gray-400"}`}>
+                      {pkg.period === "one-time" ? "one-time" : pkg.period.replace("/ month + ad spend", "+spend")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </AnimatedLinkCard>
+          ))}
 
-          <motion.a
-            href="/pricing"
-            initial={{ opacity: 0 }}
-            animate={inView ? { opacity: 1 } : {}}
-            className="pricing-mobile-card flex items-center justify-between gap-2 px-4 py-4"
-          >
-            <span className="text-sm font-bold text-[#0077A8]">
-              View all {pricingServices.length} services &amp; pricing
+          <AnimatedLinkCard href="/pricing#ai-automation" skipEntrance className="bg-[#F8FAFC] border border-gray-200 px-4 py-4">
+            <span className="flex items-center justify-between gap-2 text-sm font-bold text-[#0077A8]">
+              View full automation pricing
+              <ServiceCardArrow className="text-[#0077A8] opacity-100 translate-x-0" />
             </span>
-            <ArrowRight className="h-4 w-4 text-[#0077A8]" />
-          </motion.a>
-        </div>
+          </AnimatedLinkCard>
+        </StaggerGrid>
 
-        {/* Desktop / tablet matrix */}
+        {/* ── Pricing matrix (sm and up) ── */}
         <motion.div
-          initial={{ opacity: 0, y: reduceMotion ? 0 : 28 }}
+          initial={{ opacity: 0, y: 32 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.18, duration: 0.65, ease: easeOut }}
-          className="pricing-matrix hidden overflow-hidden sm:block"
-          data-active-tier={activeTier}
+          transition={{ delay: 0.12 }}
+          className="hidden sm:block rounded-2xl overflow-hidden bg-white border border-gray-200/80 shadow-xl shadow-gray-200/50"
         >
-          <div className={`${COLS} pricing-matrix-head`}>
-            <div className="px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/55 lg:px-6">
+          {/* Column labels */}
+          <div className={`${COLS} bg-[#00283C]`}>
+            <div className="px-5 lg:px-6 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/60">
               Service
             </div>
-            {tiers.map((tier, i) => (
-              <button
-                key={tier}
-                type="button"
-                onClick={() => setActiveTier(i)}
-                className={`relative py-4 text-center transition-colors ${
-                  activeTier === i ? "pricing-col-head--active" : ""
-                }`}
-              >
-                <p
-                  className={`text-[10px] font-black uppercase tracking-[0.16em] ${
-                    activeTier === i ? "text-white" : "text-white/55"
-                  }`}
-                >
+            {(["Basic", "Standard", "Premium"] as const).map((tier, i) => (
+              <div key={tier} className={`py-4 text-center relative ${i === 1 ? "bg-[#0077A8]" : ""}`}>
+                <p className={`text-[10px] font-black uppercase tracking-[0.16em] ${i === 1 ? "text-white" : "text-white/60"}`}>
                   {tier}
                 </p>
                 {i === 1 && (
-                  <p className="mt-0.5 flex items-center justify-center gap-1 text-[8px] font-bold tracking-wide text-white/75">
-                    <Star className="h-2.5 w-2.5" fill="currentColor" strokeWidth={0} />
-                    MOST POPULAR
-                  </p>
+                  <p className="text-[8px] text-white/70 font-bold mt-0.5 tracking-wide">★ MOST POPULAR</p>
                 )}
-              </button>
+              </div>
             ))}
           </div>
 
-          {featured.map((service, si) => {
-            const Icon = SERVICE_ICONS[service.id] ?? Bot;
-            const scanned = scanRow >= si;
-            const isHovered = hoveredRow === service.id;
-
-            return (
-              <motion.a
-                key={service.id}
-                href={`/pricing#${service.id}`}
-                initial={{
-                  opacity: 0,
-                  x: reduceMotion ? 0 : -24,
-                }}
-                animate={inView ? { opacity: 1, x: 0 } : {}}
-                transition={{
-                  delay: reduceMotion ? 0 : 0.22 + si * 0.1,
-                  duration: 0.55,
-                  ease: easeOut,
-                }}
-                onPointerEnter={() => setHoveredRow(service.id)}
-                onPointerLeave={() =>
-                  setHoveredRow((p) => (p === service.id ? null : p))
-                }
-                className={`group pricing-row ${COLS} ${
-                  scanned ? "pricing-row--scanned" : ""
-                } ${isHovered ? "pricing-row--hover" : ""}`}
-              >
-                <div className="flex min-w-0 flex-col justify-center px-5 py-5 lg:px-6">
-                  <div className="flex items-center gap-2.5">
-                    <span className="pricing-svc-icon">
-                      <Icon className="h-3.5 w-3.5" strokeWidth={1.9} />
-                    </span>
-                    <span className="truncate text-sm font-semibold text-white">
-                      {service.name}
-                    </span>
-                    {service.id === "ai-automation" && (
-                      <span className="pricing-hot flex-shrink-0">
-                        <Zap className="h-3 w-3" strokeWidth={2.4} /> Hot
-                      </span>
-                    )}
-                    <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 text-[#0077A8] opacity-0 transition-all duration-200 -translate-x-1 group-hover:translate-x-0 group-hover:opacity-100" />
-                  </div>
-                  <span className="mt-0.5 pl-9 text-[10px] font-bold uppercase tracking-wider text-white/45">
-                    {service.category}
-                  </span>
+          {/* Featured service rows */}
+          {featured.map((service, si) => (
+            <motion.a
+              key={service.id}
+              href={`/pricing#${service.id}`}
+              initial={{ opacity: 0, x: -12 }}
+              animate={inView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: 0.18 + si * 0.05, duration: 0.35 }}
+              className={`group ${COLS} border-t border-gray-100 hover:bg-[#F8FAFC] transition-colors duration-150`}
+            >
+              {/* Service name */}
+              <div className="px-5 lg:px-6 py-5 flex flex-col justify-center min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-[#00283C] truncate">{service.name}</span>
+                  {service.id === "ai-automation" && (
+                    <span className="flex-shrink-0 text-[9px] font-black uppercase tracking-wider text-white bg-gradient-to-r from-[#F97316] to-[#EF4444] px-1.5 py-0.5 rounded-full">Popular</span>
+                  )}
+                  <ArrowRight className="w-3.5 h-3.5 text-[#0077A8] flex-shrink-0 translate-x-[-4px] group-hover:translate-x-0 opacity-0 group-hover:opacity-100 transition-all duration-200" />
                 </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-0.5">{service.category}</span>
+              </div>
 
-                {service.fixedPrice || service.packages.length === 1 ? (
-                  <>
-                    <div className={`py-5 pricing-cell ${activeTier === 0 ? "pricing-cell--focus" : ""}`} />
-                    <div
-                      className={`flex flex-col items-center justify-center px-1 py-5 text-center pricing-cell ${
-                        activeTier === 1 ? "pricing-cell--focus pricing-cell--popular" : "pricing-cell--popular"
-                      }`}
-                    >
-                      <span className="mb-1 text-[9px] font-black uppercase tracking-wider text-[#0077A8]">
-                        Fixed
-                      </span>
-                      <span className="text-sm font-extrabold leading-none text-[#0077A8]">
-                        {service.packages[0].price}
-                      </span>
-                      <span className="mt-1 text-[10px] leading-none text-[#0077A8]/60">
-                        {service.packages[0].period === "one-time"
-                          ? "one-time"
-                          : service.packages[0].period.replace(
-                              "/ month + ad spend",
-                              "+spend"
-                            )}
-                      </span>
-                    </div>
-                    <div className={`py-5 pricing-cell ${activeTier === 2 ? "pricing-cell--focus" : ""}`} />
-                  </>
-                ) : (
-                  service.packages.map((pkg, pi) => (
-                    <div
-                      key={pkg.name}
-                      className={`flex flex-col items-center justify-center px-1 py-5 text-center pricing-cell ${
-                        pi === 1 ? "pricing-cell--popular" : ""
-                      } ${activeTier === pi ? "pricing-cell--focus" : ""}`}
-                    >
-                      <span
-                        className={`text-sm font-extrabold leading-none ${
-                          activeTier === pi || pi === 1
-                            ? "text-[#0077A8]"
-                            : "text-white"
-                        }`}
-                      >
-                        {pkg.price}
-                      </span>
-                      <span
-                        className={`mt-1 text-[10px] leading-none ${
-                          activeTier === pi || pi === 1
-                            ? "text-[#0077A8]/60"
-                            : "text-white/45"
-                        }`}
-                      >
-                        {pkg.period === "one-time"
-                          ? "one-time"
-                          : pkg.period.replace("/ month + ad spend", "+spend")}
-                      </span>
-                    </div>
-                  ))
-                )}
+              {/* Package prices — fixed-price products span the middle column */}
+              {service.fixedPrice || service.packages.length === 1 ? (
+                <>
+                  <div className="py-5" />
+                  <div className="py-5 flex flex-col items-center justify-center text-center px-1 bg-[#0077A8]/[0.06]">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-[#0077A8] mb-1">
+                      Fixed
+                    </span>
+                    <span className="text-sm font-extrabold leading-none text-[#0077A8]">
+                      {service.packages[0].price}
+                    </span>
+                    <span className="text-[10px] mt-1 leading-none text-[#0077A8]/60">
+                      {service.packages[0].period === "one-time"
+                        ? "one-time"
+                        : service.packages[0].period.replace("/ month + ad spend", "+spend")}
+                    </span>
+                  </div>
+                  <div className="py-5" />
+                </>
+              ) : (
+                service.packages.map((pkg, pi) => (
+                  <div
+                    key={pkg.name}
+                    className={`py-5 flex flex-col items-center justify-center text-center px-1 ${pi === 1 ? "bg-[#0077A8]/[0.06]" : ""}`}
+                  >
+                    <span className={`text-sm font-extrabold leading-none ${pi === 1 ? "text-[#0077A8]" : "text-[#00283C]"}`}>
+                      {pkg.price}
+                    </span>
+                    <span className={`text-[10px] mt-1 leading-none ${pi === 1 ? "text-[#0077A8]/60" : "text-gray-400"}`}>
+                      {pkg.period === "one-time" ? "one-time" : pkg.period.replace("/ month + ad spend", "+spend")}
+                    </span>
+                  </div>
+                ))
+              )}
+            </motion.a>
+          ))}
 
-                {scanned && scanRow === si && !reduceMotion && (
-                  <span aria-hidden className="pricing-scan-line" />
-                )}
-              </motion.a>
-            );
-          })}
-
-          <a
-            href="/pricing"
-            className={`group pricing-row pricing-row--footer ${COLS}`}
-          >
-            <div className="px-5 py-5 lg:px-6">
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-[#0077A8] transition-colors group-hover:text-white">
-                View all {pricingServices.length} services &amp; full pricing
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          {/* View-all bar */}
+          <a href="/pricing#ai-automation" className={`${COLS} border-t border-gray-200 bg-[#F8FAFC] hover:bg-[#F1F6F9] transition-colors group`}>
+            <div className="px-5 lg:px-6 py-5">
+              <span className="inline-flex items-center gap-2 text-sm font-bold text-[#0077A8] group-hover:text-[#00283C] transition-colors duration-150">
+                View full automation pricing
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
-              <p className="mt-1 text-xs text-white/45">
-                Features, comparisons, timelines &amp; FAQs.
-              </p>
+              <p className="text-gray-400 text-xs mt-1">Features, comparisons, timelines &amp; FAQs.</p>
             </div>
-            <div className={`pricing-cell ${activeTier === 0 ? "pricing-cell--focus" : ""}`} />
-            <div
-              className={`pricing-cell pricing-cell--popular ${
-                activeTier === 1 ? "pricing-cell--focus" : ""
-              }`}
-            />
-            <div className={`pricing-cell ${activeTier === 2 ? "pricing-cell--focus" : ""}`} />
+            <div />
+            <div className="bg-[#0077A8]/[0.06]" />
+            <div />
           </a>
         </motion.div>
 
+        {/* ── CTA strip ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.5, duration: 0.5, ease: easeOut }}
-          className="pricing-cta-strip mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row"
+          transition={{ delay: 0.45 }}
+          className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl px-7 py-6 bg-[#00283C]"
         >
           <div className="text-center sm:text-left">
-            <p className="text-base font-extrabold text-white">
-              Not sure which plan is right?
-            </p>
-            <p className="mt-0.5 text-sm text-white/55">
-              Book a free 30-min call — we&apos;ll recommend the exact fit.
-            </p>
+            <p className="text-white font-extrabold text-base">Not sure which automation plan is right?</p>
+            <p className="text-white/60 text-sm mt-0.5">Book a free 30-min call — we&apos;ll map Answer, Reply, Book, Remind, and Record to a plan.</p>
           </div>
-          <a href="/pricing" className="pricing-cta-btn flex-shrink-0">
-            View Full Pricing
-            <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
+          <a
+            href="/pricing#ai-automation"
+            className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-white text-[#00283C] hover:bg-[#9FD3E8] transition-colors duration-200 shadow-lg"
+          >
+            View Automation Pricing <ArrowRight className="w-4 h-4" />
           </a>
         </motion.div>
+
       </div>
     </section>
   );

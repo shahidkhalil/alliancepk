@@ -89,18 +89,20 @@ export default function BlogCard({ post, delay = 0 }: { post: BlogPost; delay?: 
       </a>
 
       <div className="flex flex-col flex-1 p-5 lg:p-6 relative z-[1]">
-        <p className="flex-1 text-sm leading-relaxed text-[#a8c6d3] line-clamp-3">{post.excerpt}</p>
-        <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-4">
-          <p className="text-xs text-[#7fa3b4]">
+        <p className="relative z-[2] flex-1 text-[15px] font-medium leading-relaxed text-[#334155] line-clamp-3">
+          {post.excerpt}
+        </p>
+        <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100/80">
+          <p className="text-xs text-gray-500">
             {post.date} · {post.readTime}
           </p>
-          <div className="relative flex items-center gap-1">
+          <div className="flex items-center gap-1 relative">
             <button
               type="button"
               onClick={toggleLike}
               aria-label={liked ? "Unlike" : "Like"}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold transition-colors ${
-                liked ? "bg-rose-500/15 text-rose-300" : "text-[#a8c6d3] hover:bg-white/10"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                liked ? "text-rose-600 bg-rose-50" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
               <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
@@ -110,7 +112,7 @@ export default function BlogCard({ post, delay = 0 }: { post: BlogPost; delay?: 
               type="button"
               onClick={() => setShareOpen((o) => !o)}
               aria-label="Share"
-              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-[#a8c6d3] transition-colors hover:bg-white/10"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
               <Share2 className="w-4 h-4" />
             </button>

@@ -29,24 +29,14 @@ export default async function BlogPage() {
 
   return (
     <PageWrapper>
-      <section className="relative overflow-hidden bg-[#021016] pt-28 pb-14">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(0,180,216,0.2), transparent 55%), linear-gradient(180deg, #041820 0%, #021016 100%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-4xl px-6 text-center">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#5ce1ff]">Blog</p>
-          <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-white lg:text-5xl">
+      <section className="pt-28 pb-12 bg-[#00283C]">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-white/50 mb-3">Blog</p>
+          <h1 className="text-3xl lg:text-5xl font-extrabold text-white tracking-tight mb-4">
             Clinic Growth Across the{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7DD3EA] to-[#00B4D8]">
-              United States
-            </span>
+            <span className="text-[#00B4D8]">United States</span>
           </h1>
-          <p className="mx-auto max-w-2xl leading-relaxed text-[#8eb4c4]">
+          <p className="text-white/60 max-w-2xl mx-auto leading-relaxed">
             Location-focused insights for dental and aesthetic clinics — from Houston to New York, Los Angeles to Chicago.
           </p>
         </div>

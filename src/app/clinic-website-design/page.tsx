@@ -33,7 +33,6 @@ export default function ClinicWebsiteDesign() {
         headline="A Website That Converts"
         highlight="From Day One"
         subheadline="Live in 7 days. Mobile-first, fast-loading, and built to turn visitors into booked patients — not just look good."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="bg-white border-b border-gray-100">

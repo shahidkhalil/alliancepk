@@ -35,7 +35,6 @@ export default function ClinicMobileApp() {
         headline="Your Brand on Every"
         highlight="Patient's Phone"
         subheadline="A fully branded iOS and Android app for your clinic — booking, records, reminders, and payments, all under your own name and logo."
-        ctaText="Get Your Free Clinic Audit"
       />
 
       <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">

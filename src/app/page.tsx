@@ -3,7 +3,6 @@ import { FormProvider, useForm } from "@/context/FormContext";
 import dynamic from "next/dynamic";
 import Navigation from "@/components/Navigation";
 import Hero from "@/components/Hero";
-import CapabilityStrip from "@/components/CapabilityStrip";
 import Footer from "@/components/Footer";
 import FinalCTA from "@/components/FinalCTA";
 import HomeBelowFold from "@/components/HomeBelowFold";
@@ -15,22 +14,16 @@ const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySale
 function HomeContent() {
   const { isOpen, closeForm } = useForm();
   return (
-    <div className="site-shell relative min-h-screen w-full max-w-full overflow-x-clip">
-      <div aria-hidden className="site-shell-glow site-shell-glow--one" />
-      <div aria-hidden className="site-shell-glow site-shell-glow--two" />
-      {/* Only download form/Firebase when the user opens the audit modal */}
+    <main className="relative min-h-screen w-full max-w-full overflow-x-clip bg-white">
       {isOpen && <ConsultationForm isOpen={isOpen} onClose={closeForm} />}
       <AuditChatWidget />
       <Navigation />
-      <main className="relative w-full max-w-full overflow-x-clip">
-        <Hero />
-        <CapabilityStrip />
-        <HomeBelowFold />
-        <FinalCTA />
-      </main>
+      <Hero />
+      <HomeBelowFold />
+      <FinalCTA />
       <Footer />
       <MobileStickySalesBar />
-    </div>
+    </main>
   );
 }
 
