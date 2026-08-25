@@ -9,7 +9,7 @@ export default function MobileAppMockup() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <div ref={ref} className="relative max-w-[280px] mx-auto">
+    <div ref={ref} className="light-island relative mx-auto max-w-[280px]">
       {/* Phone frame */}
       <div className="rounded-[2rem] border-[6px] border-[#00283C] overflow-hidden shadow-2xl bg-white">
         {/* Status bar */}

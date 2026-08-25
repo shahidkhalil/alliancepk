@@ -8,7 +8,7 @@ export default function AuditPromo() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section ref={ref} className="py-14 bg-[#00283C]">
+    <section ref={ref} className="audit-promo-section py-14">
       <div className="max-w-5xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -16,24 +16,24 @@ export default function AuditPromo() {
           className="flex flex-col lg:flex-row items-center gap-8"
         >
           <div className="flex-1 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-[#9FD3E8] text-xs font-bold uppercase tracking-wider mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00B4D8]/10 border border-[#00B4D8]/30 text-[#5ce1ff] text-xs font-bold uppercase tracking-wider mb-4">
               <Bot className="w-3.5 h-3.5" /> Free AI Tool
             </div>
             <h2 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-3">
               Is Your Website Losing You Patients?<br className="hidden lg:block" />
-              <span className="text-[#9FD3E8]"> Find Out in 30 Seconds.</span>
+              <span className="text-[#5ce1ff]"> Find Out in 30 Seconds.</span>
             </h2>
-            <p className="text-white/60 text-sm max-w-xl mb-6">
+            <p className="text-[#8eb4c4] text-sm max-w-xl mb-6">
               Our AI audits your clinic&apos;s website with real data — speed, SEO, patient experience, and the exact competitors outranking you on Google. Free, no signup.
             </p>
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-6 text-xs text-white/60">
-              <span className="flex items-center gap-1.5"><Gauge className="w-4 h-4 text-[#9FD3E8]" /> Speed test</span>
-              <span className="flex items-center gap-1.5"><Search className="w-4 h-4 text-[#9FD3E8]" /> SEO check</span>
-              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-[#9FD3E8]" /> Competitor benchmark</span>
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-6 text-xs text-[#8eb4c4]">
+              <span className="flex items-center gap-1.5"><Gauge className="w-4 h-4 text-[#5ce1ff]" /> Speed test</span>
+              <span className="flex items-center gap-1.5"><Search className="w-4 h-4 text-[#5ce1ff]" /> SEO check</span>
+              <span className="flex items-center gap-1.5"><Users className="w-4 h-4 text-[#5ce1ff]" /> Competitor benchmark</span>
             </div>
             <a
               href="/free-website-audit"
-              className="inline-flex items-center gap-2 bg-white text-[#00283C] font-bold px-7 py-3.5 rounded-md text-sm hover:bg-[#9FD3E8] transition-colors"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00B4D8] to-[#0077A8] text-white font-bold px-7 py-3.5 rounded-full text-sm hover:brightness-110 transition-all shadow-[0_0_28px_rgba(0,180,216,0.35)]"
             >
               Audit My Website Free <ArrowRight className="w-4 h-4" />
             </a>

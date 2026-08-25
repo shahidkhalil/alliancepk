@@ -1,8 +1,25 @@
 "use client";
 
-import { ReactNode, useState, ComponentType, SVGProps, Children, isValidElement } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import {
+  ReactNode,
+  useState,
+  ComponentType,
+  SVGProps,
+  Children,
+  isValidElement,
+  useRef,
+  type CSSProperties,
+} from "react";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import {
+  ArrowRight,
+  SearchCheck,
+  Settings2,
+  Zap,
+  CalendarCheck2,
+  BarChart3,
+  ShieldCheck,
+} from "lucide-react";
 import { useCardMotion, staggerDelay } from "@/lib/motionVariants";
 
 function cardClasses(accent: boolean, feature: boolean, hover: boolean, extra = "") {
@@ -179,25 +196,48 @@ export function FeatureCard({
   skipEntrance = false,
   index,
 }: FeatureCardProps) {
-  return (
-    <Card accent feature delay={delay} skipEntrance={skipEntrance} className={`p-6 lg:p-8 ${className}`}>
-      <div className="flex items-start justify-between gap-3 mb-5">
-        {icon ? <CardIconWell className="flex-shrink-0">{icon}</CardIconWell> : null}
-        {index != null ? (
-          <span className="card-number-badge" aria-hidden>
-            {String(index + 1).padStart(2, "0")}
+  const { entrance } = useCardMotion();
+  const num = index != null ? String(index + 1).padStart(2, "0") : null;
+  const stagger = { "--fc-delay": `${-((index ?? 0) % 3) * 2.3}s` } as CSSProperties;
+
+  const body = (
+    <div className="feature-card-pro-shell" style={stagger}>
+      <div className={`feature-card-pro group h-full p-6 lg:p-7 ${className}`}>
+        <span aria-hidden className="feature-card-pro-rail" />
+        <span aria-hidden className="feature-card-pro-scan" />
+        {num ? (
+          <span aria-hidden className="feature-card-pro-watermark">
+            {num}
           </span>
-        ) : (
-          <ServiceCardArrow />
-        )}
+        ) : null}
+
+        <div className="relative z-[2] mb-5 flex items-start justify-between gap-3">
+          {icon ? <span className="feature-card-pro-icon">{icon}</span> : null}
+          {num ? (
+            <span className="feature-card-pro-badge" aria-hidden>
+              {num}
+            </span>
+          ) : (
+            <ServiceCardArrow />
+          )}
+        </div>
+
+        <h3 className="relative z-[2] mb-2.5 text-base font-extrabold leading-snug tracking-tight text-white transition-transform duration-300 ease-out group-hover:translate-x-0.5">
+          {title}
+        </h3>
+        <p className="relative z-[2] text-sm leading-relaxed text-[#a8c6d3]">{description}</p>
+        <hr className="card-footer-rule relative z-[2] mt-5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {children}
       </div>
-      <h3 className="text-base font-extrabold text-[#00283C] mb-2.5 leading-snug tracking-tight transition-transform duration-200 ease-out group-hover:translate-x-0.5">
-        {title}
-      </h3>
-      <p className="text-sm text-[#00283C]/55 leading-relaxed">{description}</p>
-      <hr className="card-footer-rule mt-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      {children}
-    </Card>
+    </div>
+  );
+
+  if (skipEntrance) return body;
+
+  return (
+    <motion.div className="h-full" {...entrance(delay)}>
+      {body}
+    </motion.div>
   );
 }
 
@@ -210,20 +250,58 @@ export function FeatureCardGrid({
   items,
   className = "grid md:grid-cols-2 lg:grid-cols-3 gap-6",
 }: FeatureCardGridProps) {
+  const fallbackIcons = [
+    SearchCheck,
+    Settings2,
+    Zap,
+    CalendarCheck2,
+    BarChart3,
+    ShieldCheck,
+  ];
+  const ref = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const glowY = useTransform(scrollYProgress, [0, 1], reduceMotion ? [0, 0] : [24, -24]);
+
   return (
-    <StaggerGrid className={className}>
-      {items.map((item, i) => (
-        <FeatureCard
-          key={item.title}
-          index={i}
-          icon={item.icon}
-          title={item.title}
-          description={item.description || item.desc || ""}
-          skipEntrance
-          className="h-full"
-        />
-      ))}
-    </StaggerGrid>
+    <div ref={ref} className="relative">
+      <motion.div
+        aria-hidden
+        style={{ y: glowY }}
+        className="pointer-events-none absolute -left-10 top-8 h-40 w-40 rounded-full bg-[#00B4D8]/10 blur-3xl"
+      />
+      <motion.div
+        aria-hidden
+        style={{ y: glowY }}
+        className="pointer-events-none absolute -right-8 bottom-4 h-48 w-48 rounded-full bg-[#0077A8]/10 blur-3xl"
+      />
+      <StaggerGrid className={`relative z-[1] ${className}`}>
+        {items.map((item, i) => {
+          const FallbackIcon = fallbackIcons[i % fallbackIcons.length];
+          const icon =
+            typeof item.icon === "string" ? (
+              <FallbackIcon className="h-5 w-5 text-[#5ce1ff]" strokeWidth={1.8} />
+            ) : (
+              item.icon
+            );
+
+          return (
+            <FeatureCard
+              key={item.title}
+              index={i}
+              icon={icon}
+              title={item.title}
+              description={item.description || item.desc || ""}
+              skipEntrance
+              className="h-full"
+            />
+          );
+        })}
+      </StaggerGrid>
+    </div>
   );
 }
 
@@ -362,8 +440,8 @@ export function ServiceCard({
         <ServiceCardArrow />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="text-[15px] font-extrabold text-[#00283C] leading-snug tracking-tight mb-2">{title}</h3>
-        <p className="text-sm text-[#00283C]/55 leading-relaxed">{description}</p>
+        <h3 className="mb-2 text-[15px] font-extrabold leading-snug tracking-tight text-white">{title}</h3>
+        <p className="text-sm leading-relaxed text-[#a8c6d3]">{description}</p>
       </div>
       <hr className="card-footer-rule mt-1" />
     </AnimatedLinkCard>
@@ -426,10 +504,10 @@ export function ServiceShowcaseCard({
         <p className={`text-[10px] font-bold uppercase tracking-[0.14em] mb-1.5 ${popular ? "text-[#7DD3EA]/80" : "text-[#00B4D8]"}`}>
           {subtitle}
         </p>
-        <h3 className={`text-base font-extrabold mb-2 leading-snug tracking-tight ${popular ? "text-white" : "text-[#00283C]"}`}>
+        <h3 className="mb-2 text-base font-extrabold leading-snug tracking-tight text-white">
           {title}
         </h3>
-        <p className={`text-xs leading-relaxed ${popular ? "text-white/65" : "text-[#00283C]/55"}`}>
+        <p className={`text-xs leading-relaxed ${popular ? "text-white/65" : "text-[#a8c6d3]"}`}>
           {description}
         </p>
       </div>
@@ -504,14 +582,14 @@ export function ActiveTabBar<T extends string>({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`relative flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
-              selected ? "text-white" : "text-[#00283C]/55 hover:text-[#00283C] hover:bg-white"
+            className={`relative flex-shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+              selected ? "text-white" : "text-white/50 hover:bg-white/10 hover:text-white"
             }`}
           >
             {selected && (
               <motion.div
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-full bg-[#00283C]"
+                className="absolute inset-0 rounded-full bg-[#0077A8]"
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
               />
             )}
@@ -535,14 +613,24 @@ export function ContentCardList({
 }) {
   return (
     <StaggerGrid className={className}>
-      {items.map((item) => {
+      {items.map((item, i) => {
         const title = item.q ?? item.title ?? "";
         const body = item.a ?? item.description ?? "";
         return (
-          <AnimatedSurface key={title} skipEntrance accent className={cardClassName}>
-            <h3 className="font-bold text-[#00283C] mb-2">{title}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
-          </AnimatedSurface>
+          <motion.div
+            key={title}
+            className={`feature-card-pro group ${cardClassName}`}
+          >
+            <span aria-hidden className="feature-card-pro-rail" />
+            <span aria-hidden className="feature-card-pro-scan" />
+            <div className="relative z-[1] mb-3 flex items-center justify-between gap-3">
+              <h3 className="font-bold text-white">{title}</h3>
+              <span className="feature-card-pro-badge" aria-hidden>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+            </div>
+            <p className="relative z-[1] text-sm leading-relaxed text-[#a8c6d3]">{body}</p>
+          </motion.div>
         );
       })}
     </StaggerGrid>

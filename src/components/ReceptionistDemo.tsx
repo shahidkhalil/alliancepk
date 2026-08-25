@@ -1237,8 +1237,8 @@ export default function ReceptionistDemo() {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto px-3 sm:px-4 overflow-x-clip">
-      <div className="rounded-2xl sm:rounded-3xl border border-gray-200/80 shadow-sm sm:shadow-xl sm:shadow-gray-200/50 overflow-hidden bg-white max-w-full">
+    <div className="light-island mx-auto w-full max-w-xl overflow-x-clip px-3 sm:px-4">
+      <div className="max-w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:rounded-3xl sm:shadow-xl sm:shadow-gray-200/50">
 
         {/* Header */}
         <div className="px-3 sm:px-5 py-2.5 sm:py-4" style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}>

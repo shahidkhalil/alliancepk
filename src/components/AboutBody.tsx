@@ -21,7 +21,7 @@ import {
 import { ServiceCardGrid } from "@/components/ui/Card";
 
 const softSurface =
-  "rounded-2xl bg-white border border-[#E8EEF2] shadow-[0_1px_2px_rgba(0,40,60,0.04),0_12px_32px_rgba(0,40,60,0.06)]";
+  "rounded-2xl border border-[#00B4D8]/20 bg-[linear-gradient(158deg,rgba(11,45,60,0.92),rgba(4,22,31,0.96))] shadow-[0_1px_0_rgba(92,225,255,0.07)_inset,0_18px_44px_rgba(0,0,0,0.35)]";
 
 const services = [
   {
@@ -126,8 +126,8 @@ const steps = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F7FB] border border-[#D6EEF5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] mb-4">
-      <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
+    <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-[#E8F7FB] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
       {children}
     </span>
   );
@@ -147,7 +147,7 @@ export default function AboutBody() {
               </h2>
             </div>
             <div className={`lg:col-span-7 ${softSurface} p-7 sm:p-9`}>
-              <div className="space-y-5 text-[#00283C]/65 text-base lg:text-lg leading-relaxed">
+              <div className="space-y-5 text-[#a8c6d3] text-base lg:text-lg leading-relaxed">
                 <p>
                   Most clinics that struggle aren&apos;t bad at care — they&apos;re missing the digital
                   systems patients now expect.
@@ -157,7 +157,7 @@ export default function AboutBody() {
                   page two. None of that is inevitable. It&apos;s infrastructure — and infrastructure can
                   be fixed.
                 </p>
-                <p className="text-[#00283C] font-semibold border-l-4 border-[#00B4D8] pl-4">
+                <p className="border-l-4 border-[#00B4D8] pl-4 font-semibold text-white">
                   We close that gap for healthcare clinics across the United States — with AI, websites,
                   SEO, and marketing measured in appointments, not vanity metrics.
                 </p>
@@ -169,10 +169,10 @@ export default function AboutBody() {
 
       {/* Who we serve */}
       <section
-        className="py-16 lg:py-24 border-y border-[#E8EEF2]"
+        className="border-y border-[#00B4D8]/15 py-16 lg:py-24"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,180,216,0.08), transparent 55%), #F5F9FB",
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,180,216,0.1), transparent 55%), #062430",
         }}
       >
         <div className="max-w-6xl mx-auto px-6">
@@ -194,9 +194,9 @@ export default function AboutBody() {
                 href={href}
                 className={`group ${softSurface} p-6 lg:p-7 hover:border-[#00B4D8]/40 hover:shadow-[0_12px_36px_rgba(0,119,168,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25 transition-all duration-200 cursor-pointer`}
               >
-                <span className="w-11 h-11 rounded-xl bg-[#E8F7FB] flex items-center justify-center mb-5 transition-colors duration-200 group-hover:bg-[#00283C]">
+                <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-[#00B4D8]/15 transition-colors duration-200 group-hover:bg-[#00B4D8]">
                   <Icon
-                    className="w-5 h-5 text-[#0077A8] transition-colors duration-200 group-hover:text-white"
+                    className="h-5 w-5 text-[#5ce1ff] transition-colors duration-200 group-hover:text-white"
                     strokeWidth={2}
                     aria-hidden
                   />
@@ -221,8 +221,8 @@ export default function AboutBody() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             {problems.map(({ icon: Icon, title, desc }) => (
               <div key={title} className={`${softSurface} p-6`}>
-                <span className="w-10 h-10 rounded-xl bg-[#E8F7FB] flex items-center justify-center mb-4">
-                  <Icon className="w-5 h-5 text-[#0077A8]" strokeWidth={2} aria-hidden />
+                <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[#00B4D8]/15">
+                  <Icon className="h-5 w-5 text-[#5ce1ff]" strokeWidth={2} aria-hidden />
                 </span>
                 <h4 className="text-base font-extrabold text-[#00283C] mb-2 tracking-tight">{title}</h4>
                 <p className="text-sm text-[#00283C]/55 leading-relaxed">{desc}</p>
@@ -249,8 +249,8 @@ export default function AboutBody() {
             {steps.map(({ icon: Icon, title, desc }, i) => (
               <li key={title} className={`relative ${softSurface} p-6 lg:p-7`}>
                 <div className="flex items-center justify-between mb-5">
-                  <span className="w-10 h-10 rounded-xl bg-[#E8F7FB] flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-[#0077A8]" strokeWidth={2} aria-hidden />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00B4D8]/15">
+                    <Icon className="h-5 w-5 text-[#5ce1ff]" strokeWidth={2} aria-hidden />
                   </span>
                   <span className="text-[11px] font-black tracking-widest text-[#0077A8]/70">
                     {String(i + 1).padStart(2, "0")}
@@ -266,10 +266,10 @@ export default function AboutBody() {
 
       {/* What we do */}
       <section
-        className="py-16 lg:py-24 relative overflow-hidden border-y border-[#E8EEF2]"
+        className="relative overflow-hidden border-y border-[#00B4D8]/15 py-16 lg:py-24"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,180,216,0.07) 0%, transparent 60%), #FFFFFF",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,180,216,0.1) 0%, transparent 60%), #041820",
         }}
       >
         <div className="max-w-6xl mx-auto px-6 relative">

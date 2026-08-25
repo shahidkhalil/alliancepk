@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ShieldCheck, MapPinned, Clock3 } from "lucide-react";
+import { ArrowRight, ShieldCheck, MapPinned, Clock3, Sparkles } from "lucide-react";
 import { useForm } from "@/context/FormContext";
 import { BreadcrumbSchema } from "@/components/StructuredData";
 
@@ -21,83 +21,60 @@ export default function AboutHero() {
           { name: "About Us", path: "/about" },
         ]}
       />
-      <section className="relative overflow-hidden bg-[#F3F8FB]">
-        {/* Soft depth field */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 90% 70% at 0% 0%, rgba(0,180,216,0.14), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 20%, rgba(0,119,168,0.12), transparent 50%), linear-gradient(180deg, #E8F4F8 0%, #F3F8FB 45%, #FFFFFF 100%)",
-          }}
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 pointer-events-none opacity-[0.35]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(0,40,60,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(0,40,60,0.04) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "linear-gradient(180deg, black 0%, transparent 85%)",
-          }}
-          aria-hidden
-        />
+      <section className="service-hero relative overflow-hidden">
+        <div aria-hidden className="service-hero-atmosphere absolute inset-0" />
+        <div aria-hidden className="service-hero-grid absolute inset-0" />
+        <div aria-hidden className="service-hero-orb service-hero-orb--one" />
+        <div aria-hidden className="service-hero-orb service-hero-orb--two" />
+        <div aria-hidden className="service-hero-beam" />
 
-        <div className="relative max-w-6xl mx-auto px-6 pt-28 sm:pt-36 pb-14 sm:pb-16">
+        <div className="relative mx-auto max-w-6xl px-6 pb-16 pt-28 sm:pb-20 sm:pt-36">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 backdrop-blur-sm border border-white shadow-[0_1px_2px_rgba(0,40,60,0.06),0_8px_24px_rgba(0,40,60,0.06)] px-3.5 py-1.5 mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
-              <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#0077A8]">
-                About Alliance Tech
-              </span>
-            </div>
+            <span className="service-hero-badge mb-6 inline-flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 flex-shrink-0" strokeWidth={2} />
+              About Alliance Tech
+            </span>
 
-            <p className="text-sm font-semibold text-[#0077A8] mb-3 tracking-wide">
+            <p className="mb-3 text-sm font-semibold tracking-wide text-[#7DD3EA]">
               Alliance Tech
             </p>
-            <h1 className="text-[2.15rem] sm:text-5xl lg:text-[3.35rem] font-extrabold text-[#00283C] tracking-tight leading-[1.12] mb-5">
+            <h1 className="mb-5 text-[2.15rem] font-extrabold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-[3.35rem]">
               The growth partner for{" "}
-              <span className="text-[#0077A8]">healthcare clinics</span>
+              <span className="service-hero-highlight">healthcare clinics</span>
             </h1>
-            <p className="text-base sm:text-lg text-[#00283C]/65 leading-relaxed max-w-2xl mb-9">
+            <p className="mb-9 max-w-2xl text-base leading-relaxed text-[#a8c6d3] sm:text-lg">
               We help US clinics get more patients with AI reception, converting websites,
               local SEO, and marketing measured by appointments — not impressions.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <a
-                href="/free-website-audit"
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#00283C] text-white font-bold px-7 text-sm shadow-[0_8px_20px_rgba(0,40,60,0.22)] hover:bg-[#003D5C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/30 transition-colors duration-200 cursor-pointer"
-              >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <a href="/free-website-audit" className="service-hero-cta">
                 Free clinic audit
-                <ArrowRight className="w-4 h-4" aria-hidden />
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
-              <a
-                href="#contact"
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white text-[#00283C] font-bold px-7 text-sm border border-[#00283C]/10 shadow-[0_1px_2px_rgba(0,40,60,0.04),0_8px_20px_rgba(0,40,60,0.05)] hover:border-[#0077A8]/35 hover:shadow-[0_8px_24px_rgba(0,119,168,0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25 transition-all duration-200 cursor-pointer"
-              >
+              <a href="#contact" className="service-hero-back">
                 Contact us
               </a>
               <button
                 type="button"
                 onClick={openForm}
-                className="inline-flex min-h-[48px] items-center justify-center text-sm font-semibold text-[#00283C]/55 hover:text-[#00283C] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/20 rounded-lg px-2 transition-colors duration-200 cursor-pointer"
+                className="inline-flex min-h-[48px] cursor-pointer items-center justify-center rounded-lg px-2 text-sm font-semibold text-white/55 transition-colors duration-200 hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00B4D8]/30"
               >
                 Book a strategy call
               </button>
             </div>
           </div>
 
-          {/* Trust strip — Soft UI pills */}
-          <ul className="mt-12 lg:mt-14 grid sm:grid-cols-3 gap-3">
+          <ul className="mt-12 grid gap-3 sm:grid-cols-3 lg:mt-14">
             {trustItems.map(({ icon: Icon, label }) => (
               <li
                 key={label}
-                className="flex items-center gap-3 rounded-2xl bg-white/90 border border-white shadow-[0_1px_2px_rgba(0,40,60,0.04),0_10px_28px_rgba(0,40,60,0.06)] px-4 py-3.5"
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3.5 backdrop-blur-sm"
               >
-                <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#E8F7FB] flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-[#0077A8]" strokeWidth={2} aria-hidden />
+                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[#00B4D8]/25 bg-[#00B4D8]/10">
+                  <Icon className="h-5 w-5 text-[#5ce1ff]" strokeWidth={2} aria-hidden />
                 </span>
-                <span className="text-sm font-semibold text-[#00283C] leading-snug">{label}</span>
+                <span className="text-sm font-semibold leading-snug text-white">{label}</span>
               </li>
             ))}
           </ul>

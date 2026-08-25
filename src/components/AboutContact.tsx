@@ -97,7 +97,7 @@ function ContactQuickForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="light-island space-y-4">
       <div>
         <label htmlFor="about-contact-name" className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
           Your name
@@ -196,15 +196,15 @@ export default function AboutContact() {
   return (
     <section
       id="contact"
-      className="py-16 lg:py-24 scroll-mt-24 border-t border-[#E8EEF2]"
+      className="scroll-mt-24 border-t border-[#00B4D8]/15 py-16 lg:py-24"
       style={{
         background:
-          "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,180,216,0.06), transparent 50%), #FFFFFF",
+          "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,180,216,0.1), transparent 50%), #041820",
       }}
     >
       <div className="max-w-5xl mx-auto px-6">
         <div className="text-center mb-10">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#E8F7FB] border border-[#D6EEF5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] mb-4">
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-[#041820]/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#7dd3ea]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
             Contact
           </span>
@@ -248,13 +248,13 @@ export default function AboutContact() {
           <button
             type="button"
             onClick={openForm}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white border border-[#E8EEF2] text-[#00283C] font-bold text-sm py-3.5 shadow-[0_1px_2px_rgba(0,40,60,0.04),0_8px_20px_rgba(0,40,60,0.05)] hover:border-[#0077A8]/35 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25 transition-all duration-200 cursor-pointer"
+            className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[#00B4D8]/50 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25"
           >
             Book Strategy Call
           </button>
           <a
             href="/free-website-audit"
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-white border border-[#E8EEF2] text-[#00283C] font-bold text-sm py-3.5 shadow-[0_1px_2px_rgba(0,40,60,0.04),0_8px_20px_rgba(0,40,60,0.05)] hover:border-[#0077A8]/35 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25 transition-all duration-200 cursor-pointer"
+            className="flex min-h-[48px] cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 py-3.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[#00B4D8]/50 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#0077A8]/25"
           >
             <ClipboardCheck className="w-4 h-4" aria-hidden /> Free Website Audit
           </a>

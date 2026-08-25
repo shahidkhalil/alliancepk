@@ -15,7 +15,9 @@ const MobileStickySalesBar = dynamic(() => import("./MobileStickySalesBar"), { s
 function PageContent({ children }: { children: ReactNode }) {
   const { isOpen, closeForm } = useForm();
   return (
-    <div className="relative min-h-screen w-full max-w-full bg-white overflow-x-clip">
+    <div className="site-shell relative min-h-screen w-full max-w-full overflow-x-clip">
+      <div aria-hidden className="site-shell-glow site-shell-glow--one" />
+      <div aria-hidden className="site-shell-glow site-shell-glow--two" />
       <Navigation />
       <main className="relative w-full max-w-full overflow-x-clip">{children}</main>
       <Footer />

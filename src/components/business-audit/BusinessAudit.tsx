@@ -94,7 +94,7 @@ export default function BusinessAudit() {
   };
 
   return (
-    <div className="w-full">
+    <div className="light-island w-full">
       <AnimatePresence mode="wait">
         {step === "hero" && (
           <motion.div
