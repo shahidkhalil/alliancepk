@@ -350,14 +350,14 @@ export function ServiceCard({
     <AnimatedLinkCard
       href={href}
       shine={false}
-      className={`gap-4 ${className}`}
+      className={className}
       showAccentBar={showAccentBar || active}
       accentLayoutId={accentLayoutId}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
       skipEntrance={skipEntrance}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 mb-5">
         <ServiceCardIcon icon={icon} filled={active} />
         <ServiceCardArrow />
       </div>
@@ -365,7 +365,7 @@ export function ServiceCard({
         <h3 className="text-[15px] font-extrabold text-[#00283C] leading-snug tracking-tight mb-2">{title}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
       </div>
-      <hr className="card-footer-rule mt-1" />
+      <hr className="card-footer-rule mt-4" />
     </AnimatedLinkCard>
   );
 }
