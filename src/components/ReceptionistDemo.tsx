@@ -374,9 +374,11 @@ function inferInteractiveExtras(
       replyText
     );
   const askingEmail = /\bemail\b/i.test(replyText) && /\b(skip|optional|prefer|want to (add|share|leave))\b/i.test(replyText);
+  // Strict: only when Maya is asking the patient to choose a day/time — not every mention of "time"/"available".
   const askingSchedule =
-    /\b(day|date|time|when|schedule|available|prefer(red)?\s+(day|time))\b/i.test(replyText) ||
-    /\b(morning|afternoon|evening)\b/i.test(replyText);
+    /\b(what|which)\s+(day|date|time|slot)\b|\b(pick|choose|select)\s+(an?\s+)?(available\s+)?(day|date|time|slot)\b|\b(day|date|time|slot)\s+(would|do|works?|suits?)\b|\bwhen\s+(would|do|are|can)\s+you\b|\bprefer(red)?\s+(day|date|time|slot)\b|\b(morning|afternoon|evening)\s+or\s+(morning|afternoon|evening)\b/i.test(
+      replyText
+    );
   const askingConfirm = /\b(shall i book|ready to book|confirm( the)? booking|book that|go ahead and book)\b/i.test(
     replyText
   );
@@ -399,36 +401,36 @@ function inferInteractiveExtras(
     };
   }
 
-  if (draft.service && draft.name && draft.phone.replace(/\D/g, "").length >= 10) {
-    if (askingEmail) {
-      return {
-        quickReplies: [{ label: "Skip email", value: "Please skip email — I don't want to provide one." }],
-      };
-    }
-    if (!draft.day || !draft.time) {
-      return {
-        showSchedule: true,
-        content: replyText || "Pick an available day and time below.",
-      };
-    }
-    if (askingConfirm) {
-      return {
-        quickReplies: [
-          {
-            label: "Yes, book it",
-            value: `Yes, please book ${draft.service} for ${draft.name} on ${draft.day} at ${draft.time}. Phone: ${draft.phone}.${draft.email ? ` Email: ${draft.email}.` : ""}`,
-          },
-          { label: "Change details", value: "I'd like to change some booking details before we confirm." },
-        ],
-      };
-    }
+  if (askingEmail && draft.service && draft.name && draft.phone.replace(/\D/g, "").length >= 10) {
+    return {
+      quickReplies: [{ label: "Skip email", value: "Please skip email — I don't want to provide one." }],
+    };
   }
 
-  // Schedule asked before all contact fields — still show calendar if Maya is clearly asking for day/time
-  if ((!draft.day || !draft.time) && askingSchedule) {
+  // Calendar only when Maya asks for a slot — never just because name/phone/service are filled.
+  if (draft.service && (!draft.day || !draft.time) && askingSchedule) {
     return {
       showSchedule: true,
       content: replyText || "Pick an available day and time below.",
+    };
+  }
+
+  if (
+    askingConfirm &&
+    draft.service &&
+    draft.name &&
+    draft.phone.replace(/\D/g, "").length >= 10 &&
+    draft.day &&
+    draft.time
+  ) {
+    return {
+      quickReplies: [
+        {
+          label: "Yes, book it",
+          value: `Yes, please book ${draft.service} for ${draft.name} on ${draft.day} at ${draft.time}. Phone: ${draft.phone}.${draft.email ? ` Email: ${draft.email}.` : ""}`,
+        },
+        { label: "Change details", value: "I'd like to change some booking details before we confirm." },
+      ],
     };
   }
 
