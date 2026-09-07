@@ -53,6 +53,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#0A2540",
+  // Helps Chrome/Android resize layout when the keyboard opens (iOS still needs visualViewport).
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

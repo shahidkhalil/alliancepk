@@ -656,6 +656,11 @@ export default function ReceptionistDemo() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [composerFocused, setComposerFocused] = useState(false);
+  /** Mobile keyboard: shrink message pane so the whole card fits above the keyboard. */
+  const [chatPanePx, setChatPanePx] = useState<number | null>(null);
 
   const focusComposer = () => {
     // Defer until after React re-enable / layout so focus sticks on mobile too.
@@ -707,6 +712,54 @@ export default function ReceptionistDemo() {
   useEffect(() => {
     scrollChatToBottom(true);
   }, [messages, busy, scrollChatToBottom]);
+
+  // iOS/Android keyboard: keep header + messages + composer inside the visual viewport
+  // so page CTAs don't squeeze between the input and the keyboard.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncPaneHeight = () => {
+      const mobile = window.matchMedia("(max-width: 639px)").matches;
+      if (!composerFocused || !mobile) {
+        setChatPanePx(null);
+        return;
+      }
+      const vv = window.visualViewport;
+      const card = cardRef.current;
+      if (!vv || !card) return;
+
+      const header = card.querySelector<HTMLElement>("[data-maya-header]");
+      const speaking = card.querySelector<HTMLElement>("[data-maya-speaking]");
+      const chrome =
+        (header?.offsetHeight ?? 52) +
+        (formRef.current?.offsetHeight ?? 60) +
+        (speaking?.offsetHeight ?? 0);
+      const available = Math.floor(vv.height - chrome - 8);
+      setChatPanePx(Math.max(140, Math.min(380, available)));
+    };
+
+    syncPaneHeight();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", syncPaneHeight);
+    vv?.addEventListener("scroll", syncPaneHeight);
+    window.addEventListener("orientationchange", syncPaneHeight);
+    return () => {
+      vv?.removeEventListener("resize", syncPaneHeight);
+      vv?.removeEventListener("scroll", syncPaneHeight);
+      window.removeEventListener("orientationchange", syncPaneHeight);
+    };
+  }, [composerFocused]);
+
+  useEffect(() => {
+    if (!composerFocused || chatPanePx == null) return;
+    const card = cardRef.current;
+    if (!card) return;
+    // After shrinking, pin the card so the composer sits above the keyboard.
+    requestAnimationFrame(() => {
+      card.scrollIntoView({ block: "end", behavior: "auto" });
+      scrollChatToBottom(false);
+    });
+  }, [composerFocused, chatPanePx, scrollChatToBottom]);
 
   // Email deep link: /ai-receptionist?ref=XXXX&intent=check
   useEffect(() => {
@@ -1238,10 +1291,17 @@ export default function ReceptionistDemo() {
 
   return (
     <div className="light-island mx-auto w-full max-w-xl overflow-x-clip px-3 sm:px-4">
-      <div className="max-w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:rounded-3xl sm:shadow-xl sm:shadow-gray-200/50">
+      <div
+        ref={cardRef}
+        className="max-w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:rounded-3xl sm:shadow-xl sm:shadow-gray-200/50"
+      >
 
         {/* Header */}
-        <div className="px-3 sm:px-5 py-2.5 sm:py-4" style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}>
+        <div
+          data-maya-header
+          className="px-3 sm:px-5 py-2.5 sm:py-4"
+          style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}
+        >
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative flex-shrink-0">
               <MayaAvatar size="w-9 h-9 sm:w-11 sm:h-11" />
@@ -1272,8 +1332,13 @@ export default function ReceptionistDemo() {
 
         <div
           ref={chatScrollRef}
-          className="overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 h-[380px] sm:h-[420px]"
-          style={{ background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)" }}
+          className={`overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 ${
+            chatPanePx == null ? "h-[380px] sm:h-[420px]" : ""
+          }`}
+          style={{
+            background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)",
+            ...(chatPanePx != null ? { height: chatPanePx } : null),
+          }}
         >
           <AnimatePresence initial={false}>
             {messages.map((m) => {
@@ -1495,6 +1560,7 @@ export default function ReceptionistDemo() {
         <AnimatePresence>
           {speaking && (
             <motion.div
+              data-maya-speaking
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -1510,6 +1576,7 @@ export default function ReceptionistDemo() {
         </AnimatePresence>
 
         <form
+          ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
             send(input.trim());
@@ -1531,9 +1598,17 @@ export default function ReceptionistDemo() {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={() => setComposerFocused(true)}
+              onBlur={() => {
+                window.setTimeout(() => {
+                  if (document.activeElement !== inputRef.current) setComposerFocused(false);
+                }, 120);
+              }}
               placeholder={recState === "transcribing" ? "Transcribing…" : hasOpenForm(messages) ? "Speak or type…" : "Type or tap mic…"}
               disabled={recState === "transcribing"}
               className="flex-1 min-w-0 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full bg-[#F4F8F7] border border-transparent text-sm text-gray-800 outline-none focus:border-[#0E7C6B]/40 focus:bg-white transition-all disabled:opacity-60"
+              autoComplete="off"
+              enterKeyHint="send"
             />
           )}
 
@@ -1563,7 +1638,11 @@ export default function ReceptionistDemo() {
         </form>
       </div>
 
-      <p className="text-center text-xs text-gray-400 mt-4">
+      <p
+        className={`text-center text-xs text-gray-400 mt-4 ${
+          composerFocused ? "max-sm:hidden" : ""
+        }`}
+      >
         Live demo on a sample clinic · Your clinic gets its own Maya — trained on <span className="font-semibold text-gray-500">your</span> services, prices &amp; hours
       </p>
     </div>

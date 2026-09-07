@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneOff, Loader2, Mic, CalendarCheck2 } from "lucide-react";
+import { PhoneOff, Loader2, Mic, CalendarCheck2, ChevronDown, ChevronUp } from "lucide-react";
 import {
   BookingDraft,
   EMPTY_DRAFT,
@@ -28,6 +28,8 @@ const LIVE_SERVICES = [
 
 type CallState = "connecting" | "live" | "ended" | "error";
 type RecallField = "name" | "phone" | "email" | "other";
+type CallLanguage = "en" | "ur";
+type LockableField = "name" | "phone" | "email" | "service" | "schedule";
 
 interface Props {
   onClose: () => void;
@@ -212,16 +214,43 @@ function isFieldLocked(field: string, flags: ConfirmationFlags): boolean {
 }
 
 function nextStepHint(flags: ConfirmationFlags): string {
-  if (!flags.nameConfirmed) return "Collect full name only — recall_last_spoken_text(name), read back, confirm_field(name).";
+  if (!flags.nameConfirmed) {
+    return "Ask for their full name only — recall_last_spoken_text(name), read back, confirm_field(name). Then use their first name.";
+  }
+  if (!flags.serviceConfirmed) return "Confirm which service they need with confirm_field(service). Do NOT re-ask name.";
   if (!flags.phoneConfirmed) {
     return "Collect FULL 10-digit phone only. Wait until they finish speaking. recall_last_spoken_text(phone), read back in digit groups, confirm_field(phone). Do NOT ask email yet.";
   }
   if (flags.emailConfirmed !== "skipped" && flags.emailConfirmed !== true) {
     return "Ask once for email (optional). If they give it: recall + spell-back + confirm_field(email). If they decline: confirm_field(email) with email_skipped true. Then continue.";
   }
-  if (!flags.serviceConfirmed) return "Confirm service with confirm_field(service). Do NOT re-ask name or phone.";
   if (!flags.scheduleConfirmed) return "Collect day and time, then confirm_field(schedule).";
-  return "One short summary, ask 'Shall I book that?', then book_appointment.";
+  return "One short summary, ask 'Shall I book that?', then book_appointment. After booking: one short farewell only.";
+}
+
+function firstNameOf(full: string): string {
+  return full.trim().split(/\s+/)[0] || full.trim();
+}
+
+/** Detect English vs Urdu (script or Roman Urdu) from a spoken turn. */
+function detectCallLanguage(text: string): CallLanguage | null {
+  const t = text.trim();
+  if (t.length < 2) return null;
+  if (/[\u0600-\u06FF]/.test(t)) return "ur";
+  const strongUrdu =
+    /\b(assalam|asalam|salaam|walaikum|haan\s*ji|ji\s+haan|nahin|nahi|mera\s+naam|mera\s+name|aap\s+(ka|ki|ko)|mujhe|mujhko|chahiye|kitne|kitna|kab\s+(aa|free|mile)|theek\s+hai|bilkul|shukriya|shukria|meherbani|meharbani|daant|dard|booking\s+karni|appointment\s+chahiye)\b/i;
+  if (strongUrdu.test(t)) return "ur";
+  const strongEn =
+    /\b(hello|hi\b|hey|i('m| am)|my name|i want|i need|i'd like|book|appointment|please|thanks|thank you|tomorrow|today|yes|okay|sure)\b/i;
+  if (strongEn.test(t)) return "en";
+  return null;
+}
+
+function languageLockBlock(lang: CallLanguage): string {
+  if (lang === "ur") {
+    return `LANGUAGE LOCK: Urdu for the ENTIRE remaining call (Urdu script or natural Roman Urdu). Do NOT switch to English. Do NOT mix languages. All questions, read-backs, and the farewell stay in Urdu.`;
+  }
+  return `LANGUAGE LOCK: English for the ENTIRE remaining call. Do NOT switch to Urdu. Do NOT mix languages. All questions, read-backs, and the farewell stay in English.`;
 }
 
 function sessionStatus(flags: ConfirmationFlags, confirmed: ConfirmedValues) {
@@ -242,7 +271,8 @@ function sessionStatus(flags: ConfirmationFlags, confirmed: ConfirmedValues) {
   };
 }
 
-const YES_TRANSCRIPT = /^(yes|yeah|yep|yup|correct|right|that's right|that is right|absolutely|sure|ok|okay)\.?$/i;
+const YES_TRANSCRIPT =
+  /^(yes|yeah|yep|yup|correct|right|that's right|that is right|absolutely|sure|ok|okay|haan|han|ji|haan ji|bilkul|theek|theek hai|sahi|sahi hai|ہاں|جی|ہاں جی|بالکل|ٹھیک|ٹھیک ہے|صحیح)\.?$/i;
 
 async function waitForTranscript(
   field: string,
@@ -392,6 +422,8 @@ export default function LiveCall({ onClose }: Props) {
   const [mayaTalking, setMayaTalking] = useState(false);
   const [booked, setBooked] = useState<string | null>(null);
   const [draft, setDraft] = useState<BookingDraft>({ ...EMPTY_DRAFT });
+  const [formOpen, setFormOpen] = useState(true);
+  const [callLanguage, setCallLanguage] = useState<CallLanguage | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -411,41 +443,33 @@ export default function LiveCall({ onClose }: Props) {
   const bookingTrackedRef = useRef(false);
   const secondsRef = useRef(0);
   const connectGenRef = useRef(0);
-  const typedNotifyRef = useRef<{ name: boolean; phone: boolean; email: boolean }>({
+  const typedNotifyRef = useRef<{ name: boolean; phone: boolean; email: boolean; service: boolean; schedule: boolean }>({
     name: false,
     phone: false,
     email: false,
+    service: false,
+    schedule: false,
   });
+  const callLanguageRef = useRef<CallLanguage | null>(null);
+  const pendingFarewellHangupRef = useRef(false);
+  const farewellHangupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formCompleteNudgeSentRef = useRef(false);
 
   draftRef.current = draft;
   secondsRef.current = seconds;
+  callLanguageRef.current = callLanguage;
 
-  /** Push locked form state into the live session so Maya stops re-asking — silent update only. */
-  const pushFormLockToMaya = useCallback((justLocked: ("name" | "phone" | "email")[]) => {
+  const sendSessionInstructions = useCallback((extra = "") => {
     const dc = dcRef.current;
-    if (!dc || dc.readyState !== "open" || !justLocked.length) return;
-    const flags = confirmationFlagsRef.current;
-    const confirmed = confirmedValuesRef.current;
-    const status = sessionStatus(flags, confirmed);
-    const lockLines = Object.entries(status.confirmed_fields)
-      .filter(([, v]) => v)
-      .map(([k, v]) => `- ${k}: ${v}`)
-      .join("\n");
-
+    if (!dc || dc.readyState !== "open") return;
+    const lang = callLanguageRef.current;
+    const langBlock = lang ? `\n${languageLockBlock(lang)}\n` : "";
+    const text = `${instructionsRef.current || "You are Maya, a clinic receptionist."}${langBlock}${extra ? `\n${extra}` : ""}`;
     try {
-      // session.update only — do NOT response.create (that makes Maya verbally re-confirm)
       dc.send(
         JSON.stringify({
           type: "session.update",
-          session: {
-            type: "realtime",
-            instructions: `${instructionsRef.current || "You are Maya, a clinic receptionist."}
-
-LOCKED ON-SCREEN FORM (already confirmed by the patient — NEVER re-ask, NEVER read back, NEVER say "got it — is that right?"):
-${lockLines || "- (none)"}
-NEXT REQUIRED STEP: ${status.next_step}
-When you next speak, skip every locked field entirely. Do not acknowledge locked name/phone/email. Only pursue NEXT REQUIRED STEP.`,
-          },
+          session: { type: "realtime", instructions: text },
         })
       );
     } catch {
@@ -453,12 +477,95 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
     }
   }, []);
 
+  const lockCallLanguage = useCallback(
+    (lang: CallLanguage, opts?: { speakNudge?: boolean }) => {
+      if (callLanguageRef.current === lang) return;
+      callLanguageRef.current = lang;
+      setCallLanguage(lang);
+      sendSessionInstructions(
+        opts?.speakNudge
+          ? `The patient chose ${lang === "ur" ? "Urdu" : "English"}. Continue only in that language from your next turn.`
+          : ""
+      );
+    },
+    [sendSessionInstructions]
+  );
+
+  /** Push locked form state into the live session so Maya stops re-asking — silent update only. */
+  const pushFormLockToMaya = useCallback(
+    (justLocked: LockableField[], opts?: { formComplete?: boolean }) => {
+      const dc = dcRef.current;
+      if (!dc || dc.readyState !== "open") return;
+      const flags = confirmationFlagsRef.current;
+      const confirmed = confirmedValuesRef.current;
+      const d = draftRef.current;
+      const status = sessionStatus(flags, confirmed);
+      const lockLines = Object.entries(status.confirmed_fields)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join("\n");
+      const draftLines = [
+        d.name.trim() ? `- name (on screen): ${d.name.trim()}` : null,
+        digitsOnly(d.phone).length >= 10 ? `- phone (on screen): ${formatPhoneDigits(d.phone)}` : null,
+        d.email.trim() ? `- email (on screen): ${d.email.trim()}` : null,
+        d.service ? `- service (on screen): ${d.service}` : null,
+        d.day && d.time ? `- schedule (on screen): ${d.day} at ${d.time}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const lang = callLanguageRef.current;
+      const langBlock = lang ? `\n${languageLockBlock(lang)}\n` : "";
+      const completeNudge = opts?.formComplete
+        ? `\nFORM COMPLETE: The patient filled the on-screen form. Do NOT re-ask those fields. Give one short summary of the locked details and ask to confirm booking, then call book_appointment.`
+        : "";
+      const lockedNote = justLocked.length
+        ? `\nJust locked by patient (form or confirm): ${justLocked.join(", ")}. Skip those entirely.`
+        : "";
+
+      try {
+        dc.send(
+          JSON.stringify({
+            type: "session.update",
+            session: {
+              type: "realtime",
+              instructions: `${instructionsRef.current || "You are Maya, a clinic receptionist."}${langBlock}
+
+LOCKED DETAILS (FINAL — NEVER re-ask, NEVER read back, NEVER say "got it — is that right?"):
+${lockLines || "- (none)"}
+ON-SCREEN FORM (treat filled values as the patient's answers):
+${draftLines || "- (empty)"}
+NEXT REQUIRED STEP: ${status.next_step}${lockedNote}${completeNudge}
+When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Use the patient's first name if name is locked.`,
+            },
+          })
+        );
+        // If the patient finished the form during the call, prompt Maya to continue without waiting for speech.
+        if (opts?.formComplete && justLocked.length && !formCompleteNudgeSentRef.current) {
+          formCompleteNudgeSentRef.current = true;
+          dc.send(
+            JSON.stringify({
+              type: "response.create",
+              response: {
+                instructions:
+                  "The patient just finished filling the on-screen form. Acknowledge briefly using their first name if known, summarize the booking details once, ask to confirm, then call book_appointment if they agree. Do not re-ask locked fields.",
+              },
+            })
+          );
+        }
+      } catch {
+        /* channel closed */
+      }
+    },
+    []
+  );
+
   /** Auto-lock completed form fields. Contact fields (name/phone/email) only lock from typed form input — never from speech preview. */
   const lockCompletedFields = useCallback(
     (next: BookingDraft, opts?: { notify?: boolean; source?: "form" | "speech" }) => {
       const flags = { ...confirmationFlagsRef.current };
       const confirmed = { ...confirmedValuesRef.current };
-      const justLocked: ("name" | "phone" | "email")[] = [];
+      const justLocked: LockableField[] = [];
       const fromForm = (opts?.source || "form") === "form";
 
       if (fromForm) {
@@ -490,16 +597,27 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
       if (!flags.serviceConfirmed && next.service.trim()) {
         flags.serviceConfirmed = true;
         confirmed.service = next.service.trim();
+        if (!typedNotifyRef.current.service) {
+          typedNotifyRef.current.service = true;
+          justLocked.push("service");
+        }
       }
       if (!flags.scheduleConfirmed && next.day && next.time) {
         flags.scheduleConfirmed = true;
         confirmed.preferredTime = `${next.day} at ${next.time}`;
+        if (!typedNotifyRef.current.schedule) {
+          typedNotifyRef.current.schedule = true;
+          justLocked.push("schedule");
+        }
       }
 
       confirmationFlagsRef.current = flags;
       confirmedValuesRef.current = confirmed;
+
       if (opts?.notify !== false && justLocked.length) {
-        queueMicrotask(() => pushFormLockToMaya(justLocked));
+        const payload = buildBookingPayload(next, confirmed);
+        const gate = canBook(payload, flags, next);
+        queueMicrotask(() => pushFormLockToMaya(justLocked, { formComplete: gate.ok }));
       }
       return justLocked;
     },
@@ -578,8 +696,8 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
 
         const next = mergeDraft(prev, patch);
         draftRef.current = next;
-        // Speech may preview fields on screen, but never auto-confirm name/phone/email
-        lockCompletedFields(next, { source: "speech", notify: false });
+        // Speech may preview contact fields; service/schedule auto-lock and notify Maya
+        lockCompletedFields(next, { source: "speech" });
         return next;
       });
     },
@@ -595,6 +713,8 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
         if (field === "name" && value.trim().length < 2) typedNotifyRef.current.name = false;
         if (field === "phone" && digitsOnly(value).length < 10) typedNotifyRef.current.phone = false;
         if (field === "email" && !value.trim()) typedNotifyRef.current.email = false;
+        if (field === "service" && !value.trim()) typedNotifyRef.current.service = false;
+        if ((field === "day" || field === "time") && !(next.day && next.time)) typedNotifyRef.current.schedule = false;
 
         // Clear confirm flags when user empties a field
         const flags = { ...confirmationFlagsRef.current };
@@ -632,6 +752,9 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
   const teardownCall = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
+    if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
+    farewellHangupTimerRef.current = null;
+    pendingFarewellHangupRef.current = false;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     dcRef.current = null;
@@ -725,6 +848,11 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                 userTranscriptsRef.current = [...userTranscriptsRef.current.slice(-11), t];
                 syncDraftFromSpeech(userTranscriptsRef.current);
 
+                if (!callLanguageRef.current) {
+                  const detected = detectCallLanguage(t);
+                  if (detected) lockCallLanguage(detected);
+                }
+
                 const pending = pendingRecallRef.current;
                 if (pending && YES_TRANSCRIPT.test(t)) {
                   const flags = confirmationFlagsRef.current;
@@ -748,6 +876,15 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
               const calls = (ev.response?.output || []).filter(
                 (o: FnCall) => o.type === "function_call" && o.name && o.call_id
               ) as FnCall[];
+
+              // After a successful book, wait until Maya finishes her farewell (no more tools), then hang up.
+              if (pendingFarewellHangupRef.current && !calls.length) {
+                pendingFarewellHangupRef.current = false;
+                if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
+                farewellHangupTimerRef.current = setTimeout(() => hangUpRef.current(), 1500);
+                return;
+              }
+
               if (!calls.length) return;
 
               for (const call of calls) {
@@ -888,7 +1025,7 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                       field: "name",
                       value: confirmed.name,
                       locked: true,
-                      instruction: "Name is locked. Do NOT ask for name again. Ask for phone number next.",
+                      instruction: `Name is locked as "${confirmed.name}". Use first name "${firstNameOf(confirmed.name)}" occasionally. Do NOT ask for name again. Next: ask which service they need, then confirm_field(service).`,
                       ...sessionStatus(flags, confirmed),
                     };
                   } else if (args.field === "phone" && flags.phoneConfirmed) {
@@ -916,7 +1053,7 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                       value: formatPhoneDigits(confirmed.phone),
                       locked: true,
                       instruction:
-                        "Phone is locked. Do NOT ask for or read back the phone number again. Next: ask for email once (optional). If they give it, recall + spell-back + confirm_field(email). If they decline, confirm_field(email) with email_skipped true.",
+                        "Phone is locked. Do NOT ask for or read back the phone number again. " + nextStepHint(flags),
                       ...sessionStatus(flags, confirmed),
                     };
                   } else if (args.field === "email") {
@@ -1009,7 +1146,12 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                       });
                       const bd = await br.json();
                       if (br.ok && bd.booked) {
-                        output = { booked: true, reference: bd.reference };
+                        output = {
+                          booked: true,
+                          reference: bd.reference,
+                          instruction:
+                            "Booking confirmed. Say ONE short farewell only: confirm the appointment, mention the reference if useful, say goodbye. Then stop — do not ask more questions.",
+                        };
                         const bookedLabel = `${payload.service} · ${payload.preferredTime} (Ref ${bd.reference})`;
                         setBooked(bookedLabel);
                         if (!bookingTrackedRef.current) {
@@ -1023,8 +1165,11 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
                           trackEvent("appointment_booking_complete", { channel: "voice" });
                           trackEvent("generate_lead", { lead_source: "ai_receptionist_voice" });
                         }
-                        // End call shortly after booking so Maya can finish her confirmation line.
-                        setTimeout(() => hangUpRef.current(), 3000);
+                        // Let Maya finish her confirmation + farewell, then hang up on next response.done.
+                        pendingFarewellHangupRef.current = true;
+                        if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
+                        // Safety net if response.done never arrives (network glitch)
+                        farewellHangupTimerRef.current = setTimeout(() => hangUpRef.current(), 12000);
                       } else {
                         output = { booked: false, reason: bd.error || "Booking failed." };
                       }
@@ -1071,25 +1216,32 @@ When you next speak, skip every locked field entirely. Do not acknowledge locked
           return;
         }
 
-        // Reinforce booking-detail accuracy (works even if functions deploy is pending)
+        // Reinforce language lock, name-first flow, and booking-detail accuracy
         const boost = `
+LANGUAGE: English or Urdu only. Once LANGUAGE LOCK is set (or the caller clearly speaks one language), stay in that language for the entire call — never switch mid-call.
+GREETING: Ask for the caller's name early. After confirm_field(name), use their first name occasionally. Never re-ask name.
+BOOKING ORDER: Name → Service → Phone → Email → Day/time. Skip any locked / on-screen form fields.
 BOOKING DETAIL RULES (highest priority):
-- confirmed_fields from tools are locked — never re-ask those.
+- confirmed_fields and ON-SCREEN FORM values are locked — never re-ask those.
 - Spoken name/phone/email are NOT confirmed until you read them back, hear yes, and call confirm_field.
 - Phone: wait for the FULL 10 digits (people speak in chunks). If recall is not ready, ask them to repeat — do NOT jump to email.
 - Phone read-back: use grouped_spoken_digits, ask "is that right?", then confirm_field(phone).
 - Email: confirm_field(email) or email_skipped — never silently skip.
 - Typing on the form locks that field; only then skip verbal confirm for it.
+- Never restart the script. Never repeat a question already answered.
+- After book_appointment succeeds: one short farewell only (confirm + reference + goodbye).
 `;
         const base = instructionsRef.current || "You are Maya, a clinic receptionist.";
         instructionsRef.current = `${base}\n${boost}`;
         const sendBoost = () => {
           if (isStale()) return;
           if (dc.readyState === "open") {
+            const lang = callLanguageRef.current;
+            const langBlock = lang ? `\n${languageLockBlock(lang)}\n` : "";
             dc.send(
               JSON.stringify({
                 type: "session.update",
-                session: { type: "realtime", instructions: instructionsRef.current },
+                session: { type: "realtime", instructions: `${instructionsRef.current}${langBlock}` },
               })
             );
           }
@@ -1169,7 +1321,33 @@ BOOKING DETAIL RULES (highest priority):
           {state === "live" && (
             <>
               <p className="text-2xl font-mono text-white mb-1">{mm}:{ss}</p>
-              <p className="text-[11px] text-white/60 mb-4">demo call · max {Math.round(maxSeconds / 60)} min</p>
+              <p className="text-[11px] text-white/60 mb-3">demo call · max {Math.round(maxSeconds / 60)} min</p>
+
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <span className="text-[10px] text-white/50 uppercase tracking-wide">Language</span>
+                {(["en", "ur"] as CallLanguage[]).map((lang) => {
+                  const active = callLanguage === lang;
+                  const locked = callLanguage != null;
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      disabled={locked && !active}
+                      onClick={() => lockCallLanguage(lang, { speakNudge: true })}
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                        active
+                          ? "bg-white text-[#0B5D50] border-white"
+                          : locked
+                            ? "bg-white/5 text-white/30 border-white/10 cursor-not-allowed"
+                            : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
+                      }`}
+                    >
+                      {lang === "en" ? "English" : "اردو"}
+                    </button>
+                  );
+                })}
+              </div>
+
               <p className="flex items-center justify-center gap-2 text-xs text-white/60 mb-3">
                 <Mic className="w-3.5 h-3.5 text-green-400" />{" "}
                 {mayaTalking ? "Maya is speaking — you can interrupt" : "Listening… just talk"}
@@ -1185,65 +1363,95 @@ BOOKING DETAIL RULES (highest priority):
                 </p>
               )}
 
-              <div className="mt-4 text-left bg-white/10 rounded-2xl p-3 space-y-2 border border-white/10">
-                <p className="text-[10px] font-bold text-white/70 uppercase tracking-wide">Your details (speak or type)</p>
-                <input
-                  value={draft.name}
-                  onChange={(e) => updateDraftField("name", e.target.value)}
-                  placeholder="Name"
-                  className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
-                />
-                <input
-                  value={draft.phone}
-                  onChange={(e) => updateDraftField("phone", e.target.value)}
-                  placeholder="Phone"
-                  inputMode="tel"
-                  className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
-                />
-                <input
-                  value={draft.email}
-                  onChange={(e) => updateDraftField("email", e.target.value)}
-                  placeholder="Email (optional)"
-                  className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
-                />
-                <select
-                  value={draft.service}
-                  onChange={(e) => updateDraftField("service", e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
+              <div className="mt-4 text-left bg-white/10 rounded-2xl border border-white/10 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setFormOpen((o) => !o)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left hover:bg-white/5 transition-colors"
                 >
-                  <option value="">Service</option>
-                  {LIVE_SERVICES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <div className="grid grid-cols-2 gap-2">
-                  <select
-                    value={draft.day}
-                    onChange={(e) => updateDraftField("day", e.target.value)}
-                    className="w-full px-2 py-2 rounded-lg bg-white/95 text-xs text-gray-800 outline-none"
-                  >
-                    <option value="">Day</option>
-                    {BOOKING_DAYS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={draft.time}
-                    onChange={(e) => updateDraftField("time", e.target.value)}
-                    className="w-full px-2 py-2 rounded-lg bg-white/95 text-xs text-gray-800 outline-none"
-                  >
-                    <option value="">Time</option>
-                    {BOOKING_TIMES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <span>
+                    <span className="block text-[10px] font-bold text-white/70 uppercase tracking-wide">
+                      Your details {formOpen ? "(speak or type)" : ""}
+                    </span>
+                    {!formOpen && (
+                      <span className="block text-[11px] text-white/55 mt-0.5 truncate">
+                        {[
+                          draft.name.trim() || null,
+                          draft.service || null,
+                          draft.day && draft.time ? `${draft.day} ${draft.time}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Hidden — tap to show / edit"}
+                      </span>
+                    )}
+                  </span>
+                  {formOpen ? (
+                    <ChevronUp className="w-4 h-4 text-white/60 flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-white/60 flex-shrink-0" />
+                  )}
+                </button>
+                {formOpen && (
+                  <div className="px-3 pb-3 space-y-2 border-t border-white/10 pt-2">
+                    <input
+                      value={draft.name}
+                      onChange={(e) => updateDraftField("name", e.target.value)}
+                      placeholder="Name"
+                      className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
+                    />
+                    <input
+                      value={draft.phone}
+                      onChange={(e) => updateDraftField("phone", e.target.value)}
+                      placeholder="Phone"
+                      inputMode="tel"
+                      className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
+                    />
+                    <input
+                      value={draft.email}
+                      onChange={(e) => updateDraftField("email", e.target.value)}
+                      placeholder="Email (optional)"
+                      className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
+                    />
+                    <select
+                      value={draft.service}
+                      onChange={(e) => updateDraftField("service", e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/95 text-sm text-gray-800 outline-none"
+                    >
+                      <option value="">Service</option>
+                      {LIVE_SERVICES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={draft.day}
+                        onChange={(e) => updateDraftField("day", e.target.value)}
+                        className="w-full px-2 py-2 rounded-lg bg-white/95 text-xs text-gray-800 outline-none"
+                      >
+                        <option value="">Day</option>
+                        {BOOKING_DAYS.map((d) => (
+                          <option key={d} value={d}>
+                            {d}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={draft.time}
+                        onChange={(e) => updateDraftField("time", e.target.value)}
+                        className="w-full px-2 py-2 rounded-lg bg-white/95 text-xs text-gray-800 outline-none"
+                      >
+                        <option value="">Time</option>
+                        {BOOKING_TIMES.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
