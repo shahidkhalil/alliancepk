@@ -76,35 +76,6 @@ export default function AIReceptionist() {
           </p>
         </div>
         <ReceptionistDemo />
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8 sm:mt-10">
-          <div className="rounded-2xl border border-[#00283C]/10 bg-[#F8FAFC] p-5 sm:p-6 text-center">
-            <p className="text-base sm:text-lg font-bold text-[#00283C] mb-1">
-              Like what you just tried?
-            </p>
-            <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto">
-              Book a short setup call for your clinic — or run a free website audit first.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href="/free-website-audit"
-                data-analytics-label="start_website_audit"
-                data-analytics-location="maya_after_demo"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-bold hover:bg-[#003D5C] transition-colors"
-              >
-                Free Clinic Audit
-              </a>
-              <button
-                type="button"
-                onClick={openForm}
-                data-analytics-label="book_consultation"
-                data-analytics-location="maya_after_demo"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-white transition-colors"
-              >
-                Book a Strategy Call
-              </button>
-            </div>
-          </div>
-        </div>
       </section>
 
       <section className="py-16 bg-[#F8FAFC] border-b border-gray-100">
@@ -180,6 +151,38 @@ export default function AIReceptionist() {
             }),
           }}
         />
+      </section>
+
+      <section className="py-12 sm:py-16 bg-[#F8FAFC] border-b border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="rounded-2xl border border-[#00283C]/10 bg-white p-5 sm:p-6 text-center">
+            <p className="text-base sm:text-lg font-bold text-[#00283C] mb-1">
+              Like what you just tried?
+            </p>
+            <p className="text-sm text-gray-500 mb-5 max-w-md mx-auto">
+              Book a short setup call for your clinic — or run a free website audit first.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href="/free-website-audit"
+                data-analytics-label="start_website_audit"
+                data-analytics-location="maya_page_bottom"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-bold hover:bg-[#003D5C] transition-colors"
+              >
+                Free Clinic Audit
+              </a>
+              <button
+                type="button"
+                onClick={openForm}
+                data-analytics-label="book_consultation"
+                data-analytics-location="maya_page_bottom"
+                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-white transition-colors"
+              >
+                Book a Strategy Call
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <FinalCTA />

@@ -721,7 +721,7 @@ export default function ReceptionistDemo() {
     scrollChatToBottom(true);
   }, [messages, busy, scrollChatToBottom]);
 
-  // Mobile: open Maya as a full-page chat by default for usable typing UX.
+  // Mobile: show an animated “Chat with Maya” launcher first (don’t auto-open fullscreen).
   const leftImmersiveRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -731,9 +731,9 @@ export default function ReceptionistDemo() {
       setIsMobile(mobile);
       if (!mobile) {
         setImmersive(false);
-        return;
+        leftImmersiveRef.current = false;
       }
-      if (!leftImmersiveRef.current) setImmersive(true);
+      // Keep immersive closed on mobile until the user taps the launcher.
     };
     apply();
     mq.addEventListener("change", apply);
@@ -1327,17 +1327,48 @@ export default function ReceptionistDemo() {
     <>
       {isMobile && !immersive && (
         <div className="mx-auto w-full max-w-xl px-3">
-          <button
+          <motion.button
             type="button"
             onClick={enterImmersive}
-            className="w-full rounded-2xl border border-[#0E7C6B]/20 bg-gradient-to-br from-[#06382F] to-[#0E7C6B] p-5 text-left shadow-lg shadow-[#0E7C6B]/20"
+            animate={{
+              scale: [1, 1.03, 1],
+              boxShadow: [
+                "0 10px 28px rgba(14,124,107,0.28)",
+                "0 14px 36px rgba(14,124,107,0.45)",
+                "0 10px 28px rgba(14,124,107,0.28)",
+              ],
+            }}
+            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            className="relative w-full overflow-hidden rounded-2xl border border-[#0E7C6B]/25 bg-gradient-to-br from-[#06382F] to-[#0E7C6B] p-5 text-left"
           >
-            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-white/70">
-              <MessageCircle className="w-3.5 h-3.5" /> Live demo
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12"
+              animate={{ left: ["-40%", "120%"] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.8 }}
+            />
+            <span className="relative inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-white/80">
+              <motion.span
+                animate={{ scale: [1, 1.25, 1] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                className="inline-flex"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+              </motion.span>
+              Tap to try
             </span>
-            <span className="mt-2 block text-lg font-extrabold text-white">Continue chatting with Maya</span>
-            <span className="mt-1 block text-sm text-white/75">Full-screen chat — tap to reopen</span>
-          </button>
+            <span className="relative mt-2 block text-lg font-extrabold text-white">Chat with Maya</span>
+            <span className="relative mt-1 flex items-center gap-2 text-sm text-white/80">
+              Full-screen live demo — tap here to start
+              <motion.span
+                animate={{ x: [0, 6, 0] }}
+                transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
+                aria-hidden
+              >
+                →
+              </motion.span>
+            </span>
+          </motion.button>
         </div>
       )}
 
