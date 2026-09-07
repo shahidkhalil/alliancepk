@@ -453,11 +453,30 @@ export default function LiveCall({ onClose }: Props) {
   const callLanguageRef = useRef<CallLanguage | null>(null);
   const pendingFarewellHangupRef = useRef(false);
   const farewellHangupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const farewellTranscriptRef = useRef("");
   const formCompleteNudgeSentRef = useRef(false);
 
   draftRef.current = draft;
   secondsRef.current = seconds;
   callLanguageRef.current = callLanguage;
+
+  const scheduleHangUpAfterFarewell = useCallback((reason: "audio_stopped" | "response_done" | "safety") => {
+    if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
+    // response.done = model finished generating; WebRTC still has buffered audio to play.
+    // Estimate from transcript length, with a solid minimum so confirmation isn't cut off.
+    const chars = farewellTranscriptRef.current.length;
+    const estimatedMs = Math.round(chars * 65); // ~15 chars/sec spoken
+    const delayMs =
+      reason === "audio_stopped"
+        ? 900
+        : reason === "safety"
+          ? 0
+          : Math.min(16000, Math.max(6500, estimatedMs + 2000));
+    farewellHangupTimerRef.current = setTimeout(() => {
+      pendingFarewellHangupRef.current = false;
+      hangUpRef.current();
+    }, delayMs);
+  }, []);
 
   const sendSessionInstructions = useCallback((extra = "") => {
     const dc = dcRef.current;
@@ -755,6 +774,7 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
     if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
     farewellHangupTimerRef.current = null;
     pendingFarewellHangupRef.current = false;
+    farewellTranscriptRef.current = "";
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     dcRef.current = null;
@@ -869,7 +889,19 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
               captionRef.current += ev.delta || "";
               setCaption(captionRef.current.slice(-160));
               setMayaTalking(true);
+              if (pendingFarewellHangupRef.current) {
+                farewellTranscriptRef.current += String(ev.delta || "");
+              }
             }
+
+            // WebRTC finished playing Maya's audio — safest moment to hang up after booking.
+            if (
+              (ev.type === "output_audio_buffer.stopped" || ev.type === "response.output_audio.done") &&
+              pendingFarewellHangupRef.current
+            ) {
+              scheduleHangUpAfterFarewell("audio_stopped");
+            }
+
             if (ev.type === "response.done") {
               setMayaTalking(false);
               captionRef.current = "";
@@ -877,11 +909,10 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
                 (o: FnCall) => o.type === "function_call" && o.name && o.call_id
               ) as FnCall[];
 
-              // After a successful book, wait until Maya finishes her farewell (no more tools), then hang up.
+              // After a successful book, wait for farewell audio to finish — do NOT hang up immediately.
+              // response.done only means generation ended; playback usually lags by several seconds.
               if (pendingFarewellHangupRef.current && !calls.length) {
-                pendingFarewellHangupRef.current = false;
-                if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
-                farewellHangupTimerRef.current = setTimeout(() => hangUpRef.current(), 1500);
+                scheduleHangUpAfterFarewell("response_done");
                 return;
               }
 
@@ -1150,7 +1181,7 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
                           booked: true,
                           reference: bd.reference,
                           instruction:
-                            "Booking confirmed. Say ONE short farewell only: confirm the appointment, mention the reference if useful, say goodbye. Then stop — do not ask more questions.",
+                            "Booking confirmed. Say TWO short sentences only: (1) confirm the appointment with service and time, (2) say goodbye. Do not keep talking.",
                         };
                         const bookedLabel = `${payload.service} · ${payload.preferredTime} (Ref ${bd.reference})`;
                         setBooked(bookedLabel);
@@ -1165,11 +1196,15 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
                           trackEvent("appointment_booking_complete", { channel: "voice" });
                           trackEvent("generate_lead", { lead_source: "ai_receptionist_voice" });
                         }
-                        // Let Maya finish her confirmation + farewell, then hang up on next response.done.
+                        // Wait for farewell audio to finish playing before hang-up.
                         pendingFarewellHangupRef.current = true;
+                        farewellTranscriptRef.current = "";
                         if (farewellHangupTimerRef.current) clearTimeout(farewellHangupTimerRef.current);
-                        // Safety net if response.done never arrives (network glitch)
-                        farewellHangupTimerRef.current = setTimeout(() => hangUpRef.current(), 12000);
+                        // Safety net only — normal hang-up waits for audio/response timing above.
+                        farewellHangupTimerRef.current = setTimeout(() => {
+                          pendingFarewellHangupRef.current = false;
+                          hangUpRef.current();
+                        }, 22000);
                       } else {
                         output = { booked: false, reason: bd.error || "Booking failed." };
                       }
@@ -1256,6 +1291,8 @@ BOOKING DETAIL RULES (highest priority):
         setState("live");
         timerRef.current = setInterval(() => {
           setSeconds((s) => {
+            // Don't cut Maya off mid-farewell if the demo timer hits the cap.
+            if (pendingFarewellHangupRef.current) return s + 1;
             if (s + 1 >= callMaxSeconds) hangUp();
             return s + 1;
           });
