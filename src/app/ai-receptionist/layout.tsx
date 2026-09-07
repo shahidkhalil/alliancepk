@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "AI Receptionist for Houston & Texas Clinics — Never Miss a Patient Call | Alliance Tech",
+  title: "Maya AI Receptionist for Houston & Texas Clinics — Never Miss a Patient Call | Alliance Tech",
   description:
-    "Your front desk can't answer 100 calls a day — our AI receptionist can. 24/7 call & chat answering in English, instant appointment booking, zero missed patients for Houston and Texas clinics. Try the live demo.",
+    "Your front desk can't answer 100 calls a day — Maya AI Receptionist can. 24/7 call & chat answering in English, instant appointment booking, zero missed patients for Houston and Texas clinics. Try the live demo.",
   keywords: [
+    "Maya AI Receptionist Houston",
     "AI receptionist Houston",
     "AI receptionist Texas",
     "AI answering service Houston TX",
@@ -21,9 +22,9 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/ai-receptionist" },
   openGraph: {
-    title: "AI Receptionist for Houston & Texas Clinics — Never Miss a Patient Call",
+    title: "Maya AI Receptionist for Houston & Texas Clinics — Never Miss a Patient Call",
     description:
-      "24/7 AI receptionist that answers, qualifies, and books patients in English — built for Houston and Texas clinics. Try the live demo — talk to it right now.",
+      "24/7 Maya AI Receptionist that answers, qualifies, and books patients in English — built for Houston and Texas clinics. Try the live demo — talk to it right now.",
     url: "/ai-receptionist",
     type: "website",
   },

@@ -49,10 +49,10 @@ export default function AIReceptionist() {
   return (
     <PageWrapper>
       <ServicePageHero
-        badge="AI RECEPTIONIST FOR HOUSTON & TEXAS CLINICS"
+        badge="PRODUCT · MAYA AI RECEPTIONIST FOR HOUSTON & TEXAS CLINICS"
         headline="Too Many Calls, Too Few Staff?"
         highlight="Never Miss a Patient Again"
-        subheadline="Busy Houston clinics miss 25–40% of calls at peak hours — every one a lost patient. Our AI receptionist answers every call and chat at once, 24/7 in English, and books them automatically. Try the live demo below."
+        subheadline="Busy Houston clinics miss 25–40% of calls at peak hours — every one a lost patient. Maya AI Receptionist answers every call and chat at once, 24/7 in English, and books them automatically. Try the live demo below."
       />
 
       <section className="py-8 sm:py-12 bg-[#F8FAFC] border-b border-gray-100">
@@ -72,7 +72,7 @@ export default function AIReceptionist() {
             Try It <span className="gradient-heading">Right Now</span>
           </h2>
           <p className="text-sm sm:text-base text-gray-500">
-            This is a live AI receptionist for a sample clinic. Ask about prices, hours, treatments — or book an appointment.
+            This is Maya AI Receptionist for a sample clinic. Ask about prices, hours, treatments — or book an appointment.
           </p>
         </div>
         <ReceptionistDemo />

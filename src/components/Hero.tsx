@@ -5,7 +5,7 @@ import { useForm } from "@/context/FormContext";
 const automationSystems = [
   {
     icon: Bot,
-    title: "AI Receptionist",
+    title: "Maya AI Receptionist",
     description: "Answers every call — day, night, and weekends.",
   },
   {
@@ -64,7 +64,7 @@ export default function Hero() {
               data-analytics-location="hero"
               className="btn-dark min-h-[52px] px-8 py-4 text-base w-full sm:w-auto inline-flex items-center justify-center gap-2"
             >
-              Try Maya — AI Receptionist
+              Try Maya AI Receptionist
               <ArrowRight className="w-4 h-4" aria-hidden />
             </a>
             <a

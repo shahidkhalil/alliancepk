@@ -24,7 +24,7 @@ const GRADIENTS = [
 const CTA_PRESETS = [
   {
     id: "ai-receptionist",
-    label: "AI Receptionist",
+    label: "Maya AI Receptionist",
     href: "/ai-receptionist",
     ctaLabel: "Book a free AI receptionist demo",
     description:

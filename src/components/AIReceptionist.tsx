@@ -62,17 +62,17 @@ export default function AIReceptionist() {
             transition={{ duration: 0.5 }}
           >
             <span className="badge-light mb-5 inline-flex items-center gap-1.5">
-              <Bot className="w-3.5 h-3.5" /> Meet Maya
+              <Bot className="w-3.5 h-3.5" /> Product · Maya AI Receptionist
             </span>
 
             <h2 className="text-3xl lg:text-4xl font-extrabold text-[#00283C] tracking-tight mt-4 mb-4">
               Your Clinic&apos;s{" "}
-              <span className="gradient-heading">24/7 AI Receptionist</span>
+              <span className="gradient-heading">24/7 Maya AI Receptionist</span>
             </h2>
 
             <p className="text-gray-500 leading-relaxed mb-8 max-w-md">
               Never lose another patient to a missed call or unanswered message.
-              Our AI receptionist handles everything — automatically, intelligently, around the clock.
+              Maya AI Receptionist handles everything — automatically, intelligently, around the clock.
             </p>
 
             <ul className="grid sm:grid-cols-2 gap-3 mb-9">
@@ -100,7 +100,7 @@ export default function AIReceptionist() {
                 href="/ai-receptionist"
                 className="btn-dark px-7 py-3.5 text-sm w-full sm:w-auto text-center shadow-md shadow-[#00283C]/10"
               >
-                Try Maya — live demo
+                Try Maya AI Receptionist
               </a>
               <button
                 type="button"
@@ -132,7 +132,7 @@ export default function AIReceptionist() {
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-[#00283C]" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white truncate">Maya · AI Receptionist</div>
+                  <div className="text-sm font-bold text-white truncate">Maya AI Receptionist</div>
                   <div className="text-[11px] text-white/60 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
                     Online · replies in seconds

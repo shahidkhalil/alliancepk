@@ -6,7 +6,7 @@ import { FeatureCardGrid, AnimatedSurface, ContentCardList } from "@/components/
 
 const services = [
   {
-    title: "24/7 AI Receptionist",
+    title: "24/7 Maya AI Receptionist",
     desc: "Answer routine patient questions, capture caller details, and handle appointment requests after hours or when your Houston front desk is busy.",
     href: "/ai-receptionist",
   },
@@ -79,7 +79,7 @@ const supportingServices = [
 
 const liveTools = [
   {
-    title: "Try the AI Receptionist",
+    title: "Try Maya AI Receptionist",
     desc: "Experience how an AI conversation can answer questions and guide a patient toward booking.",
     href: "/ai-receptionist",
   },
@@ -142,7 +142,7 @@ export default function DentalClinicHouston() {
         headline="AI Automation That Helps Houston Dental Clinics"
         highlight="Convert More Inquiries"
         subheadline="AI receptionist, WhatsApp automation, lead follow-up, and appointment workflows that respond quickly and support your front desk around the clock."
-        ctaText="Try Our AI Receptionist"
+        ctaText="Try Maya AI Receptionist"
         ctaHref="/ai-receptionist"
       />
 

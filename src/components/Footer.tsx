@@ -5,10 +5,10 @@ import {
   BUSINESS_ADDRESS_MAPS_HREF,
   SALES_EMAIL,
 } from "@/lib/siteContact";
+import { productNavLinks } from "@/lib/productsData";
 
 const services = [
-  { label: "AI Receptionist", href: "/ai-receptionist" },
-  { label: "Free Website Audit", href: "/free-website-audit" },
+  { label: "WhatsApp channel", href: "/whatsapp-ai-automation" },
   { label: "Digital Marketing", href: "/digital-marketing-for-clinics" },
   { label: "SEO for Clinics", href: "/seo-for-clinics" },
   { label: "Local SEO for Clinics", href: "/local-seo-for-clinics" },
@@ -21,10 +21,10 @@ export default function Footer() {
   return (
     <footer className="bg-[#040C14] text-white">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-14">
-        <div className="grid md:grid-cols-4 gap-10 pb-10 border-b border-white/[0.07]">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 pb-10 border-b border-white/[0.07]">
 
           {/* Brand */}
-          <div className="md:col-span-1">
+          <div className="sm:col-span-2 lg:col-span-1">
             <a href="/" className="inline-block mb-5">
               <Image
                 src="/logo.png"
@@ -62,6 +62,24 @@ export default function Footer() {
                 </svg>
               </a>
             </div>
+          </div>
+
+          {/* Products */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/60 mb-4">Our Products</p>
+            <ul className="space-y-2.5">
+              {productNavLinks.map((p) => (
+                <li key={p.label}>
+                  <a
+                    href={p.href}
+                    {...(p.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className="text-sm text-white/60 hover:text-white transition-colors"
+                  >
+                    {p.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Services */}

@@ -153,7 +153,7 @@ function PricingContent() {
                 data-analytics-location="pricing_hero"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-black hover:bg-[#003D5C] transition-colors"
               >
-                Try Maya Live <ArrowRight className="w-4 h-4" />
+                Try Maya AI Receptionist <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="/free-website-audit"

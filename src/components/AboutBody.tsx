@@ -26,7 +26,7 @@ const softSurface =
 const services = [
   {
     icon: Bot,
-    title: "AI Receptionist",
+    title: "Maya AI Receptionist",
     description: "Answers calls & chats 24/7, qualifies patients, and books appointments automatically.",
     href: "/ai-receptionist",
   },

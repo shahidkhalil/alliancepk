@@ -36,7 +36,7 @@ export type ServicePricing = {
 const allServices: ServicePricing[] = [
 {
     id: "ai-automation",
-    name: "AI Receptionist",
+    name: "Maya AI Receptionist",
     category: "AI & Automation",
     tagline: "One flagship AI front desk — phone, voice, and website chat. Answers, books, and follows up 24/7.",
     packages: [
@@ -110,9 +110,9 @@ const allServices: ServicePricing[] = [
       { feature: "Monthly conversations", basic: "500", standard: "2,000", premium: "Unlimited" },
     ],
     faqs: [
-      { q: "What is the AI Receptionist?", a: "It's your clinic's AI front desk for phone calls and website chat (with live voice on Premium). It answers patient questions, books appointments, sends reminders, and follows up 24/7. WhatsApp automation is a separate product." },
+      { q: "What is Maya AI Receptionist?", a: "It's your clinic's AI front desk for phone calls and website chat (with live voice on Premium). It answers patient questions, books appointments, sends reminders, and follows up 24/7. WhatsApp automation is a separate product." },
       { q: "Is this a monthly subscription?", a: "No. Basic ($2,000), Standard ($4,000), and Premium ($6,000) are one-time project fees for build, training, and go-live. Optional add-ons can be monthly if you need them." },
-      { q: "Is WhatsApp included?", a: "No. WhatsApp AI Automation is sold separately. AI Receptionist covers phone, website chat, and voice — so you can buy either product alone or both together." },
+      { q: "Is WhatsApp included?", a: "No. WhatsApp AI Automation is sold separately. Maya AI Receptionist covers phone, website chat, and voice — so you can buy either product alone or both together." },
       { q: "Will it work with my current systems?", a: "Yes. Standard and Premium integrate with your calendar, CRM, and EHR so bookings and patient details flow in automatically — no double entry." },
       { q: "How fast can we go live?", a: "Typically 5 business days. We train the AI on your services, prices, and hours, test it with you, then switch it on." },
       { q: "Is it only for dental clinics?", a: "No — it works for healthcare clinics broadly: dental, aesthetic, dermatology, primary care, and multi-specialty practices. It's trained on your specific services." },
@@ -127,7 +127,7 @@ const allServices: ServicePricing[] = [
     name: "AI Automation for Clinics",
     category: "AI & Automation",
     fixedPrice: true,
-    tagline: "Fixed-price clinic workflows — reminders, follow-ups, reviews, and lead routing. Separate from the AI Receptionist front desk.",
+    tagline: "Fixed-price clinic workflows — reminders, follow-ups, reviews, and lead routing. Separate from Maya AI Receptionist.",
     packages: [
       {
         name: "Clinic Automation",
@@ -150,7 +150,7 @@ const allServices: ServicePricing[] = [
         cta: "Get Clinic Automation",
         popular: true,
         addOns: [
-          "AI Receptionist (front desk) sold separately — from $2,000 one-time",
+          "Maya AI Receptionist (front desk) sold separately — from $2,000 one-time",
           "Extra locations from $399/mo each",
         ],
       },
@@ -158,16 +158,16 @@ const allServices: ServicePricing[] = [
     comparison: [],
     faqs: [
       {
-        q: "How is this different from the AI Receptionist?",
-        a: "AI Receptionist is your front desk — it answers phone calls and website chat and books appointments live. WhatsApp AI Automation is a separate product. AI Automation for Clinics runs the follow-up engine behind the scenes: reminders, no-show recovery, reviews, and lead chase. You can buy each alone or combine them.",
+        q: "How is this different from Maya AI Receptionist?",
+        a: "Maya AI Receptionist is your front desk — it answers phone calls and website chat and books appointments live. WhatsApp AI Automation is a separate product. AI Automation for Clinics runs the follow-up engine behind the scenes: reminders, no-show recovery, reviews, and lead chase. You can buy each alone or combine them.",
       },
       {
         q: "Is the price really fixed?",
         a: "Yes — $1,499/month covers the full clinic automation stack listed above. No Basic/Standard/Premium tiers. Extra clinic locations are optional add-ons.",
       },
       {
-        q: "Do I need the AI Receptionist too?",
-        a: "No. Many clinics start with automation only (reminders + recovery) and add the AI Receptionist later for 24/7 answering. If you want both, we’ll package them cleanly.",
+        q: "Do I need Maya AI Receptionist too?",
+        a: "No. Many clinics start with automation only (reminders + recovery) and add Maya AI Receptionist later for 24/7 answering. If you want both, we’ll package them cleanly.",
       },
       {
         q: "How fast can we go live?",
@@ -256,7 +256,7 @@ const allServices: ServicePricing[] = [
         ],
         cta: "Book a Strategy Call",
         popular: false,
-        addOns: ["Ongoing SEO from $1,199/mo", "AI Receptionist from $2,000 one-time"],
+        addOns: ["Ongoing SEO from $1,199/mo", "Maya AI Receptionist from $2,000 one-time"],
       },
     ],
     comparison: [

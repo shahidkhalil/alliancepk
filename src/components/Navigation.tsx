@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { useForm } from "@/context/FormContext";
+import { products } from "@/lib/productsData";
 
-interface DropdownLink { label: string; href: string; }
+interface DropdownLink { label: string; href: string; external?: boolean; }
 interface DropdownGroup { title: string; links: DropdownLink[]; }
 interface Dropdown {
   heading: string;
@@ -15,6 +16,24 @@ interface NavLink { label: string; href: string; dropdown: Dropdown | null; }
 
 const navLinks: NavLink[] = [
   {
+    label: "Our Products",
+    href: "/products",
+    dropdown: {
+      heading: "Our Products",
+      top: [{ label: "All Products", href: "/products" }],
+      groups: [
+        {
+          title: "Products",
+          links: products.map((p) => ({
+            label: p.name,
+            href: p.href,
+            external: p.external,
+          })),
+        },
+      ],
+    },
+  },
+  {
     label: "Services",
     href: "/#services",
     dropdown: {
@@ -24,9 +43,7 @@ const navLinks: NavLink[] = [
         {
           title: "AI Automation",
           links: [
-            { label: "AI Receptionist", href: "/ai-receptionist" },
             { label: "WhatsApp channel", href: "/whatsapp-ai-automation" },
-            { label: "Free Website Audit", href: "/free-website-audit" },
           ],
         },
         {
@@ -59,18 +76,6 @@ const navLinks: NavLink[] = [
     dropdown: null,
   },
   {
-    label: "Try It",
-    href: "#",
-    dropdown: {
-      heading: "Try It Live",
-      links: [
-        { label: "Free Website Audit", href: "/free-website-audit" },
-        { label: "AI Business Growth Audit", href: "/business-growth-audit" },
-        { label: "AI Receptionist", href: "/ai-receptionist" },
-      ],
-    },
-  },
-  {
     label: "Blog",
     href: "/blog",
     dropdown: null,
@@ -81,6 +86,12 @@ const navLinks: NavLink[] = [
     dropdown: null,
   },
 ];
+
+function externalProps(external?: boolean) {
+  return external
+    ? { target: "_blank" as const, rel: "noopener noreferrer" }
+    : {};
+}
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -152,7 +163,7 @@ export default function Navigation() {
                               <div key={g.title} className={gi > 0 ? "mt-1 pt-2 border-t border-gray-100" : "mt-1"}>
                                 <p className="px-4 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{g.title}</p>
                                 {g.links.map((d) => (
-                                  <a key={d.label} href={d.href}
+                                  <a key={d.label} href={d.href} {...externalProps(d.external)}
                                     className="block px-4 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] transition-colors">
                                     {d.label}
                                   </a>
@@ -164,7 +175,7 @@ export default function Navigation() {
                           <>
                             <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{link.dropdown.heading}</p>
                             {link.dropdown.links!.map((d) => (
-                              <a key={d.label} href={d.href}
+                              <a key={d.label} href={d.href} {...externalProps(d.external)}
                                 className="block px-4 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] transition-colors">
                                 {d.label}
                               </a>
@@ -237,7 +248,7 @@ export default function Navigation() {
                                   <div key={g.title} className="mt-1">
                                     <p className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{g.title}</p>
                                     {g.links.map((d) => (
-                                      <a key={d.label} href={d.href} onClick={() => setMobileOpen(false)}
+                                      <a key={d.label} href={d.href} {...externalProps(d.external)} onClick={() => setMobileOpen(false)}
                                         className="block px-3 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
                                         {d.label}
                                       </a>
@@ -247,7 +258,7 @@ export default function Navigation() {
                               </>
                             ) : (
                               link.dropdown.links!.map((d) => (
-                                <a key={d.label} href={d.href} onClick={() => setMobileOpen(false)}
+                                <a key={d.label} href={d.href} {...externalProps(d.external)} onClick={() => setMobileOpen(false)}
                                   className="block px-3 py-2 text-sm text-gray-600 hover:text-[#00283C] hover:bg-[#F0F7FA] rounded-lg transition-colors">
                                   {d.label}
                                 </a>

@@ -15,7 +15,7 @@ import {
 const workflow = [
   {
     verb: "Answer",
-    title: "AI Receptionist",
+    title: "Maya AI Receptionist",
     desc: "Every call gets picked up — nights, weekends, and peak hours — in your clinic's voice.",
     outcome: "0 missed calls",
     href: "/ai-receptionist",

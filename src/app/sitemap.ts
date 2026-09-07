@@ -8,6 +8,7 @@ const baseUrl = "https://alliancetechltd.com";
 const staticRoutes = [
   { path: "", priority: 1.0 },
   { path: "/services", priority: 0.9 },
+  { path: "/products", priority: 0.9 },
   { path: "/digital-marketing-for-clinics", priority: 0.8 },
   { path: "/clinic-website-design", priority: 0.8 },
   { path: "/clinic-mobile-app", priority: 0.8 },

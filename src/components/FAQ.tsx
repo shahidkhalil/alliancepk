@@ -9,13 +9,13 @@ import { useCardMotion, staggerDelay } from "@/lib/motionVariants";
 
 
 const faqs = [
-  { q: "How does the AI Receptionist work?", a: "It's connected to your clinic's phone number and website chat. It answers in English, qualifies the patient, and books them directly into your appointment calendar — 24/7 without any staff involvement. WhatsApp is a separate automation service." },
-  { q: "What does the AI Receptionist cost?", a: "It's a one-time build: Basic $2,000, Standard $4,000, and Premium $6,000. Optional add-ons (extra conversations, live voice, CRM/EHR sync) can be monthly if you need them." },
-  { q: "Will the AI Receptionist replace my front desk staff?", a: "No. It covers missed calls, after-hours inquiries, and overflow so your team can focus on patients in the clinic. Staff can take over any conversation at any time." },
+  { q: "How does Maya AI Receptionist work?", a: "It's connected to your clinic's phone number and website chat. It answers in English, qualifies the patient, and books them directly into your appointment calendar — 24/7 without any staff involvement. WhatsApp is a separate automation service." },
+  { q: "What does Maya AI Receptionist cost?", a: "It's a one-time build: Basic $2,000, Standard $4,000, and Premium $6,000. Optional add-ons (extra conversations, live voice, CRM/EHR sync) can be monthly if you need them." },
+  { q: "Will Maya AI Receptionist replace my front desk staff?", a: "No. It covers missed calls, after-hours inquiries, and overflow so your team can focus on patients in the clinic. Staff can take over any conversation at any time." },
   { q: "Can it book appointments into our existing calendar?", a: "Yes. Standard and Premium connect to your calendar (and CRM/EHR where needed) so bookings land automatically — no double entry." },
-  { q: "How long does AI Receptionist setup take?", a: "Typically about 5 business days. We train it on your services, prices, hours, and escalation rules, test with your team, then go live." },
+  { q: "How long does Maya AI Receptionist setup take?", a: "Typically about 5 business days. We train it on your services, prices, hours, and escalation rules, test with your team, then go live." },
   { q: "How quickly will I see results?", a: "Most clinics see measurable results — more calls answered, website chat replies, and booked appointments — within 30–45 days. We give you a clear month-by-month projection at the start." },
-  { q: "What is your minimum contract length?", a: "We require a minimum commitment of 3–6 months for ongoing growth work. One-time automation builds (like AI Receptionist) are paid once at launch. 90%+ of our clients continue because the ROI speaks for itself." },
+  { q: "What is your minimum contract length?", a: "We require a minimum commitment of 3–6 months for ongoing growth work. One-time automation builds (like Maya AI Receptionist) are paid once at launch. 90%+ of our clients continue because the ROI speaks for itself." },
   { q: "What kinds of clinics do you work with?", a: "Healthcare clinics that take appointments — dental, aesthetic/med spa, dermatology, chiropractic, physio, urgent care, ENT, primary care, and other outpatient practices. If patients call, search, and book, we can help fill the calendar." },
   { q: "Can I see results before committing?", a: "Yes. We offer a free clinic audit with a written report showing exactly where patients are dropping off, what we'd automate first, and what results you could expect. No commitment required." },
 ];

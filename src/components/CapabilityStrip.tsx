@@ -21,7 +21,7 @@ type Tag = {
 };
 
 const rowOne: Tag[] = [
-  { label: "AI Receptionist", href: "/ai-receptionist", Icon: Phone },
+  { label: "Maya AI Receptionist", href: "/ai-receptionist", Icon: Phone },
   { label: "WhatsApp AI", href: "/whatsapp-ai-automation", Icon: MessageCircle },
   { label: "Clinic Websites", href: "/clinic-website-design", Icon: Globe },
   { label: "Local SEO", href: "/local-seo-for-clinics", Icon: MapPin },

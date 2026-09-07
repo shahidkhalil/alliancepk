@@ -23,7 +23,7 @@ export default function AICallMockup() {
         <div className="px-5 pt-2 pb-6 text-center">
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={inView ? { scale: 1, opacity: 1 } : {}}
             className="w-16 h-16 mx-auto rounded-full bg-white/10 flex items-center justify-center text-2xl mb-3">🤖</motion.div>
-          <p className="text-white font-bold text-sm">Alliance AI Receptionist</p>
+          <p className="text-white font-bold text-sm">Maya AI Receptionist</p>
           <p className="text-white/60 text-[11px] mb-3">Incoming call · 00:14</p>
 
           {/* Waveform */}

@@ -306,7 +306,7 @@ const caseStudies: CaseStudy[] = [
     accent: "#12B3C7",
   },
   {
-    client: "AI Receptionist",
+    client: "Maya AI Receptionist",
     type: "AI Automation",
     category: "Product Case Study — 24/7 Voice & Chat Booking Agent",
     tagline:

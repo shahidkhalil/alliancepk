@@ -63,7 +63,7 @@ const groupOrder: ServiceGroup[] = ["ai", "growth", "platform"];
 const services: Service[] = [
   {
     Icon: PhoneCall,
-    title: "AI Receptionist",
+    title: "Maya AI Receptionist",
     href: "/ai-receptionist",
     group: "ai",
     summary:
@@ -301,7 +301,7 @@ function ServicesContent() {
                         <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-12">
                           <div className="flex-1 min-w-0">
                             <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#7DD3EA] mb-4">
-                              Flagship
+                              Product
                             </span>
                             <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-3">
                               {flagship.title}

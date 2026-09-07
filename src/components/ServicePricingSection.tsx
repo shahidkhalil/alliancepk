@@ -136,7 +136,7 @@ export default function ServicePricingSection({ service }: { service: ServicePri
 
         {service.fixedPrice && (
           <p className="mt-4 text-center text-xs text-gray-400 max-w-lg mx-auto">
-            AI Receptionist (live front desk) is sold separately — see that product for chat, WhatsApp answering, and voice.
+            Maya AI Receptionist (live front desk) is sold separately — see that product for chat, WhatsApp answering, and voice.
           </p>
         )}
 
