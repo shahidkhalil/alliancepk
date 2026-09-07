@@ -6,7 +6,7 @@ import { useForm } from "@/context/FormContext";
 import { SALES_TEL_HREF } from "@/lib/siteContact";
 import { trackPhoneClick } from "@/lib/analytics";
 
-const HIDDEN_PREFIXES = ["/admin"];
+const HIDDEN_PREFIXES = ["/admin", "/ai-receptionist"];
 
 /**
  * Mobile-only closer for the US market: Call (or request a call) + Book strategy call.

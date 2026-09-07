@@ -181,7 +181,7 @@ export default function ConsultationForm({ isOpen, onClose }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[80]"
           />
 
           <motion.div
@@ -189,7 +189,7 @@ export default function ConsultationForm({ isOpen, onClose }: Props) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            className="fixed inset-0 z-[80] flex items-center justify-center p-4 pointer-events-none"
           >
             <div
               className="relative w-full max-w-lg pointer-events-auto rounded-3xl overflow-hidden shadow-2xl"

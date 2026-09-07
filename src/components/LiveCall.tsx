@@ -1141,7 +1141,7 @@ BOOKING DETAIL RULES (highest priority):
       <motion.div
         initial={{ scale: 0.95, y: 16 }}
         animate={{ scale: 1, y: 0 }}
-        className="w-full sm:max-w-sm max-h-[92dvh] sm:max-h-[90vh] rounded-t-3xl sm:rounded-3xl overflow-y-auto overflow-x-hidden shadow-2xl text-center"
+        className="w-full max-w-full sm:max-w-sm h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] rounded-none sm:rounded-3xl overflow-y-auto overflow-x-hidden shadow-2xl text-center"
         style={{ background: "linear-gradient(160deg, #06382F, #0B5D50)" }}
         onClick={(e) => e.stopPropagation()}
       >

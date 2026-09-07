@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useForm } from "@/context/FormContext";
 
 const AuditChat = dynamic(() => import("./AuditChat"), { ssr: false });
 
@@ -17,7 +18,14 @@ export default function AuditChatWidget() {
   const [showNudge, setShowNudge] = useState(false);
   const [ready, setReady] = useState(false);
   const pathname = usePathname();
+  const { isOpen: formOpen } = useForm();
   const hidden = pathname === "/free-website-audit" || pathname === "/ai-receptionist";
+
+  // Consultation form sits above the chat (z-80). Collapse chat so it doesn't
+  // cover the form on mobile after "Book a free strategy call".
+  useEffect(() => {
+    if (formOpen) setOpen(false);
+  }, [formOpen]);
 
   useEffect(() => {
     if (hidden) return;
@@ -102,7 +110,7 @@ export default function AuditChatWidget() {
         </div>
       )}
 
-      {showNudge && !open && (
+      {showNudge && !open && !formOpen && (
         <button
           type="button"
           onClick={openChat}
@@ -116,39 +124,41 @@ export default function AuditChatWidget() {
         </button>
       )}
 
-      <button
-        type="button"
-        onClick={() => {
-          setOpen((o) => !o);
-          setEverOpened(true);
-          setShowNudge(false);
-        }}
-        className="fixed bottom-5 right-4 sm:right-6 z-[60] group"
-        aria-label={open ? "Close free website audit chat" : "Open free website audit chat"}
-      >
-        {open ? (
-          <span className="flex items-center justify-center w-16 h-16 rounded-full bg-[#00283C] shadow-xl text-white hover:scale-105 transition-transform">
-            <X className="w-7 h-7" />
-          </span>
-        ) : (
-          <span
-            className="relative flex items-center gap-3 pl-3 pr-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform max-sm:pl-0 max-sm:pr-0 max-sm:py-0 max-sm:w-14 max-sm:h-14 max-sm:justify-center"
-            style={{ background: "linear-gradient(135deg, #00283C, #0077A8)" }}
-          >
-            <span className="flex items-center justify-center w-11 h-11 max-sm:w-full max-sm:h-full rounded-full bg-white/15 text-2xl" aria-hidden="true">
-              🩺
+      {!formOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((o) => !o);
+            setEverOpened(true);
+            setShowNudge(false);
+          }}
+          className="fixed bottom-5 right-4 sm:right-6 z-[60] group"
+          aria-label={open ? "Close free website audit chat" : "Open free website audit chat"}
+        >
+          {open ? (
+            <span className="flex items-center justify-center w-16 h-16 rounded-full bg-[#00283C] shadow-xl text-white hover:scale-105 transition-transform">
+              <X className="w-7 h-7" />
             </span>
-            <span className="text-left leading-tight max-sm:hidden">
-              <span className="block text-sm font-extrabold text-white">Free Website Audit</span>
-              <span className="block text-[11px] text-white/80">AI checkup in 30 sec</span>
+          ) : (
+            <span
+              className="relative flex items-center gap-3 pl-3 pr-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform max-sm:pl-0 max-sm:pr-0 max-sm:py-0 max-sm:w-14 max-sm:h-14 max-sm:justify-center"
+              style={{ background: "linear-gradient(135deg, #00283C, #0077A8)" }}
+            >
+              <span className="flex items-center justify-center w-11 h-11 max-sm:w-full max-sm:h-full rounded-full bg-white/15 text-2xl" aria-hidden="true">
+                🩺
+              </span>
+              <span className="text-left leading-tight max-sm:hidden">
+                <span className="block text-sm font-extrabold text-white">Free Website Audit</span>
+                <span className="block text-[11px] text-white/80">AI checkup in 30 sec</span>
+              </span>
+              <span className="absolute -top-1 -right-1 flex h-4 w-4" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-2 border-white" />
+              </span>
             </span>
-            <span className="absolute -top-1 -right-1 flex h-4 w-4" aria-hidden="true">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-2 border-white" />
-            </span>
-          </span>
-        )}
-      </button>
+          )}
+        </button>
+      )}
     </>
   );
 }

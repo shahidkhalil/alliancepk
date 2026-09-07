@@ -124,28 +124,28 @@ function ServicesCatalog({
   onBook: (s: string) => void;
 }) {
   return (
-    <div className="mt-2.5 w-full rounded-2xl border border-[#0E7C6B]/15 bg-white shadow-sm overflow-hidden">
-      <div className="px-3.5 py-2.5 bg-[#F4F8F7] border-b border-[#0E7C6B]/10 text-left">
+    <div className="mt-2.5 w-full max-w-full rounded-2xl border border-[#0E7C6B]/15 bg-white shadow-sm overflow-hidden">
+      <div className="px-3 py-2.5 sm:px-3.5 bg-[#F4F8F7] border-b border-[#0E7C6B]/10 text-left">
         <p className="text-[11px] font-bold uppercase tracking-wide text-[#0E7C6B]">Our services</p>
         <p className="text-[11px] text-gray-500 mt-0.5">Tap a row for details · Book to reserve</p>
       </div>
-      <div className="max-h-[280px] sm:max-h-[320px] overflow-y-auto overscroll-contain divide-y divide-gray-100">
+      <div className="max-h-[280px] sm:max-h-[320px] overflow-y-auto overflow-x-hidden overscroll-contain divide-y divide-gray-100">
         {SERVICES.map((s) => {
           const info = SERVICE_INFO[s];
           return (
             <div
               key={s}
-              className="flex items-stretch gap-0 min-h-[52px] hover:bg-[#F7FBFA] transition-colors"
+              className="flex items-stretch gap-0 min-h-[52px] min-w-0 hover:bg-[#F7FBFA] transition-colors"
             >
               <button
                 type="button"
                 onClick={() => onPick(s)}
-                className="flex-1 flex items-start gap-3 px-3.5 py-3.5 text-left min-w-0"
+                className="flex-1 flex items-start gap-2.5 sm:gap-3 px-3 sm:px-3.5 py-3.5 text-left min-w-0"
               >
                 <span className="text-xl flex-shrink-0 leading-none mt-0.5" aria-hidden>
                   {info?.icon || "🦷"}
                 </span>
-                <span className="flex-1 min-w-0">
+                <span className="flex-1 min-w-0 overflow-hidden">
                   <span className="block text-[13px] sm:text-sm font-bold text-[#00332C] leading-snug">{s}</span>
                   <span className="block text-[11px] sm:text-xs text-gray-500 mt-1 leading-snug">{info?.desc}</span>
                   <span className="mt-1.5 inline-flex items-center gap-0.5 text-[11px] font-semibold text-[#0E7C6B]">
@@ -153,11 +153,11 @@ function ServicesCatalog({
                   </span>
                 </span>
               </button>
-              <div className="flex items-center pr-3 pl-1 flex-shrink-0">
+              <div className="flex items-center pr-2.5 sm:pr-3 pl-1 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => onBook(s)}
-                  className="text-[11px] sm:text-xs font-bold text-white bg-gradient-to-r from-[#0E7C6B] to-[#14A08A] px-3 py-2 rounded-full hover:shadow-md transition-all whitespace-nowrap"
+                  className="text-[11px] sm:text-xs font-bold text-white bg-gradient-to-r from-[#0E7C6B] to-[#14A08A] px-2.5 sm:px-3 py-2 rounded-full hover:shadow-md transition-all whitespace-nowrap"
                 >
                   Book
                 </button>
@@ -1272,7 +1272,7 @@ export default function ReceptionistDemo() {
 
         <div
           ref={chatScrollRef}
-          className="overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 h-[min(62dvh,520px)] sm:h-[420px]"
+          className="overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 h-[380px] sm:h-[420px]"
           style={{ background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)" }}
         >
           <AnimatePresence initial={false}>
@@ -1514,7 +1514,7 @@ export default function ReceptionistDemo() {
             e.preventDefault();
             send(input.trim());
           }}
-          className="bg-white border-t border-gray-100 px-2.5 sm:px-4 py-2.5 sm:py-3.5 flex items-center gap-1.5 sm:gap-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]"
+          className="relative z-[1] bg-white border-t border-gray-100 px-2.5 sm:px-4 py-2.5 sm:py-3.5 flex items-center gap-1.5 sm:gap-2.5"
         >
           {recState === "recording" ? (
             <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 py-1.5 rounded-full bg-red-50 border border-red-200 min-w-0">
