@@ -662,7 +662,8 @@ export default function ReceptionistDemo() {
   /** Mobile: full-screen chat so keyboard / page scroll don't break the UI. */
   const [immersive, setImmersive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [vvHeight, setVvHeight] = useState<number | null>(null);
+  /** Pin full-screen chat to the visual viewport so iOS keyboard doesn't shove the header off-screen. */
+  const [vvBox, setVvBox] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   const focusComposer = () => {
     // Defer until after React re-enable / layout so focus sticks on mobile too.
@@ -734,18 +735,30 @@ export default function ReceptionistDemo() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Lock page scroll + size shell to the visual viewport while immersive (handles iOS keyboard).
+  // Lock page scroll + pin shell to the visual viewport while immersive (iOS keyboard-safe).
   useEffect(() => {
     if (!immersive) {
-      setVvHeight(null);
+      setVvBox(null);
       return;
     }
     const prevOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
     const syncVv = () => {
       const vv = window.visualViewport;
-      setVvHeight(vv ? Math.round(vv.height) : window.innerHeight);
+      if (!vv) {
+        setVvBox({ top: 0, left: 0, width: window.innerWidth, height: window.innerHeight });
+        return;
+      }
+      // offsetTop/Left track iOS keyboard scroll — keep our shell inside the visible area.
+      setVvBox({
+        top: Math.round(vv.offsetTop),
+        left: Math.round(vv.offsetLeft),
+        width: Math.round(vv.width),
+        height: Math.round(vv.height),
+      });
     };
     syncVv();
     const vv = window.visualViewport;
@@ -754,6 +767,7 @@ export default function ReceptionistDemo() {
     window.addEventListener("orientationchange", syncVv);
     return () => {
       document.body.style.overflow = prevOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
       vv?.removeEventListener("resize", syncVv);
       vv?.removeEventListener("scroll", syncVv);
       window.removeEventListener("orientationchange", syncVv);
@@ -1325,12 +1339,23 @@ export default function ReceptionistDemo() {
       <div
         className={
           immersive
-            ? "fixed inset-0 z-[85] flex flex-col bg-white"
+            ? "fixed z-[85] flex flex-col bg-white overflow-hidden"
             : isMobile
               ? "hidden"
               : "light-island mx-auto w-full max-w-xl overflow-x-clip px-3 sm:px-4"
         }
-        style={immersive && vvHeight ? { height: vvHeight, maxHeight: vvHeight } : immersive ? { height: "100dvh" } : undefined}
+        style={
+          immersive
+            ? vvBox
+              ? {
+                  top: vvBox.top,
+                  left: vvBox.left,
+                  width: vvBox.width,
+                  height: vvBox.height,
+                }
+              : { top: 0, left: 0, right: 0, bottom: 0, height: "100dvh" }
+            : undefined
+        }
       >
       <div
         ref={cardRef}
@@ -1341,10 +1366,12 @@ export default function ReceptionistDemo() {
         }
       >
 
-        {/* Header */}
+        {/* Header — compact while typing so it stays visible above the keyboard */}
         <div
           data-maya-header
-          className={`flex-shrink-0 px-3 sm:px-5 py-2.5 sm:py-4 ${immersive ? "pt-[max(0.65rem,env(safe-area-inset-top))]" : ""}`}
+          className={`flex-shrink-0 px-3 sm:px-5 ${
+            immersive && composerFocused ? "py-1.5" : "py-2.5 sm:py-4"
+          } ${immersive && !composerFocused ? "pt-[max(0.65rem,env(safe-area-inset-top))]" : ""}`}
           style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}
         >
           <div className="flex items-center gap-2 sm:gap-3">
@@ -1359,8 +1386,8 @@ export default function ReceptionistDemo() {
                 Features
               </button>
             )}
-            <div className="relative flex-shrink-0">
-              <MayaAvatar size="w-9 h-9 sm:w-11 sm:h-11" />
+            <div className={`relative flex-shrink-0 ${immersive && composerFocused ? "scale-90" : ""}`}>
+              <MayaAvatar size={immersive && composerFocused ? "w-8 h-8" : "w-9 h-9 sm:w-11 sm:h-11"} />
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400 border-2 border-[#0B5D50]" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1370,10 +1397,12 @@ export default function ReceptionistDemo() {
                   <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> LIVE
                 </span>
               </div>
-              <p className="text-[10px] sm:text-[11px] text-white/60 leading-tight truncate">Bright Smile Dental Care</p>
+              {!(immersive && composerFocused) && (
+                <p className="text-[10px] sm:text-[11px] text-white/60 leading-tight truncate">Bright Smile Dental Care</p>
+              )}
             </div>
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <LiveCallLauncher />
+              {!(immersive && composerFocused) && <LiveCallLauncher />}
               <button
                 type="button"
                 onClick={toggleMute}
@@ -1649,22 +1678,30 @@ export default function ReceptionistDemo() {
               </span>
             </div>
           ) : (
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onFocus={() => setComposerFocused(true)}
-              onBlur={() => {
-                window.setTimeout(() => {
-                  if (document.activeElement !== inputRef.current) setComposerFocused(false);
-                }, 120);
-              }}
-              placeholder={recState === "transcribing" ? "Transcribing…" : hasOpenForm(messages) ? "Speak or type…" : "Type or tap mic…"}
-              disabled={recState === "transcribing"}
-              className="flex-1 min-w-0 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full bg-[#F4F8F7] border border-transparent text-sm text-gray-800 outline-none focus:border-[#0E7C6B]/40 focus:bg-white transition-all disabled:opacity-60"
-              autoComplete="off"
-              enterKeyHint="send"
-            />
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onFocus={() => {
+                  setComposerFocused(true);
+                  // Stop iOS from scrolling the layout viewport (which hides the header).
+                  requestAnimationFrame(() => {
+                    window.scrollTo(0, 0);
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                  });
+                }}
+                onBlur={() => {
+                  window.setTimeout(() => {
+                    if (document.activeElement !== inputRef.current) setComposerFocused(false);
+                  }, 120);
+                }}
+                placeholder={recState === "transcribing" ? "Transcribing…" : hasOpenForm(messages) ? "Speak or type…" : "Type or tap mic…"}
+                disabled={recState === "transcribing"}
+                className="flex-1 min-w-0 px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-full bg-[#F4F8F7] border border-transparent text-sm text-gray-800 outline-none focus:border-[#0E7C6B]/40 focus:bg-white transition-all disabled:opacity-60"
+                autoComplete="off"
+                enterKeyHint="send"
+              />
           )}
 
           <button
