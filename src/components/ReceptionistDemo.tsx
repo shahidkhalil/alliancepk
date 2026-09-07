@@ -358,6 +358,7 @@ function inferInteractiveExtras(
 ): Partial<Pick<ChatMsg, "showServices" | "showSchedule" | "quickReplies" | "content">> {
   if (opts.bookingDone || opts.formOpen) return {};
 
+  // Only when the patient explicitly asked for the catalog
   if (opts.servicesAsked) {
     return {
       showServices: true,
@@ -368,9 +369,10 @@ function inferInteractiveExtras(
     };
   }
 
-  const askingService = /\b(which|what)\s+(service|treatment)\b|\bservice\s+(would|do)\s+you\b|\bchoose\s+a\s+service\b/i.test(
-    replyText
-  );
+  const askingService =
+    /\b(which|what)\s+(service|treatment)\b|\b(service|treatment)\s+(would|do|are)\s+you\b|\bchoose\s+(a\s+)?(service|treatment)\b|\b(pick|select)\s+(a\s+)?(service|treatment)\b|\binterested\s+in\b.*\b(service|treatment)\b/i.test(
+      replyText
+    );
   const askingEmail = /\bemail\b/i.test(replyText) && /\b(skip|optional|prefer|want to (add|share|leave))\b/i.test(replyText);
   const askingSchedule =
     /\b(day|date|time|when|schedule|available|prefer(red)?\s+(day|time))\b/i.test(replyText) ||
@@ -389,7 +391,8 @@ function inferInteractiveExtras(
 
   if (!inBooking) return {};
 
-  if (!draft.service && (askingService || opts.chatBooking)) {
+  // Show the service picker only when Maya is actually asking which service — not on every booking turn.
+  if (!draft.service && askingService) {
     return {
       showServices: true,
       content: replyText || "Which service would you like to book? Tap one below.",
