@@ -38,10 +38,9 @@ VOICE STYLE: natural, friendly, brief — like a real phone receptionist. One or
 
 LANGUAGE LOCK (critical — never break this):
 - Supported languages: English and Urdu (including Roman Urdu / Romanized Urdu).
-- If a LANGUAGE LOCK line appears later in these instructions, obey it for the ENTIRE call — do not code-switch, do not mix languages mid-sentence, do not flip to English mid-call if Urdu is locked (or vice versa).
-- Until locked: greet briefly in English, then match the caller's first clear language (English or Urdu/Roman Urdu) and stay there.
-- If PATIENT PREFERENCES language is present and no lock yet, prefer that language.
+- A LANGUAGE LOCK line is set before/during the call from the patient's language button. Obey it for every sentence — do not code-switch, do not mix languages, do not flip mid-call unless a new LANGUAGE LOCK / LANGUAGE SWITCH appears.
 - Affirmations in Urdu include: ہاں, جی, ہاں جی, بالکل, ٹھیک ہے, theek hai, bilkul, sahi hai, haan, ji.
+- If PATIENT PREFERENCES language is present and no lock yet, prefer that language.
 
 FACTS YOU KNOW (never invent anything beyond this):
 Address: ${c.address}. Phone/WhatsApp: ${c.phone}.
@@ -68,6 +67,7 @@ RULES:
 - Once you know their name, use their first name occasionally (about once every few turns) — never re-ask for it.
 - If RETURNING PATIENT MEMORY is present, greet by name and use pending questions/preferences subtly — never invent them.
 - Confirm you're speaking to the right person before sharing booking details from memory.
+- CHECK APPOINTMENTS: If they ask about an existing/future booking, call lookup_appointments with their phone (ask once if missing). Read back service, time, and reference clearly. Never invent appointments.
 - NEVER restart the booking script. NEVER repeat a question already answered. NEVER re-confirm a locked field. If you already asked something and they answered, move forward only.
 - ON-SCREEN FORM / LOCKED fields are FINAL — treat them as already collected; skip those steps silently.
 
@@ -157,6 +157,23 @@ const BOOK_TOOL = {
   },
 };
 
+const LOOKUP_APPOINTMENTS_TOOL = {
+  type: "function",
+  name: "lookup_appointments",
+  description:
+    "Look up the patient's existing appointments by phone. Use when they ask to check bookings, future appointments, or a previous reservation.",
+  parameters: {
+    type: "object",
+    properties: {
+      phone: {
+        type: "string",
+        description: "Patient phone number (10+ digits). Prefer the confirmed/on-screen phone.",
+      },
+    },
+    required: ["phone"],
+  },
+};
+
 exports.realtimeToken = onRequest(
   { region: "asia-south1", cors: false, timeoutSeconds: 30, memory: "256MiB", minInstances: 1, secrets: [OPENAI_API_KEY] },
   async (req, res) => {
@@ -173,6 +190,7 @@ exports.realtimeToken = onRequest(
       const clinic = getClinic(req.body?.clinicId);
       const clinicId = req.body?.clinicId || "demo";
       const draft = req.body?.bookingDraft || null;
+      const chosenLang = req.body?.language === "ur" ? "ur" : req.body?.language === "en" ? "en" : null;
       let patientMemory = null;
       const phoneGuess = extractPhoneCandidate(draft, []);
       if (phoneGuess) {
@@ -182,7 +200,23 @@ exports.realtimeToken = onRequest(
           console.warn("realtime patient memory lookup failed:", e.message);
         }
       }
-      const instructions = liveInstructions(clinic, patientMemory);
+      let instructions = liveInstructions(clinic, patientMemory);
+      if (chosenLang === "ur") {
+        instructions += `\n\nLANGUAGE LOCK: Urdu for the ENTIRE call (Urdu script or natural Roman Urdu). Do NOT switch to English unless a LANGUAGE SWITCH appears.\n`;
+      } else if (chosenLang === "en") {
+        instructions += `\n\nLANGUAGE LOCK: English for the ENTIRE call. Do NOT switch to Urdu unless a LANGUAGE SWITCH appears.\n`;
+      }
+
+      const transcription = {
+        model: "gpt-4o-transcribe",
+        prompt:
+          chosenLang === "ur"
+            ? "Transcribe Urdu (Arabic script or Roman Urdu). Expect patient names, phone numbers spoken digit-by-digit, and emails with at/dot."
+            : chosenLang === "en"
+              ? "Transcribe English. Expect patient full names, US phone numbers spoken digit-by-digit or in groups, and email addresses spelled with at/dot."
+              : "Transcribe English or Urdu (including Roman Urdu). Expect patient full names, US phone numbers spoken digit-by-digit or in groups, and email addresses spelled with at/dot.",
+      };
+      if (chosenLang) transcription.language = chosenLang;
 
       const r = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
         method: "POST",
@@ -198,19 +232,12 @@ exports.realtimeToken = onRequest(
             instructions,
             audio: {
               input: {
-                // Separate STT layer — much more accurate on names / phone digits / emails
-                // than the speech-to-speech model alone.
-                transcription: {
-                  model: "gpt-4o-transcribe",
-                  // No fixed language — callers may speak English or Urdu; client locks language after detection.
-                  prompt:
-                    "Transcribe English or Urdu (including Roman Urdu). Expect patient full names, US phone numbers spoken digit-by-digit or in groups, and email addresses spelled with at/dot.",
-                },
+                transcription,
                 noise_reduction: { type: "near_field" },
               },
               output: { voice: "marin" },
             },
-            tools: [RECALL_TOOL, CONFIRM_FIELD_TOOL, BOOK_TOOL],
+            tools: [RECALL_TOOL, CONFIRM_FIELD_TOOL, BOOK_TOOL, LOOKUP_APPOINTMENTS_TOOL],
             tool_choice: "auto",
           },
         }),
@@ -279,3 +306,71 @@ exports.bookAppointmentHttp = onRequest(
     }
   }
 );
+
+/** Look up appointments by phone for Live Call / check-booking flow. */
+exports.lookupAppointmentsHttp = onRequest(
+  {
+    region: "asia-south1",
+    cors: false,
+    timeoutSeconds: 20,
+    memory: "256MiB",
+  },
+  async (req, res) => {
+    if (applyCors(req, res)) return;
+    if (req.method !== "POST") { res.status(405).json({ error: "Use POST" }); return; }
+
+    const ip = clientIp(req);
+    if (!(await checkRateLimit(ip, 30, "lookup"))) {
+      res.status(429).json({ error: "Too many lookups today." });
+      return;
+    }
+
+    try {
+      const phone = String(req.body?.phone || "").trim();
+      const clinicId = String(req.body?.clinicId || "demo").slice(0, 40);
+      const digits = phone.replace(/\D/g, "");
+      if (digits.length < 10) {
+        res.status(400).json({ error: "Need a valid phone number (10+ digits)." });
+        return;
+      }
+
+      const memory = await lookupPatientMemory(clinicId, phone);
+      if (!memory) {
+        res.status(200).json({ found: false, appointments: [], name: "", visitCount: 0 });
+        return;
+      }
+
+      const appointments = Array.isArray(memory.history)
+        ? memory.history.map((h) => ({
+            service: h.service || memory.lastService || "",
+            preferredTime: h.preferredTime || memory.lastPreferredTime || "",
+            reference: h.reference || memory.lastReference || "",
+            urgent: Boolean(h.urgent),
+            bookedAt: h.bookedAt || "",
+          }))
+        : [];
+
+      if (!appointments.length && (memory.lastService || memory.lastPreferredTime)) {
+        appointments.push({
+          service: memory.lastService || "",
+          preferredTime: memory.lastPreferredTime || "",
+          reference: memory.lastReference || "",
+          urgent: false,
+          bookedAt: "",
+        });
+      }
+
+      res.status(200).json({
+        found: true,
+        name: memory.name || "",
+        visitCount: memory.visitCount || appointments.length,
+        latest: appointments[0] || null,
+        appointments,
+      });
+    } catch (err) {
+      console.error("lookupAppointmentsHttp failed:", err);
+      res.status(500).json({ error: "Lookup failed." });
+    }
+  }
+);
+

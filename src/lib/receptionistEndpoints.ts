@@ -15,10 +15,14 @@ export const REALTIME_TOKEN_ENDPOINT =
 export const BOOK_ENDPOINT =
   process.env.NEXT_PUBLIC_BOOK_ENDPOINT || "/api/book";
 
+export const LOOKUP_APPOINTMENTS_ENDPOINT =
+  process.env.NEXT_PUBLIC_LOOKUP_APPOINTMENTS_ENDPOINT || "/api/lookup-appointments";
+
 /** Absolute URL for localhost / environments without hosting rewrites. */
 export const RECEPTIONIST_ENDPOINT_ABSOLUTE = `${CF}/clinicReceptionist`;
 export const REALTIME_TOKEN_ENDPOINT_ABSOLUTE = `${CF}/realtimeToken`;
 export const BOOK_ENDPOINT_ABSOLUTE = `${CF}/bookAppointmentHttp`;
+export const LOOKUP_APPOINTMENTS_ENDPOINT_ABSOLUTE = `${CF}/lookupAppointmentsHttp`;
 
 function isLocalHost(hostname: string) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
@@ -54,4 +58,10 @@ export function bookUrl() {
   const override = process.env.NEXT_PUBLIC_BOOK_ENDPOINT;
   if (typeof window !== "undefined" && override?.startsWith("http")) return override;
   return resolveEndpoint(BOOK_ENDPOINT, BOOK_ENDPOINT_ABSOLUTE);
+}
+
+export function lookupAppointmentsUrl() {
+  const override = process.env.NEXT_PUBLIC_LOOKUP_APPOINTMENTS_ENDPOINT;
+  if (typeof window !== "undefined" && override?.startsWith("http")) return override;
+  return resolveEndpoint(LOOKUP_APPOINTMENTS_ENDPOINT, LOOKUP_APPOINTMENTS_ENDPOINT_ABSOLUTE);
 }

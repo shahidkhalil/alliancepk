@@ -41,6 +41,7 @@ exports.transcribeAudio = require("./transcribe").transcribeAudio;
 exports.packageOrder = require("./packageOrder").packageOrder;
 exports.realtimeToken = require("./realtime").realtimeToken;
 exports.bookAppointmentHttp = require("./realtime").bookAppointmentHttp;
+exports.lookupAppointmentsHttp = require("./realtime").lookupAppointmentsHttp;
 exports.sendAppointmentReminders = require("./reminders").sendAppointmentReminders;
 exports.adminInsights = require("./adminInsights").adminInsights;
 

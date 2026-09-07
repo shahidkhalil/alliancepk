@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Loader2, CalendarCheck2, Phone, Clock, Sparkles, Mic, Square, Trash2, Volume2, VolumeX, AlertTriangle, ChevronRight } from "lucide-react";
+import { Send, Loader2, CalendarCheck2, Phone, Clock, Sparkles, Mic, Square, Trash2, Volume2, VolumeX, AlertTriangle, ChevronRight, ChevronLeft, MessageCircle } from "lucide-react";
 import { LiveCallLauncher } from "./LiveCall";
 import {
   BookingDraft,
@@ -659,8 +659,10 @@ export default function ReceptionistDemo() {
   const cardRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [composerFocused, setComposerFocused] = useState(false);
-  /** Mobile keyboard: shrink message pane so the whole card fits above the keyboard. */
-  const [chatPanePx, setChatPanePx] = useState<number | null>(null);
+  /** Mobile: full-screen chat so keyboard / page scroll don't break the UI. */
+  const [immersive, setImmersive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [vvHeight, setVvHeight] = useState<number | null>(null);
 
   const focusComposer = () => {
     // Defer until after React re-enable / layout so focus sticks on mobile too.
@@ -713,53 +715,66 @@ export default function ReceptionistDemo() {
     scrollChatToBottom(true);
   }, [messages, busy, scrollChatToBottom]);
 
-  // iOS/Android keyboard: keep header + messages + composer inside the visual viewport
-  // so page CTAs don't squeeze between the input and the keyboard.
+  // Mobile: open Maya as a full-page chat by default for usable typing UX.
+  const leftImmersiveRef = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const syncPaneHeight = () => {
-      const mobile = window.matchMedia("(max-width: 639px)").matches;
-      if (!composerFocused || !mobile) {
-        setChatPanePx(null);
+    const mq = window.matchMedia("(max-width: 639px)");
+    const apply = () => {
+      const mobile = mq.matches;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setImmersive(false);
         return;
       }
-      const vv = window.visualViewport;
-      const card = cardRef.current;
-      if (!vv || !card) return;
-
-      const header = card.querySelector<HTMLElement>("[data-maya-header]");
-      const speaking = card.querySelector<HTMLElement>("[data-maya-speaking]");
-      const chrome =
-        (header?.offsetHeight ?? 52) +
-        (formRef.current?.offsetHeight ?? 60) +
-        (speaking?.offsetHeight ?? 0);
-      const available = Math.floor(vv.height - chrome - 8);
-      setChatPanePx(Math.max(140, Math.min(380, available)));
+      if (!leftImmersiveRef.current) setImmersive(true);
     };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
-    syncPaneHeight();
-    const vv = window.visualViewport;
-    vv?.addEventListener("resize", syncPaneHeight);
-    vv?.addEventListener("scroll", syncPaneHeight);
-    window.addEventListener("orientationchange", syncPaneHeight);
-    return () => {
-      vv?.removeEventListener("resize", syncPaneHeight);
-      vv?.removeEventListener("scroll", syncPaneHeight);
-      window.removeEventListener("orientationchange", syncPaneHeight);
-    };
-  }, [composerFocused]);
-
+  // Lock page scroll + size shell to the visual viewport while immersive (handles iOS keyboard).
   useEffect(() => {
-    if (!composerFocused || chatPanePx == null) return;
-    const card = cardRef.current;
-    if (!card) return;
-    // After shrinking, pin the card so the composer sits above the keyboard.
+    if (!immersive) {
+      setVvHeight(null);
+      return;
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const syncVv = () => {
+      const vv = window.visualViewport;
+      setVvHeight(vv ? Math.round(vv.height) : window.innerHeight);
+    };
+    syncVv();
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", syncVv);
+    vv?.addEventListener("scroll", syncVv);
+    window.addEventListener("orientationchange", syncVv);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      vv?.removeEventListener("resize", syncVv);
+      vv?.removeEventListener("scroll", syncVv);
+      window.removeEventListener("orientationchange", syncVv);
+    };
+  }, [immersive]);
+
+  const exitImmersive = useCallback(() => {
+    leftImmersiveRef.current = true;
+    setImmersive(false);
+    setComposerFocused(false);
+    inputRef.current?.blur();
+    // Reveal product features on the detail page
     requestAnimationFrame(() => {
-      card.scrollIntoView({ block: "end", behavior: "auto" });
-      scrollChatToBottom(false);
+      document.getElementById("maya-features")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [composerFocused, chatPanePx, scrollChatToBottom]);
+  }, []);
+
+  const enterImmersive = useCallback(() => {
+    leftImmersiveRef.current = false;
+    setImmersive(true);
+  }, []);
 
   // Email deep link: /ai-receptionist?ref=XXXX&intent=check
   useEffect(() => {
@@ -1290,19 +1305,60 @@ export default function ReceptionistDemo() {
   };
 
   return (
-    <div className="light-island mx-auto w-full max-w-xl overflow-x-clip px-3 sm:px-4">
+    <>
+      {isMobile && !immersive && (
+        <div className="mx-auto w-full max-w-xl px-3">
+          <button
+            type="button"
+            onClick={enterImmersive}
+            className="w-full rounded-2xl border border-[#0E7C6B]/20 bg-gradient-to-br from-[#06382F] to-[#0E7C6B] p-5 text-left shadow-lg shadow-[#0E7C6B]/20"
+          >
+            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-white/70">
+              <MessageCircle className="w-3.5 h-3.5" /> Live demo
+            </span>
+            <span className="mt-2 block text-lg font-extrabold text-white">Continue chatting with Maya</span>
+            <span className="mt-1 block text-sm text-white/75">Full-screen chat — tap to reopen</span>
+          </button>
+        </div>
+      )}
+
+      <div
+        className={
+          immersive
+            ? "fixed inset-0 z-[85] flex flex-col bg-white"
+            : isMobile
+              ? "hidden"
+              : "light-island mx-auto w-full max-w-xl overflow-x-clip px-3 sm:px-4"
+        }
+        style={immersive && vvHeight ? { height: vvHeight, maxHeight: vvHeight } : immersive ? { height: "100dvh" } : undefined}
+      >
       <div
         ref={cardRef}
-        className="max-w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:rounded-3xl sm:shadow-xl sm:shadow-gray-200/50"
+        className={
+          immersive
+            ? "flex h-full min-h-0 w-full flex-col overflow-hidden bg-white"
+            : "max-w-full overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm sm:rounded-3xl sm:shadow-xl sm:shadow-gray-200/50"
+        }
       >
 
         {/* Header */}
         <div
           data-maya-header
-          className="px-3 sm:px-5 py-2.5 sm:py-4"
+          className={`flex-shrink-0 px-3 sm:px-5 py-2.5 sm:py-4 ${immersive ? "pt-[max(0.65rem,env(safe-area-inset-top))]" : ""}`}
           style={{ background: "linear-gradient(120deg, #06382F, #0E7C6B)" }}
         >
           <div className="flex items-center gap-2 sm:gap-3">
+            {immersive && (
+              <button
+                type="button"
+                onClick={exitImmersive}
+                className="flex items-center gap-0.5 rounded-full bg-white/15 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-white/25 transition-colors flex-shrink-0"
+                aria-label="Back to features"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Features
+              </button>
+            )}
             <div className="relative flex-shrink-0">
               <MayaAvatar size="w-9 h-9 sm:w-11 sm:h-11" />
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-400 border-2 border-[#0B5D50]" />
@@ -1333,12 +1389,9 @@ export default function ReceptionistDemo() {
         <div
           ref={chatScrollRef}
           className={`overflow-y-auto overflow-x-hidden overscroll-contain px-2.5 sm:px-4 py-3 sm:py-5 space-y-3 sm:space-y-4 ${
-            chatPanePx == null ? "h-[380px] sm:h-[420px]" : ""
+            immersive ? "min-h-0 flex-1" : "h-[420px]"
           }`}
-          style={{
-            background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)",
-            ...(chatPanePx != null ? { height: chatPanePx } : null),
-          }}
+          style={{ background: "linear-gradient(180deg, #F4F8F7 0%, #FAFCFB 100%)" }}
         >
           <AnimatePresence initial={false}>
             {messages.map((m) => {
@@ -1564,8 +1617,8 @@ export default function ReceptionistDemo() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-[#0E7C6B]/5 border-t border-[#0E7C6B]/10 px-4 py-2 flex items-center gap-2"
-            >
+                className="flex-shrink-0 bg-[#0E7C6B]/5 border-t border-[#0E7C6B]/10 px-4 py-2 flex items-center gap-2"
+              >
               <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1 }}>🔊</motion.span>
               <span className="text-xs text-[#0E7C6B] font-semibold flex-1">Maya is speaking…</span>
               <button type="button" onClick={stopSpeaking} className="text-xs font-bold text-[#0E7C6B] bg-white border border-[#0E7C6B]/25 rounded-full px-3 py-1 hover:bg-[#0E7C6B] hover:text-white transition-colors">
@@ -1581,8 +1634,10 @@ export default function ReceptionistDemo() {
             e.preventDefault();
             send(input.trim());
           }}
-          className="relative z-[1] bg-white border-t border-gray-100 px-2.5 sm:px-4 py-2.5 sm:py-3.5 flex items-center gap-1.5 sm:gap-2.5"
-        >
+            className={`relative z-[1] flex-shrink-0 bg-white border-t border-gray-100 px-2.5 sm:px-4 py-2.5 sm:py-3.5 flex items-center gap-1.5 sm:gap-2.5 ${
+              immersive ? "pb-[max(0.75rem,env(safe-area-inset-bottom))]" : ""
+            }`}
+          >
           {recState === "recording" ? (
             <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 py-1.5 rounded-full bg-red-50 border border-red-200 min-w-0">
               <button type="button" onClick={cancelRecording} className="w-8 h-8 rounded-full flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-100 transition-colors flex-shrink-0" aria-label="Cancel recording">
@@ -1638,13 +1693,12 @@ export default function ReceptionistDemo() {
         </form>
       </div>
 
-      <p
-        className={`text-center text-xs text-gray-400 mt-4 ${
-          composerFocused ? "max-sm:hidden" : ""
-        }`}
-      >
-        Live demo on a sample clinic · Your clinic gets its own Maya — trained on <span className="font-semibold text-gray-500">your</span> services, prices &amp; hours
-      </p>
-    </div>
+      {!immersive && (
+        <p className={`text-center text-xs text-gray-400 mt-4 ${composerFocused ? "max-sm:hidden" : ""}`}>
+          Live demo on a sample clinic · Your clinic gets its own Maya — trained on <span className="font-semibold text-gray-500">your</span> services, prices &amp; hours
+        </p>
+      )}
+      </div>
+    </>
   );
 }

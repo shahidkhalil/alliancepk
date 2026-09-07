@@ -52,6 +52,10 @@
         "function": { "functionId": "bookAppointmentHttp", "region": "asia-south1" }
       },
       {
+        "source": "/api/lookup-appointments",
+        "function": { "functionId": "lookupAppointmentsHttp", "region": "asia-south1" }
+      },
+      {
         "source": "/api/business-audit",
         "function": { "functionId": "auditWebsite", "region": "asia-south1" }
       },

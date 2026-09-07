@@ -117,7 +117,7 @@ export default function AIReceptionist() {
         <AICallMockup />
       </section>
 
-      <ParallaxSection className="border-b border-[#00B4D8]/10 bg-gradient-to-b from-[#F4FBFD] to-white py-16" intensity={34}>
+      <ParallaxSection id="maya-features" className="border-b border-[#00B4D8]/10 bg-gradient-to-b from-[#F4FBFD] to-white py-16 scroll-mt-20" intensity={34}>
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-10 text-center">
             <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#00B4D8]/25 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#0077A8] shadow-sm">

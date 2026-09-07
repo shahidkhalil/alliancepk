@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PhoneOff, Loader2, Mic, CalendarCheck2, ChevronDown, ChevronUp } from "lucide-react";
+import { PhoneOff, Loader2, Mic, CalendarCheck2, ChevronDown, ChevronUp, CalendarSearch } from "lucide-react";
 import {
   BookingDraft,
   EMPTY_DRAFT,
@@ -11,7 +11,7 @@ import {
   mergeDraft,
 } from "@/lib/bookingExtract";
 import { trackDemoComplete, trackDemoStart, trackEvent } from "@/lib/analytics";
-import { realtimeTokenUrl, bookUrl } from "@/lib/receptionistEndpoints";
+import { realtimeTokenUrl, bookUrl, lookupAppointmentsUrl } from "@/lib/receptionistEndpoints";
 
 const LIVE_SERVICES = [
   "Consultation & Check-up",
@@ -26,10 +26,18 @@ const LIVE_SERVICES = [
   "Wisdom Tooth Extraction",
 ];
 
-type CallState = "connecting" | "live" | "ended" | "error";
+type CallState = "choose_language" | "connecting" | "live" | "ended" | "error";
 type RecallField = "name" | "phone" | "email" | "other";
 type CallLanguage = "en" | "ur";
 type LockableField = "name" | "phone" | "email" | "service" | "schedule";
+
+type ApptSummary = {
+  service: string;
+  preferredTime: string;
+  reference: string;
+  urgent?: boolean;
+  bookedAt?: string;
+};
 
 interface Props {
   onClose: () => void;
@@ -414,7 +422,7 @@ function canBook(payload: ReturnType<typeof buildBookingPayload>, flags: Confirm
 }
 
 export default function LiveCall({ onClose }: Props) {
-  const [state, setState] = useState<CallState>("connecting");
+  const [state, setState] = useState<CallState>("choose_language");
   const [error, setError] = useState("");
   const [seconds, setSeconds] = useState(0);
   const [maxSeconds, setMaxSeconds] = useState(180);
@@ -424,6 +432,13 @@ export default function LiveCall({ onClose }: Props) {
   const [draft, setDraft] = useState<BookingDraft>({ ...EMPTY_DRAFT });
   const [formOpen, setFormOpen] = useState(true);
   const [callLanguage, setCallLanguage] = useState<CallLanguage | null>(null);
+  const [callStarted, setCallStarted] = useState(false);
+  const [checkingAppts, setCheckingAppts] = useState(false);
+  const [apptResults, setApptResults] = useState<{
+    found: boolean;
+    name?: string;
+    appointments: ApptSummary[];
+  } | null>(null);
 
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -497,18 +512,148 @@ export default function LiveCall({ onClose }: Props) {
   }, []);
 
   const lockCallLanguage = useCallback(
-    (lang: CallLanguage, opts?: { speakNudge?: boolean }) => {
-      if (callLanguageRef.current === lang) return;
+    (lang: CallLanguage, opts?: { speakNudge?: boolean; switchMidCall?: boolean }) => {
+      const prev = callLanguageRef.current;
       callLanguageRef.current = lang;
       setCallLanguage(lang);
+
+      const dc = dcRef.current;
+      const switching = opts?.switchMidCall && prev && prev !== lang;
+
       sendSessionInstructions(
-        opts?.speakNudge
-          ? `The patient chose ${lang === "ur" ? "Urdu" : "English"}. Continue only in that language from your next turn.`
-          : ""
+        switching
+          ? `LANGUAGE SWITCH: Patient switched to ${lang === "ur" ? "Urdu" : "English"}. From your NEXT word speak ONLY in that language. Acknowledge the switch in one short phrase, then continue where you left off.`
+          : opts?.speakNudge
+            ? `The patient chose ${lang === "ur" ? "Urdu" : "English"}. Continue only in that language from your next turn.`
+            : ""
       );
+
+      if (dc && dc.readyState === "open") {
+        try {
+          dc.send(
+            JSON.stringify({
+              type: "session.update",
+              session: {
+                type: "realtime",
+                audio: {
+                  input: {
+                    transcription: {
+                      model: "gpt-4o-transcribe",
+                      language: lang,
+                      prompt:
+                        lang === "ur"
+                          ? "Transcribe Urdu (Arabic script or Roman Urdu). Expect names, phone digits, emails."
+                          : "Transcribe English. Expect names, phone digits, emails.",
+                    },
+                  },
+                },
+              },
+            })
+          );
+          if (switching || opts?.speakNudge) {
+            dc.send(
+              JSON.stringify({
+                type: "response.create",
+                response: {
+                  instructions:
+                    lang === "ur"
+                      ? "Ab sirf Urdu mein bolo. Ek short line mein language switch acknowledge karo, phir baat continue karo."
+                      : "Speak only English now. Acknowledge the language switch in one short line, then continue.",
+                },
+              })
+            );
+          }
+        } catch {
+          /* channel closed */
+        }
+      }
     },
     [sendSessionInstructions]
   );
+
+  const fetchAppointments = useCallback(async (phone: string) => {
+    const data = await postJson(
+      lookupAppointmentsUrl(),
+      { clinicId: "demo", phone },
+      "lookup"
+    );
+    const appointments = Array.isArray(data.appointments)
+      ? (data.appointments as ApptSummary[])
+      : [];
+    return {
+      found: Boolean(data.found),
+      name: String(data.name || ""),
+      appointments,
+      latest: (data.latest as ApptSummary | null) || appointments[0] || null,
+      visitCount: Number(data.visitCount || appointments.length || 0),
+      raw: data,
+    };
+  }, []);
+
+  const checkMyAppointments = useCallback(async () => {
+    const phone =
+      draftRef.current.phone.trim() ||
+      confirmedValuesRef.current.phone ||
+      "";
+    if (digitsOnly(phone).length < 10) {
+      setFormOpen(true);
+      setApptResults(null);
+      const dc = dcRef.current;
+      if (dc && dc.readyState === "open") {
+        try {
+          dc.send(
+            JSON.stringify({
+              type: "response.create",
+              response: {
+                instructions:
+                  callLanguageRef.current === "ur"
+                    ? "Patient apni appointments check karna chahta hai. Unse phone number maango (ya on-screen form mein type karne ko kaho), phir lookup_appointments call karo."
+                    : "The patient wants to check their appointments. Ask for their phone number once (or ask them to type it on screen), then call lookup_appointments.",
+              },
+            })
+          );
+        } catch {
+          /* ignore */
+        }
+      }
+      return;
+    }
+
+    setCheckingAppts(true);
+    try {
+      const result = await fetchAppointments(phone);
+      setApptResults({
+        found: result.found,
+        name: result.name,
+        appointments: result.appointments,
+      });
+      const dc = dcRef.current;
+      if (dc && dc.readyState === "open") {
+        const summary = result.found
+          ? result.appointments
+              .slice(0, 3)
+              .map(
+                (a, i) =>
+                  `${i + 1}. ${a.service || "Appointment"} — ${a.preferredTime || "time TBD"}${a.reference ? ` (ref ${a.reference})` : ""}`
+              )
+              .join("; ")
+          : "No appointments found for this phone.";
+        dc.send(
+          JSON.stringify({
+            type: "response.create",
+            response: {
+              instructions: `The patient tapped Check appointments. Lookup result: ${summary}. Tell them clearly in the locked language. Do not invent bookings.`,
+            },
+          })
+        );
+      }
+    } catch (err) {
+      setApptResults({ found: false, appointments: [] });
+      setError(err instanceof Error ? err.message : "Could not look up appointments.");
+    } finally {
+      setCheckingAppts(false);
+    }
+  }, [fetchAppointments]);
 
   /** Push locked form state into the live session so Maya stops re-asking — silent update only. */
   const pushFormLockToMaya = useCallback(
@@ -644,9 +789,10 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
   );
 
   useEffect(() => {
+    if (!callStarted) return;
     trackDemoStart({ demo_type: "ai_receptionist_voice", voice_used: true });
     trackEvent("appointment_booking_start", { channel: "voice" });
-  }, []);
+  }, [callStarted]);
 
   const applyFieldConfirm = useCallback((field: RecallField | "service" | "schedule", opts?: { emailSkipped?: boolean }) => {
     const flags = { ...confirmationFlagsRef.current };
@@ -794,6 +940,8 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
   hangUpRef.current = hangUp;
 
   useEffect(() => {
+    if (!callStarted) return;
+
     let cancelled = false;
     const gen = ++connectGenRef.current;
     setState("connecting");
@@ -819,7 +967,11 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
       try {
         const tokenData = await postJson(
           realtimeTokenUrl(),
-          { clinicId: "demo", bookingDraft: draftRef.current },
+          {
+            clinicId: "demo",
+            bookingDraft: draftRef.current,
+            language: callLanguageRef.current || "en",
+          },
           "session"
         );
         if (isStale()) return;
@@ -1146,6 +1298,63 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
                   );
                 }
 
+                if (call.name === "lookup_appointments") {
+                  let args: { phone?: string } = {};
+                  try {
+                    args = JSON.parse(call.arguments || "{}");
+                  } catch {
+                    /* ignore */
+                  }
+                  const phone =
+                    String(args.phone || "").trim() ||
+                    draftRef.current.phone.trim() ||
+                    confirmedValuesRef.current.phone ||
+                    "";
+                  let output: Record<string, unknown> = { found: false, appointments: [] };
+                  if (digitsOnly(phone).length < 10) {
+                    output = {
+                      found: false,
+                      reason: "Need a valid phone number. Ask the patient for their phone, or have them type it on screen.",
+                    };
+                  } else {
+                    try {
+                      const result = await fetchAppointments(phone);
+                      setApptResults({
+                        found: result.found,
+                        name: result.name,
+                        appointments: result.appointments,
+                      });
+                      if (!draftRef.current.phone.trim() && phone) {
+                        const next = mergeDraft(draftRef.current, { phone: formatPhoneDigits(digitsOnly(phone)) });
+                        draftRef.current = next;
+                        setDraft(next);
+                      }
+                      output = {
+                        found: result.found,
+                        name: result.name,
+                        visitCount: result.visitCount,
+                        latest: result.latest,
+                        appointments: result.appointments.slice(0, 5),
+                        instruction: result.found
+                          ? "Read back the latest appointment clearly (service, time, reference). Offer to help with another booking if needed."
+                          : "No appointments found for that phone. Offer to book a new one.",
+                      };
+                    } catch (err) {
+                      output = {
+                        found: false,
+                        reason: err instanceof Error ? err.message : "Lookup failed.",
+                      };
+                    }
+                  }
+                  dc.send(
+                    JSON.stringify({
+                      type: "conversation.item.create",
+                      item: { type: "function_call_output", call_id: call.call_id, output: JSON.stringify(output) },
+                    })
+                  );
+                  continue;
+                }
+
                 if (call.name === "book_appointment") {
                   let llmArgs: { notes?: string } = {};
                   try {
@@ -1253,8 +1462,9 @@ When you next speak, skip every locked field. Only pursue NEXT REQUIRED STEP. Us
 
         // Reinforce language lock, name-first flow, and booking-detail accuracy
         const boost = `
-LANGUAGE: English or Urdu only. Once LANGUAGE LOCK is set (or the caller clearly speaks one language), stay in that language for the entire call — never switch mid-call.
+LANGUAGE: Patient already chose a language before the call. Obey LANGUAGE LOCK. If they tap a language switch, follow LANGUAGE SWITCH immediately — never mix languages.
 GREETING: Ask for the caller's name early. After confirm_field(name), use their first name occasionally. Never re-ask name.
+CHECK APPOINTMENTS: If they ask about existing/future bookings, call lookup_appointments with their phone.
 BOOKING ORDER: Name → Service → Phone → Email → Day/time. Skip any locked / on-screen form fields.
 BOOKING DETAIL RULES (highest priority):
 - confirmed_fields and ON-SCREEN FORM values are locked — never re-ask those.
@@ -1264,7 +1474,7 @@ BOOKING DETAIL RULES (highest priority):
 - Email: confirm_field(email) or email_skipped — never silently skip.
 - Typing on the form locks that field; only then skip verbal confirm for it.
 - Never restart the script. Never repeat a question already answered.
-- After book_appointment succeeds: one short farewell only (confirm + reference + goodbye).
+- After book_appointment succeeds: two short sentences only (confirm + goodbye).
 `;
         const base = instructionsRef.current || "You are Maya, a clinic receptionist.";
         instructionsRef.current = `${base}\n${boost}`;
@@ -1314,7 +1524,7 @@ BOOKING DETAIL RULES (highest priority):
       teardownCall();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [callStarted]);
 
   const mm = String(Math.floor(seconds / 60));
   const ss = String(seconds % 60).padStart(2, "0");
@@ -1349,6 +1559,37 @@ BOOKING DETAIL RULES (highest priority):
           <p className="text-xl font-bold text-white">Maya</p>
           <p className="text-xs text-white/60 mb-4">Bright Smile Dental Care · Live Call</p>
 
+          {state === "choose_language" && (
+            <div className="space-y-4">
+              <p className="text-sm text-white/80">Choose a language to start the call</p>
+              <p className="text-xs text-white/50">آپ کس زبان میں بات کرنا چاہتے ہیں؟</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    callLanguageRef.current = "en";
+                    setCallLanguage("en");
+                    setCallStarted(true);
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-white text-[#0B5D50] text-sm font-bold hover:bg-white/90 transition-colors"
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    callLanguageRef.current = "ur";
+                    setCallLanguage("ur");
+                    setCallStarted(true);
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-white/15 border border-white/25 text-white text-sm font-bold hover:bg-white/25 transition-colors"
+                >
+                  اردو · Urdu
+                </button>
+              </div>
+            </div>
+          )}
+
           {state === "connecting" && (
             <p className="flex items-center justify-center gap-2 text-sm text-white/70">
               <Loader2 className="w-4 h-4 animate-spin" /> Connecting…
@@ -1364,19 +1605,18 @@ BOOKING DETAIL RULES (highest priority):
                 <span className="text-[10px] text-white/50 uppercase tracking-wide">Language</span>
                 {(["en", "ur"] as CallLanguage[]).map((lang) => {
                   const active = callLanguage === lang;
-                  const locked = callLanguage != null;
                   return (
                     <button
                       key={lang}
                       type="button"
-                      disabled={locked && !active}
-                      onClick={() => lockCallLanguage(lang, { speakNudge: true })}
+                      onClick={() => {
+                        if (callLanguage === lang) return;
+                        lockCallLanguage(lang, { switchMidCall: true });
+                      }}
                       className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors ${
                         active
                           ? "bg-white text-[#0B5D50] border-white"
-                          : locked
-                            ? "bg-white/5 text-white/30 border-white/10 cursor-not-allowed"
-                            : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
+                          : "bg-white/10 text-white/80 border-white/20 hover:bg-white/20"
                       }`}
                     >
                       {lang === "en" ? "English" : "اردو"}
@@ -1384,6 +1624,39 @@ BOOKING DETAIL RULES (highest priority):
                   );
                 })}
               </div>
+
+              <button
+                type="button"
+                onClick={() => void checkMyAppointments()}
+                disabled={checkingAppts}
+                className="mb-3 inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-xl bg-white/10 border border-white/15 text-xs font-semibold text-white/90 hover:bg-white/15 transition-colors disabled:opacity-50"
+              >
+                {checkingAppts ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CalendarSearch className="w-3.5 h-3.5" />}
+                Check my appointments
+              </button>
+
+              {apptResults && (
+                <div className="mb-3 text-left bg-white/10 rounded-xl px-3 py-2 border border-white/10">
+                  <p className="text-[10px] font-bold text-white/60 uppercase tracking-wide mb-1">
+                    {apptResults.found ? "Saved appointments" : "No appointments found"}
+                  </p>
+                  {apptResults.found && apptResults.appointments.length > 0 ? (
+                    <ul className="space-y-1.5">
+                      {apptResults.appointments.slice(0, 4).map((a, i) => (
+                        <li key={`${a.reference}-${i}`} className="text-[11px] text-white/85 leading-snug">
+                          <span className="font-semibold text-white">{a.service || "Appointment"}</span>
+                          {a.preferredTime ? ` · ${a.preferredTime}` : ""}
+                          {a.reference ? ` · Ref ${a.reference}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[11px] text-white/60">
+                      Enter your phone in the form below, then tap again — bookings are stored in our database when confirmed.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <p className="flex items-center justify-center gap-2 text-xs text-white/60 mb-3">
                 <Mic className="w-3.5 h-3.5 text-green-400" />{" "}
