@@ -10,7 +10,6 @@ import {
   Star,
   Mic,
 } from "lucide-react";
-import { useForm } from "@/context/FormContext";
 
 const capabilities = [
   { icon: MessageSquare, text: "Answers patient questions instantly, 24/7" },
@@ -36,7 +35,6 @@ const demoMessages: { from: "patient" | "ai"; text: string; confirmed?: boolean 
 ];
 
 export default function AIReceptionist() {
-  const { openForm } = useForm();
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -97,18 +95,19 @@ export default function AIReceptionist() {
 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <a
-                href="/ai-receptionist"
+                href="/pricing#ai-automation"
+                data-analytics-label="view_maya_plans"
+                data-analytics-location="ai_receptionist_section"
                 className="btn-dark px-7 py-3.5 text-sm w-full sm:w-auto text-center shadow-md shadow-[#00283C]/10"
               >
-                Try Maya AI Receptionist
+                See Maya plans
               </a>
-              <button
-                type="button"
-                onClick={openForm}
+              <a
+                href="/ai-receptionist"
                 className="text-sm font-semibold text-[#0077A8] hover:underline px-2"
               >
-                Or schedule a setup call
-              </button>
+                Try the live demo
+              </a>
             </div>
           </motion.div>
 

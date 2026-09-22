@@ -13,6 +13,15 @@ import {
   type ProjectType,
 } from "@/lib/caseStudies";
 
+const FILTER_LABELS: Record<"All" | ProjectType, string> = {
+  All: "All",
+  Website: "Website",
+  "AI Automation": "AI Automation",
+  SEO: "SEO",
+  App: "App",
+  Marketing: "Digital Marketing",
+};
+
 const filters: ("All" | ProjectType)[] = [
   "All",
   "Website",
@@ -51,7 +60,7 @@ const categoryMeta: Record<ProjectType, { title: string; subtitle: string }> = {
   },
   Marketing: {
     title: "Digital Marketing",
-    subtitle: "Meta and Google campaigns that deliver leads, installs, and revenue.",
+    subtitle: "Paid ads, social posts, and campaign content that drive leads, installs, and revenue.",
   },
 };
 
@@ -382,7 +391,7 @@ export default function Portfolio() {
                     : "border-gray-200 bg-white text-gray-600 hover:border-[#00B4D8] hover:text-[#0077A8]"
                 }`}
               >
-                {f}
+                {FILTER_LABELS[f]}
               </button>
             ))}
           </div>

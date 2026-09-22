@@ -33,8 +33,6 @@ export function OrganizationSchema() {
               addressCountry: BUSINESS_ADDRESS.countryCode,
             },
             sameAs: [
-              "https://www.instagram.com/alliancetechofficial",
-              "https://www.facebook.com/alliancetech11",
               "https://www.linkedin.com/company/alliancetechltd/",
             ],
           },

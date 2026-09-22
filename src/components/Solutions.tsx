@@ -333,16 +333,20 @@ export default function Solutions() {
               Most clinics begin with Answer and Book
             </h3>
             <p className="text-sm text-[#00283C]/60 leading-relaxed">
-              Stop the missed calls first, then layer on messaging, reminders, and records. We&apos;ll map the right order in a free audit.
+              Stop the missed calls first, then layer on messaging, reminders, and records. Start with Maya plans — or{" "}
+              <a href="/free-website-audit" className="font-semibold text-[#0077A8] hover:underline">
+                run a free website audit
+              </a>
+              .
             </p>
           </div>
           <a
-            href="/free-website-audit"
-            data-analytics-label="start_website_audit"
+            href="/pricing#ai-automation"
+            data-analytics-label="view_maya_plans"
             data-analytics-location="services"
             className="btn-dark inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm flex-shrink-0 min-h-[48px]"
           >
-            Run My Free Audit
+            See Maya plans
             <ArrowRight className="w-4 h-4" aria-hidden />
           </a>
         </motion.div>

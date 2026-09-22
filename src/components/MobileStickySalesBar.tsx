@@ -1,22 +1,27 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Phone } from "lucide-react";
+import { Phone, ArrowRight } from "lucide-react";
 import { useForm } from "@/context/FormContext";
+import { usePackageOrder } from "@/context/PackageOrderContext";
 import { SALES_TEL_HREF } from "@/lib/siteContact";
 import { trackPhoneClick } from "@/lib/analytics";
 
 const HIDDEN_PREFIXES = ["/admin", "/ai-receptionist"];
 
 /**
- * Mobile-only closer for the US market: Call (or request a call) + Book strategy call.
- * Free audit stays on pages; this bar prioritizes phone / booked conversations.
+ * Mobile-only closer: Call + Book.
+ * On /pricing, Book opens the package request for the plan currently in view.
  */
 export default function MobileStickySalesBar() {
   const pathname = usePathname() || "";
   const { openForm, isOpen } = useForm();
+  const { focused, openOrder, selection } = usePackageOrder();
 
-  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) || isOpen) return null;
+  const onPricing = pathname.startsWith("/pricing");
+  const canBookPlan = onPricing && Boolean(focused);
+
+  if (HIDDEN_PREFIXES.some((p) => pathname.startsWith(p)) || isOpen || selection) return null;
 
   return (
     <>
@@ -49,19 +54,38 @@ export default function MobileStickySalesBar() {
               Request a Call
             </button>
           )}
-          <button
-            type="button"
-            onClick={openForm}
-            data-analytics-label="book_consultation"
-            data-analytics-location="mobile_sticky"
-            className="flex-1 min-w-0 py-3 rounded-xl bg-[#00283C] text-white text-xs font-black px-1"
-          >
-            Book Strategy Call
-          </button>
+          {canBookPlan && focused ? (
+            <button
+              type="button"
+              onClick={() => openOrder(focused)}
+              data-analytics-label="book_selected_package"
+              data-analytics-location="mobile_sticky_pricing"
+              className="flex-[1.35] min-w-0 py-3 rounded-xl bg-[#00283C] text-white text-xs font-black px-2 flex flex-col items-center justify-center leading-tight"
+            >
+              <span className="inline-flex items-center gap-1">
+                Book {focused.packageName}
+                <ArrowRight className="w-3 h-3" aria-hidden />
+              </span>
+              <span className="text-[10px] font-semibold text-white/70 mt-0.5 truncate max-w-full">
+                {focused.price}
+                {focused.period ? ` · ${focused.period.replace(/^\//, "").trim()}` : ""}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={openForm}
+              data-analytics-label="book_consultation"
+              data-analytics-location="mobile_sticky"
+              className="flex-1 min-w-0 py-3 rounded-xl bg-[#00283C] text-white text-xs font-black px-1"
+            >
+              Book Strategy Call
+            </button>
+          )}
         </div>
       </div>
       {/* Spacer so content isn't covered on mobile */}
-      <div className="h-[4.5rem] lg:hidden" aria-hidden />
+      <div className={`lg:hidden ${canBookPlan ? "h-[5.25rem]" : "h-[4.5rem]"}`} aria-hidden />
     </>
   );
 }

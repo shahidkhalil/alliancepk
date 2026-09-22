@@ -45,7 +45,7 @@ const services = [
   {
     icon: Megaphone,
     title: "Digital Marketing",
-    description: "Google & Meta campaigns tracked to real bookings — not vanity clicks.",
+    description: "Google & Meta ads with posts, creatives, and Reels included in both plans.",
     href: "/digital-marketing-for-clinics",
   },
   {

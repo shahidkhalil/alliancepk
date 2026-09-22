@@ -18,7 +18,7 @@ const ConsultationForm = dynamic(() => import("@/components/ConsultationForm"), 
 const AuditChatWidget = dynamic(() => import("@/components/AuditChatWidget"), { ssr: false });
 const MobileStickySalesBar = dynamic(() => import("@/components/MobileStickySalesBar"), { ssr: false });
 
-type ServiceGroup = "ai" | "growth" | "platform";
+type ServiceGroup = "ai" | "seo" | "marketing" | "web" | "platform";
 
 type Channel = {
   label: string;
@@ -40,25 +40,37 @@ type Service = {
 const groupMeta: Record<ServiceGroup, { title: string; blurb: string; id: string; index: string }> = {
   ai: {
     title: "AI Automation",
-    blurb: "One flagship product. Three channels. Zero missed leads.",
+    blurb: "Answer every call and message, then book the patient.",
     id: "group-ai",
     index: "01",
   },
-  growth: {
-    title: "Growth & Marketing",
-    blurb: "Get found, get chosen, and fill more chairs.",
-    id: "group-growth",
+  seo: {
+    title: "SEO",
+    blurb: "Rank on Google and in the local map pack.",
+    id: "group-seo",
     index: "02",
+  },
+  marketing: {
+    title: "Digital Marketing",
+    blurb: "Google and Meta ads, with posts, creatives, and Reels included.",
+    id: "group-marketing",
+    index: "03",
+  },
+  web: {
+    title: "Web & App",
+    blurb: "Clinic websites and a branded patient app.",
+    id: "group-web",
+    index: "04",
   },
   platform: {
     title: "Platform",
-    blurb: "Records, reminders, and a patient app in one system.",
+    blurb: "Records, scheduling, prescriptions, and billing in one system.",
     id: "group-platform",
-    index: "03",
+    index: "05",
   },
 };
 
-const groupOrder: ServiceGroup[] = ["ai", "growth", "platform"];
+const groupOrder: ServiceGroup[] = ["ai", "seo", "marketing", "web", "platform"];
 
 const services: Service[] = [
   {
@@ -86,35 +98,35 @@ const services: Service[] = [
     Icon: Megaphone,
     title: "Digital Marketing",
     href: "/digital-marketing-for-clinics",
-    group: "growth",
-    summary: "Google and Meta ads built only for dental and aesthetic clinics.",
+    group: "marketing",
+    summary: "Google & Meta ads with posts, creatives, and Reels built into both plans.",
   },
   {
     Icon: Search,
     title: "SEO for Clinics",
     href: "/seo-for-clinics",
-    group: "growth",
+    group: "seo",
     summary: "Rank for the treatments patients actually search for.",
   },
   {
     Icon: MapPin,
     title: "Local SEO for Clinics",
     href: "/local-seo-for-clinics",
-    group: "growth",
+    group: "seo",
     summary: "Show up in Google Maps and “near me” searches in your city.",
   },
   {
     Icon: Globe,
     title: "Clinic Websites",
     href: "/clinic-website-design",
-    group: "growth",
+    group: "web",
     summary: "Fast, mobile-first sites designed to turn visitors into bookings.",
   },
   {
     Icon: Smartphone,
     title: "Patient Mobile App",
     href: "/clinic-mobile-app",
-    group: "platform",
+    group: "web",
     summary: "Branded iOS and Android app for booking, reminders, and payments.",
   },
   {
@@ -129,7 +141,9 @@ const services: Service[] = [
 const tabs: { id: "all" | ServiceGroup; label: string }[] = [
   { id: "all", label: "All" },
   { id: "ai", label: "AI Automation" },
-  { id: "growth", label: "Growth & Marketing" },
+  { id: "seo", label: "SEO" },
+  { id: "marketing", label: "Digital Marketing" },
+  { id: "web", label: "Web & App" },
   { id: "platform", label: "Platform" },
 ];
 
@@ -156,90 +170,39 @@ function ServicesContent() {
       <Navigation />
       <main className="relative w-full max-w-full overflow-x-clip">
 
-      {/* Atmospheric hero */}
-      <section
-
-        className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-24 text-white"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 85% -10%, rgba(0,180,216,0.35), transparent 55%), radial-gradient(ellipse 50% 40% at 10% 80%, rgba(0,119,168,0.25), transparent 50%), linear-gradient(160deg, #001a28 0%, #00283C 45%, #003d52 100%)",
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-[0.12] pointer-events-none"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-            maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute -right-24 top-1/3 w-[420px] h-[420px] rounded-full blur-3xl pointer-events-none"
-          style={{ background: "rgba(0,180,216,0.2)" }}
-
-        />
-
-        <div className="relative max-w-6xl mx-auto px-6 lg:px-8">
-          <div
-
-            className="max-w-2xl"
-          >
-            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-[#7DD3EA] mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8] animate-pulse" />
-              Alliance Tech · Services
-            </span>
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold tracking-tight leading-[1.08] mb-5">
-              Built for clinics that{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7DD3EA] to-[#00B4D8]">
-                want to grow
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-white/80 leading-relaxed max-w-lg mb-9">
-              AI Automation, Growth &amp; Marketing, and Platform — the same structure as our menu,
-              designed so you can choose in seconds.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <a
-                href="/free-website-audit"
-                data-analytics-label="start_website_audit"
-                data-analytics-location="services_hero"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#00283C] shadow-[0_10px_28px_rgba(0,180,216,0.18)] transition-colors hover:bg-[#E8F7FB]"
-              >
-                Get a free clinic audit
-              </a>
-              <button
-                type="button"
-                onClick={openForm}
-                data-analytics-label="book_consultation"
-                data-analytics-location="services_hero"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              >
-                Book a strategy call
-              </button>
-            </div>
-          </div>
-
-          {/* Group preview chips */}
-          <div className="mt-14 grid sm:grid-cols-3 gap-3 max-w-3xl">
-            {groupOrder.map((key, i) => (
-              <motion.button
-                key={key}
-                type="button"
-                onClick={() => goTo(key)}
-                {...entrance(staggerDelay(i))}
-                {...hoverProps(true)}
-                className="text-left rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-sm px-4 py-4 hover:bg-white/[0.08] hover:border-[#00B4D8]/40 transition-colors group"
-              >
-                <span className="text-[10px] font-bold tracking-widest text-[#00B4D8]/80">
-                  {groupMeta[key].index}
-                </span>
-                <span className="block text-sm font-bold text-white mt-1 group-hover:text-[#7DD3EA] transition-colors">
-                  {groupMeta[key].title}
-                </span>
-              </motion.button>
-            ))}
+      {/* Hero */}
+      <section className="relative bg-white border-b border-gray-100 pt-28 pb-12 lg:pt-36 lg:pb-16">
+        <div className="relative max-w-3xl mx-auto px-6 text-center">
+          <span className="badge-light inline-flex items-center gap-2 mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00B4D8]" aria-hidden />
+            Services
+          </span>
+          <h1 className="text-[2rem] sm:text-5xl font-extrabold text-[#00283C] tracking-tight leading-[1.15] mb-4">
+            Pick a service.{" "}
+            <span className="text-[#0077A8]">See the plan.</span>
+          </h1>
+          <p className="text-base sm:text-lg text-gray-600 leading-relaxed max-w-xl mx-auto mb-8">
+            AI front desk, SEO, ads, websites, and clinic software. Each one has a published price.
+          </p>
+          <div className="flex flex-col items-center gap-3">
+            <a
+              href="/pricing"
+              data-analytics-label="view_pricing"
+              data-analytics-location="services_hero"
+              className="btn-dark inline-flex items-center justify-center gap-2 px-8 py-3.5 text-sm w-full sm:w-auto"
+            >
+              See plans & pricing
+              <ArrowRight className="w-4 h-4" />
+            </a>
+            <button
+              type="button"
+              onClick={openForm}
+              data-analytics-label="book_consultation"
+              data-analytics-location="services_hero"
+              className="text-sm font-semibold text-[#0077A8] hover:underline"
+            >
+              Book a strategy call
+            </button>
           </div>
         </div>
       </section>

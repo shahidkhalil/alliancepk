@@ -15,12 +15,12 @@ export default function HomeBelowFold() {
   return (
     <>
       <Problems />
-      <AuditPromo />
       <ForWho />
       <Solutions />
       <AIReceptionist />
       <Process />
       <TestimonialVideo />
+      <AuditPromo />
       <Guarantee />
       <PricingPackages />
       <FAQ />

@@ -1,7 +1,6 @@
 "use client";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { useForm } from "@/context/FormContext";
 
 const steps = [
   {
@@ -45,7 +44,6 @@ const steps = [
 export default function Process() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const { openForm } = useForm();
 
   return (
     <section className="py-20 lg:py-28 bg-white" ref={ref}>
@@ -93,9 +91,14 @@ export default function Process() {
           become undeniable.
         </p>
         <div className="flex justify-center">
-          <button type="button" onClick={openForm} className="btn-dark px-8 py-4 text-base">
-            Book a Free Strategy Call
-          </button>
+          <a
+            href="/pricing#ai-automation"
+            data-analytics-label="view_maya_plans"
+            data-analytics-location="process"
+            className="btn-dark px-8 py-4 text-base inline-flex items-center justify-center"
+          >
+            See Maya plans
+          </a>
         </div>
       </div>
     </section>

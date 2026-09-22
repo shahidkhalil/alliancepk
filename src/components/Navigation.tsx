@@ -43,22 +43,33 @@ const navLinks: NavLink[] = [
         {
           title: "AI Automation",
           links: [
-            { label: "WhatsApp channel", href: "/whatsapp-ai-automation" },
+            { label: "Maya AI Receptionist", href: "/ai-receptionist" },
+            { label: "WhatsApp AI Automation", href: "/whatsapp-ai-automation" },
           ],
         },
         {
-          title: "Growth & Marketing",
+          title: "SEO",
           links: [
-            { label: "Digital Marketing", href: "/digital-marketing-for-clinics" },
             { label: "SEO for Clinics", href: "/seo-for-clinics" },
             { label: "Local SEO for Clinics", href: "/local-seo-for-clinics" },
+          ],
+        },
+        {
+          title: "Digital Marketing",
+          links: [
+            { label: "Digital Marketing", href: "/digital-marketing-for-clinics" },
+          ],
+        },
+        {
+          title: "Web & App",
+          links: [
             { label: "Clinic Websites", href: "/clinic-website-design" },
+            { label: "Patient Mobile App", href: "/clinic-mobile-app" },
           ],
         },
         {
           title: "Platform",
           links: [
-            { label: "Patient Mobile App", href: "/clinic-mobile-app" },
             { label: "EHR Platform", href: "/ehr-platform" },
           ],
         },
@@ -203,7 +214,7 @@ export default function Navigation() {
                 data-analytics-location="desktop_navigation"
                 className="btn-dark px-5 py-2.5 text-sm"
               >
-                Book a Free Audit
+                Book a Strategy Call
               </button>
             </div>
 
@@ -282,7 +293,7 @@ export default function Navigation() {
                   data-analytics-label="book_consultation"
                   data-analytics-location="mobile_navigation"
                   className="btn-dark w-full py-3 text-sm">
-                  Book a Free Audit
+                  Book a Strategy Call
                 </button>
               </div>
             </div>

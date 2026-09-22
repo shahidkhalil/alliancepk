@@ -2,7 +2,6 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { ShieldCheck, FileCheck2, TrendingUp, PlugZap, UserCheck } from "lucide-react";
-import { useForm } from "@/context/FormContext";
 import { useCardMotion, staggerDelay } from "@/lib/motionVariants";
 
 const itemIconClass = "w-[1.15rem] h-[1.15rem] text-[#0077A8]";
@@ -17,7 +16,6 @@ const guaranteeItems = [
 export default function Guarantee() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const { openForm } = useForm();
   const { entrance, hoverProps } = useCardMotion();
 
   return (
@@ -49,9 +47,14 @@ export default function Guarantee() {
                 <p className="text-gray-500 leading-relaxed mb-8">
                   For qualifying clinics we guarantee measurable results within 60 days: more calls answered, more appointments booked, fewer no-shows. If we don&apos;t deliver, you don&apos;t pay. Minimum 3–6 month commitment.
                 </p>
-                <button onClick={openForm} className="btn-dark px-8 py-4 text-base">
-                  Get Your Free Automation Audit
-                </button>
+                <a
+                  href="/pricing#ai-automation"
+                  data-analytics-label="view_maya_plans"
+                  data-analytics-location="guarantee"
+                  className="btn-dark px-8 py-4 text-base inline-flex items-center justify-center"
+                >
+                  See Maya plans
+                </a>
               </div>
 
               <div className="space-y-4">

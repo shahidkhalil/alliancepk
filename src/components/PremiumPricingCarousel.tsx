@@ -448,11 +448,29 @@ function MobileCoverFlow({ service }: { service: ServicePricing }) {
   const wheelLock = useRef(0);
   const reduceMotion = usePrefersReducedMotion();
   const spring = reduceMotion ? REDUCED_SPRING : SPRING;
+  const { setFocused } = usePackageOrder();
 
   useEffect(() => {
     const idx = packages.findIndex((p) => p.popular);
     setActive(idx >= 0 ? idx : 0);
   }, [service.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep sticky “Book this plan” in sync with the plan in view.
+  useEffect(() => {
+    const pkg = packages[active];
+    if (!pkg) {
+      setFocused(null);
+      return;
+    }
+    setFocused({
+      serviceId: service.id,
+      serviceName: service.name,
+      packageName: pkg.name,
+      price: pkg.price,
+      period: pkg.period,
+    });
+    return () => setFocused(null);
+  }, [active, service.id, service.name, packages, setFocused]);
 
   const onActiveHeight = useCallback((h: number) => {
     setStageH(Math.max(420, Math.ceil(h + 48)));

@@ -52,46 +52,43 @@ export default function Hero() {
             <span className="gradient-heading">Never Miss a Patient.</span>
           </h1>
 
-          <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto mb-9 leading-relaxed">
+          <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto mb-4 leading-relaxed">
             Alliance Tech builds AI automation for healthcare clinics — answering calls, handling
             messages, and booking appointments 24/7 so your team can focus on care.
           </p>
+          <p className="text-sm text-[#0077A8] font-semibold max-w-2xl mx-auto mb-9">
+            Typical answer time is about 5 seconds — the appointment is booked while your front desk is with a patient.{" "}
+            <a href="/case-study/maya-ai-receptionist" className="underline underline-offset-2 hover:text-[#00283C]">
+              See how Maya books
+            </a>
+          </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+          <div className="flex flex-col items-center justify-center gap-3">
             <a
-              href="/ai-receptionist"
-              data-analytics-label="start_ai_demo"
+              href="/pricing#ai-automation"
+              data-analytics-label="view_maya_plans"
               data-analytics-location="hero"
               className="btn-dark min-h-[52px] px-8 py-4 text-base w-full sm:w-auto inline-flex items-center justify-center gap-2"
             >
-              Try Maya AI Receptionist
+              See Maya plans
               <ArrowRight className="w-4 h-4" aria-hidden />
             </a>
-            <a
-              href="/free-website-audit"
-              data-analytics-label="start_website_audit"
-              data-analytics-location="hero"
-              className="min-h-[52px] inline-flex items-center gap-2 text-sm font-bold text-[#00283C] bg-white border border-[#00283C]/15 px-7 py-4 rounded-lg hover:border-[#0077A8]/40 hover:bg-[#F8FCFE] transition-colors w-full sm:w-auto justify-center"
-            >
-              Book a Free Audit
-            </a>
+            <p className="text-sm text-gray-500">
+              <a href="/ai-receptionist" className="font-semibold text-[#0077A8] hover:underline">
+                Try the live demo
+              </a>
+              <span aria-hidden> · </span>
+              <button
+                type="button"
+                onClick={openForm}
+                data-analytics-label="book_consultation"
+                data-analytics-location="hero"
+                className="font-semibold text-[#0077A8] hover:underline"
+              >
+                Book a strategy call
+              </button>
+            </p>
           </div>
-
-          <p className="mt-4 text-sm text-gray-500">
-            <a href="/pricing" className="font-semibold text-[#0077A8] hover:underline">
-              See pricing
-            </a>
-            <span aria-hidden> · </span>
-            <button
-              type="button"
-              onClick={openForm}
-              data-analytics-label="book_consultation"
-              data-analytics-location="hero"
-              className="font-semibold text-[#0077A8] hover:underline"
-            >
-              Book a Free Strategy Call
-            </button>
-          </p>
         </div>
 
         <div className="mt-12 grid sm:grid-cols-3 gap-3 sm:gap-4">

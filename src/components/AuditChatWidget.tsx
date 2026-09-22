@@ -19,7 +19,10 @@ export default function AuditChatWidget() {
   const [ready, setReady] = useState(false);
   const pathname = usePathname();
   const { isOpen: formOpen } = useForm();
-  const hidden = pathname === "/free-website-audit" || pathname === "/ai-receptionist";
+  const hidden =
+    pathname === "/free-website-audit" ||
+    pathname === "/ai-receptionist" ||
+    pathname.startsWith("/pricing");
 
   // Consultation form sits above the chat (z-80). Collapse chat so it doesn't
   // cover the form on mobile after "Book a free strategy call".
@@ -78,10 +81,10 @@ export default function AuditChatWidget() {
     <>
       {everOpened && (
         <div
-          className={`fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 z-[60] sm:w-full sm:max-w-[400px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white flex flex-col transition-all duration-200 ${
+          className={`fixed bottom-[7.5rem] left-4 right-4 sm:left-auto sm:right-6 sm:bottom-24 z-[60] sm:w-full sm:max-w-[400px] rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bg-white flex flex-col transition-all duration-200 ${
             open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none invisible"
           }`}
-          style={{ height: "min(600px, calc(100vh - 140px))" }}
+          style={{ height: "min(560px, calc(100vh - 11rem))" }}
         >
           <div className="bg-[#00283C] px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
@@ -115,7 +118,7 @@ export default function AuditChatWidget() {
           type="button"
           onClick={openChat}
           aria-label="Open free website audit chat"
-          className="fixed bottom-24 right-4 sm:right-6 z-[59] bg-white rounded-2xl rounded-br-sm shadow-xl border border-gray-200 px-4 py-3 text-left max-w-[240px]"
+          className="fixed bottom-[7.5rem] right-4 sm:bottom-24 sm:right-6 z-[59] bg-white rounded-2xl rounded-br-sm shadow-xl border border-gray-200 px-4 py-3 text-left max-w-[240px]"
         >
           <p className="text-xs font-bold text-[#00283C] mb-0.5">Free website audit</p>
           <p className="text-xs text-gray-600 leading-snug">
@@ -132,7 +135,7 @@ export default function AuditChatWidget() {
             setEverOpened(true);
             setShowNudge(false);
           }}
-          className="fixed bottom-5 right-4 sm:right-6 z-[60] group"
+          className="fixed bottom-[5.75rem] right-4 sm:bottom-5 sm:right-6 z-[60] group lg:bottom-5"
           aria-label={open ? "Close free website audit chat" : "Open free website audit chat"}
         >
           {open ? (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { doc, getDoc, increment, setDoc } from "firebase/firestore";
-import { Heart, Share2, Facebook, Linkedin, Link2, Check } from "lucide-react";
+import { Heart, Share2, Linkedin, Link2, Check } from "lucide-react";
 import { getDb } from "@/lib/firebase";
 import type { BlogPost } from "@/lib/blogTypes";
 import { useCardMotion } from "@/lib/motionVariants";
@@ -51,7 +51,6 @@ export default function BlogCard({ post, delay = 0 }: { post: BlogPost; delay?: 
   };
 
   const shareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
     x: `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.title)}`,
   };
@@ -119,14 +118,6 @@ export default function BlogCard({ post, delay = 0 }: { post: BlogPost; delay?: 
 
             {shareOpen && (
               <div className="absolute right-0 bottom-full mb-2 w-44 rounded-xl border border-gray-100 bg-white shadow-xl p-2 z-10">
-                <a
-                  href={shareLinks.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-[#F0F7FA] rounded-lg"
-                >
-                  <Facebook className="w-4 h-4 text-[#1877F2]" /> Facebook
-                </a>
                 <a
                   href={shareLinks.x}
                   target="_blank"

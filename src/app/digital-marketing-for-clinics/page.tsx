@@ -9,28 +9,30 @@ import { ContentCardList } from "@/components/ui/Card";
 
 const featured = {
   icon: "📣",
-  title: "Google Search & Display Ads",
-  desc: "Show up the moment a patient searches 'dental implants Houston' or 'botox near me.' Targeted to your treatments and your city, not generic clicks bought in bulk.",
+  title: "Ads + Content That Work Together",
+  desc: "Google and Meta ads put your clinic in front of patients searching now. Organic posts, creatives, and Reels keep your feed active so paid traffic lands on a brand that looks busy and trustworthy.",
 };
 
 const features = [
   { icon: "📱", title: "Facebook & Instagram Ads", desc: "Scroll-stopping creative aimed at people in your area who match your ideal patient profile, not random reach." },
+  { icon: "🎬", title: "Content, Creatives & Reels (in Ads Plans)", desc: "Feed posts, Stories/Shorts, and Reels are built into both Google Ads and Meta Ads plans — not a separate package — so paid and organic stay consistent." },
   { icon: "🎯", title: "Audience Targeting by Treatment", desc: "Separate campaigns for implants, whitening, botox, and laser, so budget goes only to patients looking for that exact treatment." },
-  { icon: "✍️", title: "Ad Creative & Copywriting", desc: "Every ad is written and designed around your clinic's real services and offers. No generic templates." },
+  { icon: "✍️", title: "Ad Creative & Copywriting", desc: "Every ad and organic post is written around your real services and offers. Same brand voice across paid and organic." },
   { icon: "📊", title: "Weekly Performance Reports", desc: "What you spent, how many leads came in, and what each booked patient cost. Every week, no exceptions." },
-  { icon: "🤝", title: "Monthly Strategy Calls", desc: "A real review every month: what's working, what to scale, what to cut." },
+  { icon: "🤝", title: "Monthly Strategy Calls", desc: "A real review every month: what's working, what to scale, what to cut — ads and content together." },
 ];
 
 const stats = [
   { stat: "4x", label: "Avg. return on ad spend" },
   { stat: "30 days", label: "To first patient results" },
-  { stat: "100+", label: "Clinics run campaigns for" },
-  { stat: "2", label: "Ad platforms covered" },
+  { stat: "Reels", label: "Short-form video included" },
+  { stat: "3", label: "Channels: Ads, Posts, Reels" },
 ];
 
 const faqs = [
   { q: "How much should I budget for ads?", a: "Most clinics start between $2,000 and $6,000 per month in ad spend, scaled up once we see what's converting. We'll recommend a number based on your city and treatments." },
-  { q: "How is this different from a generic marketing agency?", a: "We only run campaigns for dental and aesthetic clinics. Every targeting strategy, ad angle, and landing page is built specifically for healthcare patient acquisition, not adapted from a retail or e-commerce playbook." },
+  { q: "Do you also handle content posting and Reels?", a: "Yes — they're included inside both Google Ads and Meta Ads plans. Basic covers starter feed posts and creatives; Standard adds Reels/Shorts; Premium is a full managed content + ads engine. No separate content retainer required." },
+  { q: "How is this different from a generic marketing agency?", a: "We only run campaigns for dental and aesthetic clinics. Every targeting strategy, ad angle, Reel concept, and landing page is built specifically for healthcare patient acquisition, not adapted from a retail or e-commerce playbook." },
   { q: "Do you handle the ad spend or just management?", a: "You keep control of your own ad account and budget. We manage strategy, creative, targeting, and optimisation, with full transparency on every dollar spent." },
 ];
 
@@ -60,7 +62,7 @@ export default function DigitalMarketingForClinics() {
         badge="DIGITAL MARKETING FOR CLINICS"
         headline="Patients Actively Searching"
         highlight="For Your Treatments"
-        subheadline="Google and Meta ad campaigns built exclusively for dental and aesthetic clinics across the United States, targeted by city and treatment, not generic templates."
+        subheadline="Google and Meta ad campaigns with content posting, creatives, and Reels built into both plans — for dental and aesthetic clinics, targeted by city and treatment."
       />
 
       <section className="py-12 bg-[#F8FAFC] border-b border-gray-100">

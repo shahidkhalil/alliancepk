@@ -7,7 +7,6 @@ import {
   CalendarCheck,
   BellRing,
 } from "lucide-react";
-import { useForm } from "@/context/FormContext";
 import { Card, CardIconWell } from "@/components/ui/Card";
 
 const clinicTypes = [
@@ -48,7 +47,6 @@ const outcomes = [
 export default function ForWho() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const { openForm } = useForm();
 
   return (
     <section className="py-16 lg:py-20 bg-[#F8FAFC]" ref={ref}>
@@ -103,9 +101,14 @@ export default function ForWho() {
           transition={{ delay: 0.4 }}
           className="text-center"
         >
-          <button onClick={openForm} className="btn-dark px-8 py-4 text-base">
-            Automate My Clinic →
-          </button>
+          <a
+            href="/pricing#ai-automation"
+            data-analytics-label="view_maya_plans"
+            data-analytics-location="for_who"
+            className="btn-dark px-8 py-4 text-base inline-flex items-center justify-center"
+          >
+            See Maya plans →
+          </a>
           <p className="text-gray-400 text-sm mt-3">
             Built for US healthcare clinics — solo practices to multi-location groups.
           </p>

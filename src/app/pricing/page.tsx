@@ -46,25 +46,25 @@ function BottomCTA() {
           Not sure which plan fits?
         </h2>
         <p className="text-white/55 text-sm leading-relaxed mb-8">
-          Start with a free clinic audit — then we&apos;ll recommend the exact package for your budget on a 30-minute call.
+          Scroll up and request the plan in front of you. If you want a recommendation first, book a strategy call.
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-4">
           <a
-            href="/free-website-audit"
-            data-analytics-label="start_website_audit"
+            href="#service-detail"
+            data-analytics-label="choose_plan"
             data-analytics-location="pricing_bottom"
             className="px-8 py-3.5 bg-white text-[#00283C] rounded-xl font-black text-sm hover:bg-[#E8F7FB] transition-colors shadow flex items-center gap-2"
           >
-            Book a Free Audit <ArrowRight className="w-4 h-4" />
+            Choose a plan <ArrowRight className="w-4 h-4" />
           </a>
           <button
             type="button"
             onClick={openForm}
             data-analytics-label="book_consultation"
             data-analytics-location="pricing_bottom"
-            className="px-8 py-3.5 border border-white/30 text-white rounded-xl font-bold text-sm hover:bg-white/10 transition-colors"
+            className="text-sm font-semibold text-[#00B4D8] hover:underline"
           >
-            Book a Free Strategy Call
+            Book a strategy call
           </button>
         </div>
       </div>
@@ -146,32 +146,30 @@ function PricingContent() {
             <p className="text-gray-600 text-base leading-relaxed mb-6 max-w-2xl">
               Every service has clearly defined packages with published prices and feature lists. Pick what you need and know exactly what you&apos;re paying before you sign anything.
             </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3 mb-6">
+            <div className="flex flex-col items-start gap-3 mb-6">
               <a
-                href="/ai-receptionist"
-                data-analytics-label="start_ai_demo"
+                href="#service-detail"
+                data-analytics-label="choose_plan"
                 data-analytics-location="pricing_hero"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#00283C] text-white text-sm font-black hover:bg-[#003D5C] transition-colors"
               >
-                Try Maya AI Receptionist <ArrowRight className="w-4 h-4" />
+                Choose a plan <ArrowRight className="w-4 h-4" />
               </a>
-              <a
-                href="/free-website-audit"
-                data-analytics-label="start_website_audit"
-                data-analytics-location="pricing_hero"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
-              >
-                Book a Free Audit
-              </a>
-              <button
-                type="button"
-                onClick={openForm}
-                data-analytics-label="book_consultation"
-                data-analytics-location="pricing_hero"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#00283C]/20 text-[#00283C] text-sm font-bold hover:bg-[#F8FAFC] transition-colors"
-              >
-                Book a Free Strategy Call
-              </button>
+              <p className="text-sm text-gray-500">
+                <button
+                  type="button"
+                  onClick={openForm}
+                  data-analytics-label="book_consultation"
+                  data-analytics-location="pricing_hero"
+                  className="font-semibold text-[#0077A8] hover:underline"
+                >
+                  Book a strategy call
+                </button>
+                <span aria-hidden> · </span>
+                <a href="/ai-receptionist" className="font-semibold text-[#0077A8] hover:underline">
+                  Try Maya
+                </a>
+              </p>
             </div>
             <p className="text-xs text-gray-500 mb-5 max-w-xl">
               Built for US healthcare clinics that need more booked appointments — not vanity traffic.
