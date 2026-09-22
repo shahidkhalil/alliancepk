@@ -222,10 +222,53 @@ function PricingContent() {
             </div>
           </aside>
 
-          {/* Mobile: themed expandable picker (compact when closed) */}
+          {/* Mobile: category chips + expandable service picker */}
           <div className="lg:hidden w-full min-w-0 mb-6">
+            <div className="flex items-center justify-between gap-3 mb-2.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#0077A8]">
+                Browse by category
+              </p>
+              <p className="text-[10px] font-semibold text-gray-400">Swipe →</p>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-none mb-3">
+              {mobileCategories.map((cat) => {
+                const isCatActive =
+                  activeCategory === cat || (activeCategory === "All" && active.category === cat);
+                const count = pricingServices.filter((s) => s.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      const first = pricingServices.find((s) => s.category === cat);
+                      if (first) {
+                        setActiveId(first.id);
+                        setPickerOpen(true);
+                      }
+                    }}
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold border-2 transition-colors ${
+                      isCatActive
+                        ? "bg-[#00283C] border-[#00283C] text-white"
+                        : "bg-white border-gray-200 text-gray-600"
+                    }`}
+                  >
+                    {cat}
+                    <span
+                      className={`text-[10px] tabular-nums px-1.5 py-0.5 rounded-full ${
+                        isCatActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             <p className="text-[10px] font-black uppercase tracking-widest text-[#0077A8] mb-2">
-              Service
+              Current service · tap to switch
             </p>
 
             <div
@@ -238,6 +281,7 @@ function PricingContent() {
               <button
                 type="button"
                 aria-expanded={pickerOpen}
+                aria-label="Switch pricing service"
                 onClick={() => setPickerOpen((o) => !o)}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left bg-gradient-to-br from-white to-[#F0F9FC]"
               >
@@ -253,12 +297,21 @@ function PricingContent() {
                     {active.category}
                   </span>
                 </span>
-                <span
-                  className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    pickerOpen ? "bg-[#00B4D8] text-white" : "bg-[#E0F4F9] text-[#0077A8]"
-                  }`}
-                >
-                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${pickerOpen ? "rotate-180" : ""}`} />
+                <span className="shrink-0 flex flex-col items-end gap-0.5">
+                  <span
+                    className={`text-[10px] font-bold ${
+                      pickerOpen ? "text-[#0077A8]" : "text-[#00B4D8]"
+                    }`}
+                  >
+                    {pickerOpen ? "Close" : "Change"}
+                  </span>
+                  <span
+                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                      pickerOpen ? "bg-[#00B4D8] text-white" : "bg-[#E0F4F9] text-[#0077A8]"
+                    }`}
+                  >
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${pickerOpen ? "rotate-180" : ""}`} />
+                  </span>
                 </span>
               </button>
 
@@ -273,7 +326,7 @@ function PricingContent() {
                     className="overflow-hidden border-t border-[#00B4D8]/15 bg-white"
                   >
                     <div className="max-h-[min(58vh,380px)] overflow-y-auto overscroll-contain px-2 py-2">
-                      {mobileCategories.map((cat) => {
+                      {(activeCategory === "All" ? mobileCategories : [activeCategory]).map((cat) => {
                         const items = pricingServices.filter((s) => s.category === cat);
                         if (!items.length) return null;
                         return (
@@ -289,7 +342,7 @@ function PricingContent() {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        setActiveCategory("All");
+                                        setActiveCategory(s.category as ServiceCategory);
                                         selectService(s.id);
                                       }}
                                       className={`w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors ${
@@ -331,6 +384,15 @@ function PricingContent() {
                           </div>
                         );
                       })}
+                      {activeCategory !== "All" && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveCategory("All")}
+                          className="w-full mt-1 mb-1 px-3 py-2.5 text-xs font-bold text-[#0077A8] hover:bg-[#F0F9FC] rounded-xl"
+                        >
+                          Show all categories
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 )}
